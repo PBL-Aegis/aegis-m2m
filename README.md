@@ -44,7 +44,7 @@ AI 구매 에이전트가 벤치마크 표로 모델을 고르고 AEGIS 토큰�
 ### 2. 받고 준비하기
 
 ```bash
-git clone <이 저장소 주소> agent-M2M-py
+git clone git@github.com:PBL-Aegis/agent-M2M-py.git
 cd agent-M2M-py
 git submodule update --init --recursive   # 컨트랙트 라이브러리(OpenZeppelin, forge-std)
 uv sync                                    # Python 3.12 와 패키지 설치 (.venv)
