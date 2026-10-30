@@ -1,0 +1,59 @@
+{
+  "snapshotId": "test-fixture-v3",
+  "capturedAt": "2026-01-01T00:00:00Z",
+  "source": "fixture",
+  "note": "계산 검증용 고정 숫자. 실제 벤치마크 값이 아니다.",
+  "models": [
+    {
+      "key": "openai/test-mini",
+      "epochModel": "Test Mini",
+      "eci": "140",
+      "eciCiLow": "137.5",
+      "eciCiHigh": "142.5",
+      "inputPricePerMillion": "0.4",
+      "outputPricePerMillion": "1.6",
+      "openRouterId": "openai/test-mini",
+      "outputTokensPerSecond": "60",
+      "aaSlugs": [
+        "test-mini"
+      ],
+      "aaModelNames": [
+        "Test Mini"
+      ]
+    },
+    {
+      "key": "anthropic/test-haiku",
+      "epochModel": "Test Haiku",
+      "eci": "160",
+      "eciCiLow": "157",
+      "eciCiHigh": "163",
+      "inputPricePerMillion": "1",
+      "outputPricePerMillion": "5",
+      "openRouterId": "anthropic/test-haiku",
+      "outputTokensPerSecond": "40",
+      "aaSlugs": [
+        "test-haiku"
+      ],
+      "aaModelNames": [
+        "Test Haiku"
+      ]
+    },
+    {
+      "key": "google/test-flash",
+      "epochModel": "Test Flash",
+      "eci": "150",
+      "eciCiLow": "148",
+      "eciCiHigh": "152",
+      "inputPricePerMillion": "0.3",
+      "outputPricePerMillion": "2.5",
+      "openRouterId": "google/test-flash",
+      "outputTokensPerSecond": "150",
+      "aaSlugs": [
+        "test-flash"
+      ],
+      "aaModelNames": [
+        "Test Flash"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,691 @@
+{
+  "snapshotId": "epoch-openrouter-aa-2026-10-26T18:31",
+  "capturedAt": "2026-10-26T18:31:08.492Z",
+  "source": "epoch.ai + openrouter.ai + artificialanalysis.ai",
+  "sources": {
+    "epoch": "https://epoch.ai/data/eci_scores.csv",
+    "openRouter": "https://openrouter.ai/api/v1/models",
+    "aa": "https://artificialanalysis.ai/api/v2/language/models/free"
+  },
+  "note": "성능은 Epoch Capabilities Index(95% 신뢰구간 포함), 가격은 OpenRouter 판매 단가, 속도는 Artificial Analysis 가 잰 출력 속도(토큰/초) 최근 72시간 중앙값을 생각 단계별로 평균낸 값입니다.",
+  "models": [
+    {
+      "key": "anthropic/claude-opus-5.5",
+      "epochModel": "Claude Opus 5.5",
+      "epochDate": "2026-09-22",
+      "eci": "168.83",
+      "eciCiLow": "165.25",
+      "eciCiHigh": "173.95",
+      "inputPricePerMillion": "4",
+      "outputPricePerMillion": "20",
+      "outputTokensPerSecond": "98.13",
+      "openRouterId": "anthropic/claude-opus-5.5",
+      "aaSlugs": [
+        "claude-opus-5-5"
+      ],
+      "aaModelNames": [
+        "Claude Opus 5.5 (Max, Default Fallback)"
+      ]
+    },
+    {
+      "key": "openai/gpt-6-astra",
+      "epochModel": "GPT-6 Astra",
+      "epochDate": "2026-09-03",
+      "eci": "168.81",
+      "eciCiLow": "165.45",
+      "eciCiHigh": "174.51",
+      "inputPricePerMillion": "10",
+      "outputPricePerMillion": "50",
+      "outputTokensPerSecond": "67.57",
+      "openRouterId": "openai/gpt-6-astra",
+      "aaSlugs": [
+        "gpt-6-astra",
+        "gpt-6-astra-xhigh"
+      ],
+      "aaModelNames": [
+        "GPT-6 Astra (Max)",
+        "GPT-6 Astra (Xhigh)"
+      ]
+    },
+    {
+      "key": "openai/gpt-6.1-sol",
+      "epochModel": "GPT-6.1 Sol",
+      "epochDate": "2026-09-29",
+      "eci": "168.37",
+      "eciCiLow": "165.0",
+      "eciCiHigh": "174.43",
+      "inputPricePerMillion": "2",
+      "outputPricePerMillion": "10",
+      "outputTokensPerSecond": "60.11",
+      "openRouterId": "openai/gpt-6.1-sol",
+      "aaSlugs": [
+        "gpt-6-1-sol-high",
+        "gpt-6-1-sol-xhigh"
+      ],
+      "aaModelNames": [
+        "GPT-6.1 Sol (High)",
+        "GPT-6.1 Sol (Xhigh)"
+      ]
+    },
+    {
+      "key": "anthropic/claude-fable-5.1",
+      "epochModel": "Claude Fable 5.1",
+      "epochDate": "2026-09-01",
+      "eci": "166.49",
+      "eciCiLow": "163.47",
+      "eciCiHigh": "171.35",
+      "inputPricePerMillion": "10",
+      "outputPricePerMillion": "50",
+      "outputTokensPerSecond": "60.72",
+      "openRouterId": "anthropic/claude-fable-5.1",
+      "aaSlugs": [
+        "claude-fable-5-1",
+        "claude-fable-5-1-low",
+        "claude-fable-5-1-medium"
+      ],
+      "aaModelNames": [
+        "Claude Fable 5.1 (Max, Default Fallback)",
+        "Claude Fable 5.1 (Low, Default Fallback)",
+        "Claude Fable 5.1 (Medium, Default Fallback)"
+      ]
+    },
+    {
+      "key": "anthropic/claude-sonnet-5.5",
+      "epochModel": "Claude Sonnet 5.5",
+      "epochDate": "2026-09-28",
+      "eci": "166.18",
+      "eciCiLow": "163.06",
+      "eciCiHigh": "171.34",
+      "inputPricePerMillion": "2",
+      "outputPricePerMillion": "10",
+      "outputTokensPerSecond": "105.2",
+      "openRouterId": "anthropic/claude-sonnet-5.5",
+      "aaSlugs": [
+        "claude-sonnet-5-5-high",
+        "claude-sonnet-5-5-medium"
+      ],
+      "aaModelNames": [
+        "Claude Sonnet 5.5 (High, Default Fallback)",
+        "Claude Sonnet 5.5 (Medium, Default Fallback)"
+      ]
+    },
+    {
+      "key": "anthropic/claude-opus-5",
+      "epochModel": "Claude Opus 5",
+      "epochDate": "2026-07-24",
+      "eci": "163.94",
+      "eciCiLow": "161.12",
+      "eciCiHigh": "168.24",
+      "inputPricePerMillion": "5",
+      "outputPricePerMillion": "25",
+      "outputTokensPerSecond": "52.63",
+      "openRouterId": "anthropic/claude-opus-5",
+      "aaSlugs": [
+        "claude-opus-5-low",
+        "claude-opus-5-xhigh"
+      ],
+      "aaModelNames": [
+        "Claude Opus 5 (Low)",
+        "Claude Opus 5 (Xhigh)"
+      ]
+    },
+    {
+      "key": "openai/gpt-6-sol",
+      "epochModel": "GPT-6 Sol",
+      "epochDate": "2026-09-22",
+      "eci": "163.73",
+      "eciCiLow": "160.92",
+      "eciCiHigh": "167.44",
+      "inputPricePerMillion": "2",
+      "outputPricePerMillion": "10",
+      "outputTokensPerSecond": "121.07",
+      "openRouterId": "openai/gpt-6-sol",
+      "aaSlugs": [
+        "gpt-6-sol-low"
+      ],
+      "aaModelNames": [
+        "GPT-6 Sol (Low)"
+      ]
+    },
+    {
+      "key": "openai/gpt-5.6-sol",
+      "epochModel": "GPT-5.6 Sol",
+      "epochDate": "2026-07-09",
+      "eci": "162.79",
+      "eciCiLow": "160.15",
+      "eciCiHigh": "167.06",
+      "inputPricePerMillion": "4",
+      "outputPricePerMillion": "20",
+      "outputTokensPerSecond": "79.12",
+      "openRouterId": "openai/gpt-5.6-sol",
+      "aaSlugs": [
+        "gpt-5-6-sol-low"
+      ],
+      "aaModelNames": [
+        "GPT-5.6 Sol (Low)"
+      ]
+    },
+    {
+      "key": "openai/gpt-5.6-terra",
+      "epochModel": "GPT-5.6 Terra",
+      "epochDate": "2026-07-09",
+      "eci": "160.09",
+      "eciCiLow": "157.3",
+      "eciCiHigh": "163.31",
+      "inputPricePerMillion": "2",
+      "outputPricePerMillion": "12",
+      "outputTokensPerSecond": "119.89",
+      "openRouterId": "openai/gpt-5.6-terra",
+      "aaSlugs": [
+        "gpt-5-6-terra-medium"
+      ],
+      "aaModelNames": [
+        "GPT-5.6 Terra (Medium)"
+      ]
+    },
+    {
+      "key": "openai/gpt-5.5",
+      "epochModel": "GPT-5.5",
+      "epochDate": "2026-04-23",
+      "eci": "159.68",
+      "eciCiLow": "157.33",
+      "eciCiHigh": "163.67",
+      "inputPricePerMillion": "5",
+      "outputPricePerMillion": "30",
+      "outputTokensPerSecond": "89.88",
+      "openRouterId": "openai/gpt-5.5",
+      "aaSlugs": [
+        "gpt-5-5"
+      ],
+      "aaModelNames": [
+        "GPT-5.5 (Xhigh)"
+      ]
+    },
+    {
+      "key": "anthropic/claude-haiku-5.5",
+      "epochModel": "Claude Haiku 5.5",
+      "epochDate": "2026-10-07",
+      "eci": "159.32",
+      "eciCiLow": "156.19",
+      "eciCiHigh": "162.47",
+      "inputPricePerMillion": "0.1",
+      "outputPricePerMillion": "0.5",
+      "outputTokensPerSecond": "185.73",
+      "openRouterId": "anthropic/claude-haiku-5.5",
+      "aaSlugs": [
+        "claude-haiku-5-5-high",
+        "claude-haiku-5-5-low",
+        "claude-haiku-5-5-xhigh"
+      ],
+      "aaModelNames": [
+        "Claude Haiku 5.5 (High)",
+        "Claude Haiku 5.5 (Low)",
+        "Claude Haiku 5.5 (Xhigh)"
+      ]
+    },
+    {
+      "key": "anthropic/claude-sonnet-5",
+      "epochModel": "Claude Sonnet 5",
+      "epochDate": "2026-06-30",
+      "eci": "156.88",
+      "eciCiLow": "154.1",
+      "eciCiHigh": "159.65",
+      "inputPricePerMillion": "2",
+      "outputPricePerMillion": "10",
+      "outputTokensPerSecond": "75.32",
+      "openRouterId": "anthropic/claude-sonnet-5",
+      "aaSlugs": [
+        "claude-sonnet-5",
+        "claude-sonnet-5-low"
+      ],
+      "aaModelNames": [
+        "Claude Sonnet 5 (Max)",
+        "Claude Sonnet 5 (Low)"
+      ]
+    },
+    {
+      "key": "anthropic/claude-opus-4.7",
+      "epochModel": "Claude Opus 4.7",
+      "epochDate": "2026-04-16",
+      "eci": "156.79",
+      "eciCiLow": "154.91",
+      "eciCiHigh": "159.19",
+      "inputPricePerMillion": "5",
+      "outputPricePerMillion": "25",
+      "outputTokensPerSecond": "48.69",
+      "openRouterId": "anthropic/claude-opus-4.7",
+      "aaSlugs": [
+        "claude-opus-4-7-non-reasoning"
+      ],
+      "aaModelNames": [
+        "Claude Opus 4.7 (Non-reasoning, High)"
+      ]
+    },
+    {
+      "key": "openai/gpt-6-luna",
+      "epochModel": "GPT-6 Luna",
+      "epochDate": "2026-09-22",
+      "eci": "156.75",
+      "eciCiLow": "154.32",
+      "eciCiHigh": "159.43",
+      "inputPricePerMillion": "0.1",
+      "outputPricePerMillion": "0.5",
+      "outputTokensPerSecond": "123.22",
+      "openRouterId": "openai/gpt-6-luna",
+      "aaSlugs": [
+        "gpt-6-luna-xhigh"
+      ],
+      "aaModelNames": [
+        "GPT-6 Luna (Xhigh)"
+      ]
+    },
+    {
+      "key": "x-ai/grok-4.6",
+      "epochModel": "Grok 4.6",
+      "epochDate": "2026-08-12",
+      "eci": "156.57",
+      "eciCiLow": "154.68",
+      "eciCiHigh": "159.19",
+      "inputPricePerMillion": "2",
+      "outputPricePerMillion": "6",
+      "outputTokensPerSecond": "72.8",
+      "openRouterId": "x-ai/grok-4.6",
+      "aaSlugs": [
+        "grok-4-6-medium"
+      ],
+      "aaModelNames": [
+        "Grok 4.6 (Medium)"
+      ]
+    },
+    {
+      "key": "openai/gpt-5.6-luna",
+      "epochModel": "GPT-5.6 Luna",
+      "epochDate": "2026-07-09",
+      "eci": "156.5",
+      "eciCiLow": "154.19",
+      "eciCiHigh": "159.26",
+      "inputPricePerMillion": "0.2",
+      "outputPricePerMillion": "1.2",
+      "outputTokensPerSecond": "120.82",
+      "openRouterId": "openai/gpt-5.6-luna",
+      "aaSlugs": [
+        "gpt-5-6-luna",
+        "gpt-5-6-luna-low"
+      ],
+      "aaModelNames": [
+        "GPT-5.6 Luna (Max)",
+        "GPT-5.6 Luna (Low)"
+      ]
+    },
+    {
+      "key": "anthropic/claude-opus-4.6",
+      "epochModel": "Claude Opus 4.6",
+      "epochDate": "2026-02-05",
+      "eci": "155.66",
+      "eciCiLow": "153.82",
+      "eciCiHigh": "158.07",
+      "inputPricePerMillion": "5",
+      "outputPricePerMillion": "25",
+      "outputTokensPerSecond": "43.25",
+      "openRouterId": "anthropic/claude-opus-4.6",
+      "aaSlugs": [
+        "claude-opus-4-6"
+      ],
+      "aaModelNames": [
+        "Claude Opus 4.6 (Non-reasoning, High)"
+      ]
+    },
+    {
+      "key": "meta/muse-spark-open",
+      "epochModel": "Muse Spark Open",
+      "epochDate": "2026-10-15",
+      "eci": "155.11",
+      "eciCiLow": "152.66",
+      "eciCiHigh": "157.97",
+      "inputPricePerMillion": "1.25",
+      "outputPricePerMillion": "4.25",
+      "outputTokensPerSecond": "183.23",
+      "openRouterId": "meta/muse-spark-open",
+      "aaSlugs": [
+        "muse-spark-open"
+      ],
+      "aaModelNames": [
+        "Muse Spark Open (Xhigh)"
+      ]
+    },
+    {
+      "key": "meta/muse-spark-1.2",
+      "epochModel": "Muse Spark 1.2",
+      "epochDate": "2026-08-05",
+      "eci": "155.05",
+      "eciCiLow": "152.82",
+      "eciCiHigh": "157.56",
+      "inputPricePerMillion": "1.25",
+      "outputPricePerMillion": "4.25",
+      "outputTokensPerSecond": "311.95",
+      "openRouterId": "meta/muse-spark-1.2",
+      "aaSlugs": [
+        "muse-spark-1-2"
+      ],
+      "aaModelNames": [
+        "Muse Spark 1.2 (Xhigh)"
+      ]
+    },
+    {
+      "key": "google/gemini-3.5-flash",
+      "epochModel": "Gemini 3.5 Flash",
+      "epochDate": "2026-05-19",
+      "eci": "154.88",
+      "eciCiLow": "152.91",
+      "eciCiHigh": "157.41",
+      "inputPricePerMillion": "1.5",
+      "outputPricePerMillion": "9",
+      "outputTokensPerSecond": "192.9",
+      "openRouterId": "google/gemini-3.5-flash",
+      "aaSlugs": [
+        "gemini-3-5-flash",
+        "gemini-3-5-flash-minimal"
+      ],
+      "aaModelNames": [
+        "Gemini 3.5 Flash (High)",
+        "Gemini 3.5 Flash (Minimal)"
+      ]
+    },
+    {
+      "key": "x-ai/grok-4.7",
+      "epochModel": "Grok 4.7",
+      "epochDate": "2026-09-21",
+      "eci": "154.37",
+      "eciCiLow": "152.6",
+      "eciCiHigh": "157.08",
+      "inputPricePerMillion": "2",
+      "outputPricePerMillion": "6",
+      "outputTokensPerSecond": "82.7",
+      "openRouterId": "x-ai/grok-4.7",
+      "aaSlugs": [
+        "grok-4-7-high",
+        "grok-4-7-low"
+      ],
+      "aaModelNames": [
+        "Grok 4.7 (High)",
+        "Grok 4.7 (Low)"
+      ]
+    },
+    {
+      "key": "z-ai/glm-5.3-flash",
+      "epochModel": "GLM-5.3-Flash",
+      "epochDate": "2026-08-20",
+      "eci": "153.08",
+      "eciCiLow": "150.76",
+      "eciCiHigh": "155.53",
+      "inputPricePerMillion": "0.15",
+      "outputPricePerMillion": "0.5",
+      "outputTokensPerSecond": "74.73",
+      "openRouterId": "z-ai/glm-5.3-flash",
+      "aaSlugs": [
+        "glm-5-3-flash"
+      ],
+      "aaModelNames": [
+        "GLM-5.3-Flash"
+      ]
+    },
+    {
+      "key": "anthropic/claude-sonnet-4.6",
+      "epochModel": "Claude Sonnet 4.6",
+      "epochDate": "2026-02-17",
+      "eci": "152.79",
+      "eciCiLow": "150.2",
+      "eciCiHigh": "155.06",
+      "inputPricePerMillion": "3",
+      "outputPricePerMillion": "15",
+      "outputTokensPerSecond": "51.01",
+      "openRouterId": "anthropic/claude-sonnet-4.6",
+      "aaSlugs": [
+        "claude-sonnet-4-6"
+      ],
+      "aaModelNames": [
+        "Claude Sonnet 4.6 (Non-reasoning, High)"
+      ]
+    },
+    {
+      "key": "qwen/qwen3.8-27b",
+      "epochModel": "Qwen 3.8 27B",
+      "epochDate": "2026-08-14",
+      "eci": "151.69",
+      "eciCiLow": "149.75",
+      "eciCiHigh": "153.72",
+      "inputPricePerMillion": "0.2",
+      "outputPricePerMillion": "2.5",
+      "outputTokensPerSecond": "48.47",
+      "openRouterId": "qwen/qwen3.8-27b",
+      "aaSlugs": [
+        "qwen3-8-27b-non-reasoning"
+      ],
+      "aaModelNames": [
+        "Qwen3.8 27B (Non-reasoning)"
+      ]
+    },
+    {
+      "key": "moonshotai/kimi-k2.6",
+      "epochModel": "Kimi K2.6",
+      "epochDate": "2026-04-20",
+      "eci": "150.94",
+      "eciCiLow": "149.04",
+      "eciCiHigh": "152.72",
+      "inputPricePerMillion": "0.65",
+      "outputPricePerMillion": "3.41",
+      "outputTokensPerSecond": "96.81",
+      "openRouterId": "moonshotai/kimi-k2.6",
+      "aaSlugs": [
+        "kimi-k2-6",
+        "kimi-k2-6-non-reasoning"
+      ],
+      "aaModelNames": [
+        "Kimi K2.6 (Reasoning)",
+        "Kimi K2.6 (Non-reasoning)"
+      ]
+    },
+    {
+      "key": "anthropic/claude-opus-4.5",
+      "epochModel": "Claude Opus 4.5",
+      "epochDate": "2025-11-24",
+      "eci": "150.11",
+      "eciCiLow": "147.81",
+      "eciCiHigh": "153.01",
+      "inputPricePerMillion": "5",
+      "outputPricePerMillion": "25",
+      "outputTokensPerSecond": "52.94",
+      "openRouterId": "anthropic/claude-opus-4.5",
+      "aaSlugs": [
+        "claude-opus-4-5",
+        "claude-opus-4-5-thinking"
+      ],
+      "aaModelNames": [
+        "Claude Opus 4.5 (Non-reasoning)",
+        "Claude Opus 4.5 (Reasoning)"
+      ]
+    },
+    {
+      "key": "openai/gpt-5.4-mini",
+      "epochModel": "GPT-5.4 Mini",
+      "epochDate": "2026-03-17",
+      "eci": "148.7",
+      "eciCiLow": "146.87",
+      "eciCiHigh": "150.47",
+      "inputPricePerMillion": "0.75",
+      "outputPricePerMillion": "4.5",
+      "outputTokensPerSecond": "238.84",
+      "openRouterId": "openai/gpt-5.4-mini",
+      "aaSlugs": [
+        "gpt-5-4-mini-medium"
+      ],
+      "aaModelNames": [
+        "GPT-5.4 mini (Medium)"
+      ]
+    },
+    {
+      "key": "thinkingmachines/inkling",
+      "epochModel": "Inkling",
+      "epochDate": "2026-07-15",
+      "eci": "148.41",
+      "eciCiLow": "145.96",
+      "eciCiHigh": "150.21",
+      "inputPricePerMillion": "1",
+      "outputPricePerMillion": "4.05",
+      "outputTokensPerSecond": "212.3",
+      "openRouterId": "thinkingmachines/inkling",
+      "aaSlugs": [
+        "inkling"
+      ],
+      "aaModelNames": [
+        "Inkling (Xhigh)"
+      ]
+    },
+    {
+      "key": "minimax/minimax-m3",
+      "epochModel": "MiniMax-M3",
+      "epochDate": "2026-06-01",
+      "eci": "146.87",
+      "eciCiLow": "142.34",
+      "eciCiHigh": "150.17",
+      "inputPricePerMillion": "0.3",
+      "outputPricePerMillion": "1.2",
+      "outputTokensPerSecond": "106.95",
+      "openRouterId": "minimax/minimax-m3",
+      "aaSlugs": [
+        "minimax-m3"
+      ],
+      "aaModelNames": [
+        "MiniMax-M3"
+      ]
+    },
+    {
+      "key": "qwen/qwen3.5-397b-a17b",
+      "epochModel": "Qwen3.5 397B-A17B",
+      "epochDate": "2026-02-13",
+      "eci": "146.8",
+      "eciCiLow": "145.24",
+      "eciCiHigh": "148.86",
+      "inputPricePerMillion": "0.5",
+      "outputPricePerMillion": "3.6",
+      "outputTokensPerSecond": "58.46",
+      "openRouterId": "qwen/qwen3.5-397b-a17b",
+      "aaSlugs": [
+        "qwen3-5-397b-a17b",
+        "qwen3-5-397b-a17b-non-reasoning"
+      ],
+      "aaModelNames": [
+        "Qwen3.5 397B A17B (Reasoning)",
+        "Qwen3.5 397B A17B (Non-reasoning)"
+      ]
+    },
+    {
+      "key": "openai/o3",
+      "epochModel": "o3",
+      "epochDate": "2025-04-16",
+      "eci": "146.73",
+      "eciCiLow": "144.83",
+      "eciCiHigh": "148.52",
+      "inputPricePerMillion": "2",
+      "outputPricePerMillion": "8",
+      "outputTokensPerSecond": "167.82",
+      "openRouterId": "openai/o3",
+      "aaSlugs": [
+        "o3"
+      ],
+      "aaModelNames": [
+        "o3"
+      ]
+    },
+    {
+      "key": "minimax/minimax-m2.5",
+      "epochModel": "MiniMax-M2.5",
+      "epochDate": "2026-02-12",
+      "eci": "146.59",
+      "eciCiLow": "142.21",
+      "eciCiHigh": "147.9",
+      "inputPricePerMillion": "0.3",
+      "outputPricePerMillion": "1.2",
+      "outputTokensPerSecond": "59.53",
+      "openRouterId": "minimax/minimax-m2.5",
+      "aaSlugs": [
+        "minimax-m2-5"
+      ],
+      "aaModelNames": [
+        "MiniMax-M2.5"
+      ]
+    },
+    {
+      "key": "qwen/qwen3.6-27b",
+      "epochModel": "Qwen3.6 27B",
+      "epochDate": "2026-04-22",
+      "eci": "146.23",
+      "eciCiLow": "144.13",
+      "eciCiHigh": "147.65",
+      "inputPricePerMillion": "0.32",
+      "outputPricePerMillion": "3.2",
+      "outputTokensPerSecond": "58.22",
+      "openRouterId": "qwen/qwen3.6-27b",
+      "aaSlugs": [
+        "qwen3-6-27b-non-reasoning"
+      ],
+      "aaModelNames": [
+        "Qwen3.6 27B (Non-reasoning)"
+      ]
+    },
+    {
+      "key": "z-ai/glm-5",
+      "epochModel": "GLM-5",
+      "epochDate": "2026-02-11",
+      "eci": "145.8",
+      "eciCiLow": "143.77",
+      "eciCiHigh": "147.67",
+      "inputPricePerMillion": "1",
+      "outputPricePerMillion": "3.2",
+      "outputTokensPerSecond": "71.77",
+      "openRouterId": "z-ai/glm-5",
+      "aaSlugs": [
+        "glm-5"
+      ],
+      "aaModelNames": [
+        "GLM-5 (Reasoning)"
+      ]
+    },
+    {
+      "key": "openai/gpt-5-mini",
+      "epochModel": "GPT-5 mini",
+      "epochDate": "2025-08-07",
+      "eci": "145.34",
+      "eciCiLow": "143.33",
+      "eciCiHigh": "147.11",
+      "inputPricePerMillion": "0.25",
+      "outputPricePerMillion": "2",
+      "outputTokensPerSecond": "105.5",
+      "openRouterId": "openai/gpt-5-mini",
+      "aaSlugs": [
+        "gpt-5-mini"
+      ],
+      "aaModelNames": [
+        "GPT-5 mini (High)"
+      ]
+    },
+    {
+      "key": "google/gemini-3.5-flash-lite",
+      "epochModel": "Gemini 3.5 Flash-Lite",
+      "epochDate": "2026-07-21",
+      "eci": "144.91",
+      "eciCiLow": "142.41",
+      "eciCiHigh": "146.26",
+      "inputPricePerMillion": "0.3",
+      "outputPricePerMillion": "2.5",
+      "outputTokensPerSecond": "429.32",
+      "openRouterId": "google/gemini-3.5-flash-lite",
+      "aaSlugs": [
+        "gemini-3-5-flash-lite"
+      ],
+      "aaModelNames": [
+        "Gemini 3.5 Flash-Lite"
+      ]
+    }
+  ]
+}

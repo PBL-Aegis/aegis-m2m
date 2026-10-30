@@ -1,0 +1,1569 @@
+{
+  "catalogVersion": "agent-m2m-2026-10-26",
+  "matching": "ECI 140 이상이고, Epoch·OpenRouter·AA 이름(기호 제거, 소문자)이 정확히 같은 모델만. 속도는 AA 가 잰 생각 단계들의 출력 속도 평균",
+  "entries": [
+    {
+      "key": "anthropic/claude-opus-5.5",
+      "providerId": "anthropic",
+      "providerModelId": "claude-opus-5.5",
+      "displayName": "Claude Opus 5.5",
+      "epochModel": "Claude Opus 5.5",
+      "openRouterId": "anthropic/claude-opus-5.5",
+      "aaSlugs": [
+        "claude-opus-5-5"
+      ],
+      "recipient": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+      "capabilities": [
+        "reasoning",
+        "tools",
+        "vision"
+      ]
+    },
+    {
+      "key": "openai/gpt-6-astra",
+      "providerId": "openai",
+      "providerModelId": "gpt-6-astra",
+      "displayName": "GPT-6 Astra",
+      "epochModel": "GPT-6 Astra",
+      "openRouterId": "openai/gpt-6-astra",
+      "aaSlugs": [
+        "gpt-6-astra",
+        "gpt-6-astra-xhigh"
+      ],
+      "recipient": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+      "capabilities": [
+        "reasoning",
+        "tools",
+        "vision"
+      ]
+    },
+    {
+      "key": "openai/gpt-6.1-sol",
+      "providerId": "openai",
+      "providerModelId": "gpt-6.1-sol",
+      "displayName": "GPT-6.1 Sol",
+      "epochModel": "GPT-6.1 Sol",
+      "openRouterId": "openai/gpt-6.1-sol",
+      "aaSlugs": [
+        "gpt-6-1-sol-high",
+        "gpt-6-1-sol-xhigh"
+      ],
+      "recipient": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+      "capabilities": [
+        "reasoning",
+        "tools",
+        "vision"
+      ]
+    },
+    {
+      "key": "anthropic/claude-fable-5.1",
+      "providerId": "anthropic",
+      "providerModelId": "claude-fable-5.1",
+      "displayName": "Claude Fable 5.1",
+      "epochModel": "Claude Fable 5.1",
+      "openRouterId": "anthropic/claude-fable-5.1",
+      "aaSlugs": [
+        "claude-fable-5-1",
+        "claude-fable-5-1-low",
+        "claude-fable-5-1-medium"
+      ],
+      "recipient": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+      "capabilities": [
+        "reasoning",
+        "tools",
+        "vision"
+      ]
+    },
+    {
+      "key": "anthropic/claude-sonnet-5.5",
+      "providerId": "anthropic",
+      "providerModelId": "claude-sonnet-5.5",
+      "displayName": "Claude Sonnet 5.5",
+      "epochModel": "Claude Sonnet 5.5",
+      "openRouterId": "anthropic/claude-sonnet-5.5",
+      "aaSlugs": [
+        "claude-sonnet-5-5-high",
+        "claude-sonnet-5-5-medium"
+      ],
+      "recipient": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+      "capabilities": [
+        "reasoning",
+        "tools",
+        "vision"
+      ]
+    },
+    {
+      "key": "anthropic/claude-opus-5",
+      "providerId": "anthropic",
+      "providerModelId": "claude-opus-5",
+      "displayName": "Claude Opus 5",
+      "epochModel": "Claude Opus 5",
+      "openRouterId": "anthropic/claude-opus-5",
+      "aaSlugs": [
+        "claude-opus-5-low",
+        "claude-opus-5-xhigh"
+      ],
+      "recipient": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+      "capabilities": [
+        "reasoning",
+        "tools",
+        "vision"
+      ]
+    },
+    {
+      "key": "openai/gpt-6-sol",
+      "providerId": "openai",
+      "providerModelId": "gpt-6-sol",
+      "displayName": "GPT-6 Sol",
+      "epochModel": "GPT-6 Sol",
+      "openRouterId": "openai/gpt-6-sol",
+      "aaSlugs": [
+        "gpt-6-sol-low"
+      ],
+      "recipient": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+      "capabilities": [
+        "reasoning",
+        "tools",
+        "vision"
+      ]
+    },
+    {
+      "key": "openai/gpt-5.6-sol",
+      "providerId": "openai",
+      "providerModelId": "gpt-5.6-sol",
+      "displayName": "GPT-5.6 Sol",
+      "epochModel": "GPT-5.6 Sol",
+      "openRouterId": "openai/gpt-5.6-sol",
+      "aaSlugs": [
+        "gpt-5-6-sol-low"
+      ],
+      "recipient": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+      "capabilities": [
+        "reasoning",
+        "tools",
+        "vision"
+      ]
+    },
+    {
+      "key": "openai/gpt-5.6-terra",
+      "providerId": "openai",
+      "providerModelId": "gpt-5.6-terra",
+      "displayName": "GPT-5.6 Terra",
+      "epochModel": "GPT-5.6 Terra",
+      "openRouterId": "openai/gpt-5.6-terra",
+      "aaSlugs": [
+        "gpt-5-6-terra-medium"
+      ],
+      "recipient": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+      "capabilities": [
+        "reasoning",
+        "tools",
+        "vision"
+      ]
+    },
+    {
+      "key": "openai/gpt-5.5",
+      "providerId": "openai",
+      "providerModelId": "gpt-5.5",
+      "displayName": "GPT-5.5",
+      "epochModel": "GPT-5.5",
+      "openRouterId": "openai/gpt-5.5",
+      "aaSlugs": [
+        "gpt-5-5"
+      ],
+      "recipient": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+      "capabilities": [
+        "reasoning",
+        "tools",
+        "vision"
+      ]
+    },
+    {
+      "key": "anthropic/claude-haiku-5.5",
+      "providerId": "anthropic",
+      "providerModelId": "claude-haiku-5.5",
+      "displayName": "Claude Haiku 5.5",
+      "epochModel": "Claude Haiku 5.5",
+      "openRouterId": "anthropic/claude-haiku-5.5",
+      "aaSlugs": [
+        "claude-haiku-5-5-high",
+        "claude-haiku-5-5-low",
+        "claude-haiku-5-5-xhigh"
+      ],
+      "recipient": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+      "capabilities": [
+        "reasoning",
+        "tools",
+        "vision"
+      ]
+    },
+    {
+      "key": "anthropic/claude-sonnet-5",
+      "providerId": "anthropic",
+      "providerModelId": "claude-sonnet-5",
+      "displayName": "Claude Sonnet 5",
+      "epochModel": "Claude Sonnet 5",
+      "openRouterId": "anthropic/claude-sonnet-5",
+      "aaSlugs": [
+        "claude-sonnet-5",
+        "claude-sonnet-5-low"
+      ],
+      "recipient": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+      "capabilities": [
+        "reasoning",
+        "tools",
+        "vision"
+      ]
+    },
+    {
+      "key": "anthropic/claude-opus-4.7",
+      "providerId": "anthropic",
+      "providerModelId": "claude-opus-4.7",
+      "displayName": "Claude Opus 4.7",
+      "epochModel": "Claude Opus 4.7",
+      "openRouterId": "anthropic/claude-opus-4.7",
+      "aaSlugs": [
+        "claude-opus-4-7-non-reasoning"
+      ],
+      "recipient": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+      "capabilities": [
+        "reasoning",
+        "tools",
+        "vision"
+      ]
+    },
+    {
+      "key": "openai/gpt-6-luna",
+      "providerId": "openai",
+      "providerModelId": "gpt-6-luna",
+      "displayName": "GPT-6 Luna",
+      "epochModel": "GPT-6 Luna",
+      "openRouterId": "openai/gpt-6-luna",
+      "aaSlugs": [
+        "gpt-6-luna-xhigh"
+      ],
+      "recipient": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+      "capabilities": [
+        "reasoning",
+        "tools",
+        "vision"
+      ]
+    },
+    {
+      "key": "x-ai/grok-4.6",
+      "providerId": "x-ai",
+      "providerModelId": "grok-4.6",
+      "displayName": "Grok 4.6",
+      "epochModel": "Grok 4.6",
+      "openRouterId": "x-ai/grok-4.6",
+      "aaSlugs": [
+        "grok-4-6-medium"
+      ],
+      "recipient": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
+      "capabilities": [
+        "reasoning",
+        "tools",
+        "vision"
+      ]
+    },
+    {
+      "key": "openai/gpt-5.6-luna",
+      "providerId": "openai",
+      "providerModelId": "gpt-5.6-luna",
+      "displayName": "GPT-5.6 Luna",
+      "epochModel": "GPT-5.6 Luna",
+      "openRouterId": "openai/gpt-5.6-luna",
+      "aaSlugs": [
+        "gpt-5-6-luna",
+        "gpt-5-6-luna-low"
+      ],
+      "recipient": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+      "capabilities": [
+        "reasoning",
+        "tools",
+        "vision"
+      ]
+    },
+    {
+      "key": "anthropic/claude-opus-4.6",
+      "providerId": "anthropic",
+      "providerModelId": "claude-opus-4.6",
+      "displayName": "Claude Opus 4.6",
+      "epochModel": "Claude Opus 4.6",
+      "openRouterId": "anthropic/claude-opus-4.6",
+      "aaSlugs": [
+        "claude-opus-4-6"
+      ],
+      "recipient": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+      "capabilities": [
+        "reasoning",
+        "tools",
+        "vision"
+      ]
+    },
+    {
+      "key": "meta/muse-spark-open",
+      "providerId": "meta",
+      "providerModelId": "muse-spark-open",
+      "displayName": "Muse Spark Open",
+      "epochModel": "Muse Spark Open",
+      "openRouterId": "meta/muse-spark-open",
+      "aaSlugs": [
+        "muse-spark-open"
+      ],
+      "recipient": "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc",
+      "capabilities": [
+        "reasoning",
+        "tools",
+        "vision"
+      ]
+    },
+    {
+      "key": "meta/muse-spark-1.2",
+      "providerId": "meta",
+      "providerModelId": "muse-spark-1.2",
+      "displayName": "Muse Spark 1.2",
+      "epochModel": "Muse Spark 1.2",
+      "openRouterId": "meta/muse-spark-1.2",
+      "aaSlugs": [
+        "muse-spark-1-2"
+      ],
+      "recipient": "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc",
+      "capabilities": [
+        "reasoning",
+        "tools",
+        "vision"
+      ]
+    },
+    {
+      "key": "google/gemini-3.5-flash",
+      "providerId": "google",
+      "providerModelId": "gemini-3.5-flash",
+      "displayName": "Gemini 3.5 Flash",
+      "epochModel": "Gemini 3.5 Flash",
+      "openRouterId": "google/gemini-3.5-flash",
+      "aaSlugs": [
+        "gemini-3-5-flash",
+        "gemini-3-5-flash-minimal"
+      ],
+      "recipient": "0xBcd4042DE499D14e55001CcbB24a551F3b954096",
+      "capabilities": [
+        "reasoning",
+        "tools",
+        "vision"
+      ]
+    },
+    {
+      "key": "x-ai/grok-4.7",
+      "providerId": "x-ai",
+      "providerModelId": "grok-4.7",
+      "displayName": "Grok 4.7",
+      "epochModel": "Grok 4.7",
+      "openRouterId": "x-ai/grok-4.7",
+      "aaSlugs": [
+        "grok-4-7-high",
+        "grok-4-7-low"
+      ],
+      "recipient": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
+      "capabilities": [
+        "reasoning",
+        "tools",
+        "vision"
+      ]
+    },
+    {
+      "key": "z-ai/glm-5.3-flash",
+      "providerId": "z-ai",
+      "providerModelId": "glm-5.3-flash",
+      "displayName": "GLM-5.3-Flash",
+      "epochModel": "GLM-5.3-Flash",
+      "openRouterId": "z-ai/glm-5.3-flash",
+      "aaSlugs": [
+        "glm-5-3-flash"
+      ],
+      "recipient": "0x976EA74026E726554dB657fA54763abd0C3a0aa9",
+      "capabilities": [
+        "reasoning",
+        "tools",
+        "vision"
+      ]
+    },
+    {
+      "key": "anthropic/claude-sonnet-4.6",
+      "providerId": "anthropic",
+      "providerModelId": "claude-sonnet-4.6",
+      "displayName": "Claude Sonnet 4.6",
+      "epochModel": "Claude Sonnet 4.6",
+      "openRouterId": "anthropic/claude-sonnet-4.6",
+      "aaSlugs": [
+        "claude-sonnet-4-6"
+      ],
+      "recipient": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+      "capabilities": [
+        "reasoning",
+        "tools",
+        "vision"
+      ]
+    },
+    {
+      "key": "qwen/qwen3.8-27b",
+      "providerId": "qwen",
+      "providerModelId": "qwen3.8-27b",
+      "displayName": "Qwen 3.8 27B",
+      "epochModel": "Qwen 3.8 27B",
+      "openRouterId": "qwen/qwen3.8-27b",
+      "aaSlugs": [
+        "qwen3-8-27b-non-reasoning"
+      ],
+      "recipient": "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955",
+      "capabilities": [
+        "reasoning",
+        "tools",
+        "vision"
+      ]
+    },
+    {
+      "key": "moonshotai/kimi-k2.6",
+      "providerId": "moonshotai",
+      "providerModelId": "kimi-k2.6",
+      "displayName": "Kimi K2.6",
+      "epochModel": "Kimi K2.6",
+      "openRouterId": "moonshotai/kimi-k2.6",
+      "aaSlugs": [
+        "kimi-k2-6",
+        "kimi-k2-6-non-reasoning"
+      ],
+      "recipient": "0xFABB0ac9d68B0B445fB7357272Ff202C5651694a",
+      "capabilities": [
+        "reasoning",
+        "tools",
+        "vision"
+      ]
+    },
+    {
+      "key": "anthropic/claude-opus-4.5",
+      "providerId": "anthropic",
+      "providerModelId": "claude-opus-4.5",
+      "displayName": "Claude Opus 4.5",
+      "epochModel": "Claude Opus 4.5",
+      "openRouterId": "anthropic/claude-opus-4.5",
+      "aaSlugs": [
+        "claude-opus-4-5",
+        "claude-opus-4-5-thinking"
+      ],
+      "recipient": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+      "capabilities": [
+        "reasoning",
+        "tools",
+        "vision"
+      ]
+    },
+    {
+      "key": "openai/gpt-5.4-mini",
+      "providerId": "openai",
+      "providerModelId": "gpt-5.4-mini",
+      "displayName": "GPT-5.4 Mini",
+      "epochModel": "GPT-5.4 Mini",
+      "openRouterId": "openai/gpt-5.4-mini",
+      "aaSlugs": [
+        "gpt-5-4-mini-medium"
+      ],
+      "recipient": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+      "capabilities": [
+        "reasoning",
+        "tools",
+        "vision"
+      ]
+    },
+    {
+      "key": "thinkingmachines/inkling",
+      "providerId": "thinkingmachines",
+      "providerModelId": "inkling",
+      "displayName": "Inkling",
+      "epochModel": "Inkling",
+      "openRouterId": "thinkingmachines/inkling",
+      "aaSlugs": [
+        "inkling"
+      ],
+      "recipient": "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f",
+      "capabilities": [
+        "reasoning",
+        "tools",
+        "vision"
+      ]
+    },
+    {
+      "key": "minimax/minimax-m3",
+      "providerId": "minimax",
+      "providerModelId": "minimax-m3",
+      "displayName": "MiniMax-M3",
+      "epochModel": "MiniMax-M3",
+      "openRouterId": "minimax/minimax-m3",
+      "aaSlugs": [
+        "minimax-m3"
+      ],
+      "recipient": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+      "capabilities": [
+        "reasoning",
+        "tools",
+        "vision"
+      ]
+    },
+    {
+      "key": "qwen/qwen3.5-397b-a17b",
+      "providerId": "qwen",
+      "providerModelId": "qwen3.5-397b-a17b",
+      "displayName": "Qwen3.5 397B-A17B",
+      "epochModel": "Qwen3.5 397B-A17B",
+      "openRouterId": "qwen/qwen3.5-397b-a17b",
+      "aaSlugs": [
+        "qwen3-5-397b-a17b",
+        "qwen3-5-397b-a17b-non-reasoning"
+      ],
+      "recipient": "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955",
+      "capabilities": [
+        "reasoning",
+        "tools",
+        "vision"
+      ]
+    },
+    {
+      "key": "openai/o3",
+      "providerId": "openai",
+      "providerModelId": "o3",
+      "displayName": "o3",
+      "epochModel": "o3",
+      "openRouterId": "openai/o3",
+      "aaSlugs": [
+        "o3"
+      ],
+      "recipient": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+      "capabilities": [
+        "reasoning",
+        "tools",
+        "vision"
+      ]
+    },
+    {
+      "key": "minimax/minimax-m2.5",
+      "providerId": "minimax",
+      "providerModelId": "minimax-m2.5",
+      "displayName": "MiniMax-M2.5",
+      "epochModel": "MiniMax-M2.5",
+      "openRouterId": "minimax/minimax-m2.5",
+      "aaSlugs": [
+        "minimax-m2-5"
+      ],
+      "recipient": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+      "capabilities": [
+        "reasoning",
+        "tools"
+      ]
+    },
+    {
+      "key": "qwen/qwen3.6-27b",
+      "providerId": "qwen",
+      "providerModelId": "qwen3.6-27b",
+      "displayName": "Qwen3.6 27B",
+      "epochModel": "Qwen3.6 27B",
+      "openRouterId": "qwen/qwen3.6-27b",
+      "aaSlugs": [
+        "qwen3-6-27b-non-reasoning"
+      ],
+      "recipient": "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955",
+      "capabilities": [
+        "reasoning",
+        "tools",
+        "vision"
+      ]
+    },
+    {
+      "key": "z-ai/glm-5",
+      "providerId": "z-ai",
+      "providerModelId": "glm-5",
+      "displayName": "GLM-5",
+      "epochModel": "GLM-5",
+      "openRouterId": "z-ai/glm-5",
+      "aaSlugs": [
+        "glm-5"
+      ],
+      "recipient": "0x976EA74026E726554dB657fA54763abd0C3a0aa9",
+      "capabilities": [
+        "reasoning",
+        "tools"
+      ]
+    },
+    {
+      "key": "openai/gpt-5-mini",
+      "providerId": "openai",
+      "providerModelId": "gpt-5-mini",
+      "displayName": "GPT-5 mini",
+      "epochModel": "GPT-5 mini",
+      "openRouterId": "openai/gpt-5-mini",
+      "aaSlugs": [
+        "gpt-5-mini"
+      ],
+      "recipient": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+      "capabilities": [
+        "reasoning",
+        "tools",
+        "vision"
+      ]
+    },
+    {
+      "key": "google/gemini-3.5-flash-lite",
+      "providerId": "google",
+      "providerModelId": "gemini-3.5-flash-lite",
+      "displayName": "Gemini 3.5 Flash-Lite",
+      "epochModel": "Gemini 3.5 Flash-Lite",
+      "openRouterId": "google/gemini-3.5-flash-lite",
+      "aaSlugs": [
+        "gemini-3-5-flash-lite"
+      ],
+      "recipient": "0xBcd4042DE499D14e55001CcbB24a551F3b954096",
+      "capabilities": [
+        "reasoning",
+        "tools",
+        "vision"
+      ]
+    }
+  ],
+  "excluded": [
+    {
+      "name": "Gemini 4 Argon",
+      "reason": "Artificial Analysis 에 같은 이름 없음"
+    },
+    {
+      "name": "Claude Fable 5",
+      "reason": "Artificial Analysis 에 같은 이름 없음"
+    },
+    {
+      "name": "GPT-5.5 Pro",
+      "reason": "Artificial Analysis 에 같은 이름 없음"
+    },
+    {
+      "name": "Muse Wonder",
+      "reason": "Artificial Analysis 에 같은 이름 없음"
+    },
+    {
+      "name": "GPT-5.4 Pro",
+      "reason": "Artificial Analysis 에 같은 이름 없음"
+    },
+    {
+      "name": "Claude Opus 4.8",
+      "reason": "Artificial Analysis 에 같은 이름 없음"
+    },
+    {
+      "name": "Gemini 3.7 Flash",
+      "reason": "Artificial Analysis 에 같은 이름 없음"
+    },
+    {
+      "name": "Kimi K3",
+      "reason": "Artificial Analysis 에 같은 이름 없음"
+    },
+    {
+      "name": "Gemini 3.8 Flash",
+      "reason": "Artificial Analysis 에 같은 이름 없음"
+    },
+    {
+      "name": "Qwen 3.8 Max",
+      "reason": "OpenRouter 에 같은 이름 없음"
+    },
+    {
+      "name": "GPT-5.4",
+      "reason": "Artificial Analysis 에 같은 이름 없음"
+    },
+    {
+      "name": "Muse Spark 1.3",
+      "reason": "Artificial Analysis 에 같은 이름 없음"
+    },
+    {
+      "name": "GPT-5.3 Codex",
+      "reason": "Artificial Analysis 에 같은 이름 없음"
+    },
+    {
+      "name": "GPT-5.2 Pro",
+      "reason": "Artificial Analysis 에 같은 이름 없음"
+    },
+    {
+      "name": "GLM-5.3",
+      "reason": "Artificial Analysis 에 같은 이름 없음"
+    },
+    {
+      "name": "DeepSeek V4.1 Flash",
+      "reason": "Artificial Analysis 에 같은 이름 없음"
+    },
+    {
+      "name": "DeepSeek V4 Pro 0813",
+      "reason": "Artificial Analysis 에 같은 이름 없음"
+    },
+    {
+      "name": "Gemini 3.1 Pro",
+      "reason": "OpenRouter 에 같은 이름 없음"
+    },
+    {
+      "name": "Qwen3.8 Max (0902)",
+      "reason": "Artificial Analysis 에 같은 이름 없음"
+    },
+    {
+      "name": "DeepSeek V4 Flash 0731",
+      "reason": "Artificial Analysis 에 같은 이름 없음"
+    },
+    {
+      "name": "Gemini 3.6 Flash",
+      "reason": "Artificial Analysis 에 같은 이름 없음"
+    },
+    {
+      "name": "Grok 4.5",
+      "reason": "Artificial Analysis 에 같은 이름 없음"
+    },
+    {
+      "name": "Muse Spark 1.1",
+      "reason": "Artificial Analysis 에 같은 이름 없음"
+    },
+    {
+      "name": "Qwen3.7-Max",
+      "reason": "Artificial Analysis 에 같은 이름 없음"
+    },
+    {
+      "name": "GPT-5.2",
+      "reason": "Artificial Analysis 에 같은 이름 없음"
+    },
+    {
+      "name": "Gemini 3 Pro",
+      "reason": "OpenRouter 에 같은 이름 없음"
+    },
+    {
+      "name": "Grok 4.20",
+      "reason": "Artificial Analysis 에 같은 이름 없음"
+    },
+    {
+      "name": "Muse Spark",
+      "reason": "OpenRouter 에 같은 이름 없음"
+    },
+    {
+      "name": "GLM-5.2",
+      "reason": "Artificial Analysis 에 같은 이름 없음"
+    },
+    {
+      "name": "Gemini 3 Flash",
+      "reason": "OpenRouter 에 같은 이름 없음"
+    },
+    {
+      "name": "GPT-5 Pro",
+      "reason": "Artificial Analysis 에 같은 이름 없음"
+    },
+    {
+      "name": "Inkling-Small",
+      "reason": "Artificial Analysis 에 같은 이름 없음"
+    },
+    {
+      "name": "Kimi K2.7 Code",
+      "reason": "Artificial Analysis 에 같은 이름 없음"
+    },
+    {
+      "name": "Mistral Large 4",
+      "reason": "Artificial Analysis 에 같은 이름 없음"
+    },
+    {
+      "name": "GPT-5",
+      "reason": "Artificial Analysis 에 같은 이름 없음"
+    },
+    {
+      "name": "GLM-5.1",
+      "reason": "Artificial Analysis 에 같은 이름 없음"
+    },
+    {
+      "name": "GPT-5.1",
+      "reason": "Artificial Analysis 에 같은 이름 없음"
+    },
+    {
+      "name": "Qwen 3.6 Max (Preview)",
+      "reason": "OpenRouter 에 같은 이름 없음"
+    },
+    {
+      "name": "DeepSeek-V4-Pro",
+      "reason": "OpenRouter 에 같은 이름 없음"
+    },
+    {
+      "name": "Grok 4.3 Beta",
+      "reason": "OpenRouter 에 같은 이름 없음"
+    },
+    {
+      "name": "Kimi K2.5",
+      "reason": "Artificial Analysis 에 같은 이름 없음"
+    },
+    {
+      "name": "o3-pro",
+      "reason": "Artificial Analysis 에 같은 이름 없음"
+    },
+    {
+      "name": "Qwen 3.6 Plus",
+      "reason": "Artificial Analysis 에 같은 이름 없음"
+    },
+    {
+      "name": "Qwen3.7-Plus",
+      "reason": "Artificial Analysis 에 같은 이름 없음"
+    },
+    {
+      "name": "Claude Sonnet 4.5",
+      "reason": "Artificial Analysis 에 같은 이름 없음"
+    },
+    {
+      "name": "Grok 4",
+      "reason": "OpenRouter 에 같은 이름 없음"
+    },
+    {
+      "name": "Qwen 3.5 Plus (hosted 397B-A17B)",
+      "reason": "OpenRouter 에 같은 이름 없음"
+    },
+    {
+      "name": "DeepSeek-V4-Flash",
+      "reason": "OpenRouter 에 같은 이름 없음"
+    },
+    {
+      "name": "DeepSeek-V3.2",
+      "reason": "Artificial Analysis 에 같은 이름 없음"
+    },
+    {
+      "name": "GPT-5.4 Nano",
+      "reason": "Artificial Analysis 에 같은 이름 없음"
+    },
+    {
+      "name": "Nemotron 3 Ultra",
+      "reason": "Artificial Analysis 에 같은 이름 없음"
+    },
+    {
+      "name": "Kimi K2 Thinking",
+      "reason": "Artificial Analysis 에 같은 이름 없음"
+    },
+    {
+      "name": "MiniMax-M2.7",
+      "reason": "Artificial Analysis 에 같은 이름 없음"
+    },
+    {
+      "name": "o4-mini",
+      "reason": "Artificial Analysis 에 같은 이름 없음"
+    },
+    {
+      "name": "Gemini 2.5 Pro (Jun 2025)",
+      "reason": "OpenRouter 에 같은 이름 없음"
+    },
+    {
+      "name": "DeepSeek-V3.2-Exp",
+      "reason": "AA 출력 속도 없음 또는 0"
+    },
+    {
+      "name": "Gemini 3.1 Flash-Lite",
+      "reason": "Artificial Analysis 에 같은 이름 없음"
+    },
+    {
+      "name": "Grok 4 Fast",
+      "reason": "OpenRouter 에 같은 이름 없음"
+    },
+    {
+      "name": "Claude Opus 4.1",
+      "reason": "Artificial Analysis 에 같은 이름 없음"
+    },
+    {
+      "name": "Qwen3.7 Flash",
+      "reason": "Artificial Analysis 에 같은 이름 없음"
+    },
+    {
+      "name": "Gemini 2.5 Pro (Mar 2025)",
+      "reason": "OpenRouter 에 같은 이름 없음"
+    },
+    {
+      "name": "Qwen3-235B-A22B-Thinking (Jul 2025)",
+      "reason": "OpenRouter 에 같은 이름 없음"
+    },
+    {
+      "name": "Qwen 3.6 35B-A3B",
+      "reason": "Artificial Analysis 에 같은 이름 없음"
+    },
+    {
+      "name": "GLM-4.7",
+      "reason": "Artificial Analysis 에 같은 이름 없음"
+    },
+    {
+      "name": "Qwen 3.5 Flash (hosted 35B-A3B)",
+      "reason": "OpenRouter 에 같은 이름 없음"
+    },
+    {
+      "name": "Gemma 4 31B IT",
+      "reason": "OpenRouter 에 같은 이름 없음"
+    },
+    {
+      "name": "Gemini 2.5 Flash (Sep 2025)",
+      "reason": "OpenRouter 에 같은 이름 없음"
+    },
+    {
+      "name": "Qwen 3.6 Flash",
+      "reason": "Artificial Analysis 에 같은 이름 없음"
+    },
+    {
+      "name": "Claude Opus 4",
+      "reason": "OpenRouter 에 같은 이름 없음"
+    },
+    {
+      "name": "Qwen3.5-35B-A3B",
+      "reason": "Artificial Analysis 에 같은 이름 없음"
+    },
+    {
+      "name": "GPT-5.5 Instant",
+      "reason": "OpenRouter 에 같은 이름 없음"
+    },
+    {
+      "name": "Qwen3-Max",
+      "reason": "OpenRouter 에 같은 이름 없음"
+    },
+    {
+      "name": "Claude Haiku 4.5",
+      "reason": "Artificial Analysis 에 같은 이름 없음"
+    },
+    {
+      "name": "Gemini 2.5 Pro (May 2025)",
+      "reason": "OpenRouter 에 같은 이름 없음"
+    },
+    {
+      "name": "Gemma 4 26B A4B",
+      "reason": "Artificial Analysis 에 같은 이름 없음"
+    },
+    {
+      "name": "o1",
+      "reason": "Artificial Analysis 에 같은 이름 없음"
+    },
+    {
+      "name": "Claude Sonnet 4",
+      "reason": "OpenRouter 에 같은 이름 없음"
+    },
+    {
+      "name": "Gemini 2.5 Flash (May 2025)",
+      "reason": "OpenRouter 에 같은 이름 없음"
+    },
+    {
+      "name": "Mistral Medium 3.5",
+      "reason": "Artificial Analysis 에 같은 이름 없음"
+    },
+    {
+      "name": "DeepSeek-R1 (May 2025)",
+      "reason": "OpenRouter 에 같은 이름 없음"
+    },
+    {
+      "name": "Claude 3.7 Sonnet",
+      "reason": "OpenRouter 에 같은 이름 없음"
+    },
+    {
+      "name": "Gemini 2.5 Flash (Jun 2025)",
+      "reason": "OpenRouter 에 같은 이름 없음"
+    },
+    {
+      "name": "o3-mini",
+      "reason": "AA 출력 속도 없음 또는 0"
+    },
+    {
+      "name": "Grok-3 mini",
+      "reason": "OpenRouter 에 같은 이름 없음"
+    },
+    {
+      "name": "Kimi K2 (Jul 2025)",
+      "reason": "최소 성능 기준(ECI 140) 미만: 139.97"
+    },
+    {
+      "name": "Gemini 2.5 Flash (Apr 2025)",
+      "reason": "최소 성능 기준(ECI 140) 미만: 139.84"
+    },
+    {
+      "name": "gpt-oss-120b",
+      "reason": "최소 성능 기준(ECI 140) 미만: 139.79"
+    },
+    {
+      "name": "DeepSeek-V3.1",
+      "reason": "최소 성능 기준(ECI 140) 미만: 139.79"
+    },
+    {
+      "name": "Qwen3-30B-A3B-Thinking (Jul 2025)",
+      "reason": "최소 성능 기준(ECI 140) 미만: 139.55"
+    },
+    {
+      "name": "Qwen3.5-9B",
+      "reason": "최소 성능 기준(ECI 140) 미만: 139.32"
+    },
+    {
+      "name": "GPT-5 nano",
+      "reason": "최소 성능 기준(ECI 140) 미만: 139.21"
+    },
+    {
+      "name": "Qwen3-235B-A22B",
+      "reason": "최소 성능 기준(ECI 140) 미만: 139.15"
+    },
+    {
+      "name": "DeepSeek-R1",
+      "reason": "최소 성능 기준(ECI 140) 미만: 138.82"
+    },
+    {
+      "name": "Qwen3-235B-A22B-Instruct (Jul 2025)",
+      "reason": "최소 성능 기준(ECI 140) 미만: 138.78"
+    },
+    {
+      "name": "Qwen3-32B",
+      "reason": "최소 성능 기준(ECI 140) 미만: 138.42"
+    },
+    {
+      "name": "Grok 3",
+      "reason": "최소 성능 기준(ECI 140) 미만: 138.21"
+    },
+    {
+      "name": "Qwen3-14B",
+      "reason": "최소 성능 기준(ECI 140) 미만: 138.15"
+    },
+    {
+      "name": "gpt-oss-20b",
+      "reason": "최소 성능 기준(ECI 140) 미만: 137.7"
+    },
+    {
+      "name": "QwQ-32B",
+      "reason": "최소 성능 기준(ECI 140) 미만: 137.5"
+    },
+    {
+      "name": "Qwen3-30B-A3B-Instruct (Jul 2025)",
+      "reason": "최소 성능 기준(ECI 140) 미만: 137.27"
+    },
+    {
+      "name": "GPT-4.5",
+      "reason": "최소 성능 기준(ECI 140) 미만: 136.65"
+    },
+    {
+      "name": "GPT-4.1",
+      "reason": "최소 성능 기준(ECI 140) 미만: 136.65"
+    },
+    {
+      "name": "Qwen3-30B-A3B",
+      "reason": "최소 성능 기준(ECI 140) 미만: 136.11"
+    },
+    {
+      "name": "Qwen3-8B",
+      "reason": "최소 성능 기준(ECI 140) 미만: 136.06"
+    },
+    {
+      "name": "DeepSeek-V3 (Mar 2025)",
+      "reason": "최소 성능 기준(ECI 140) 미만: 135.85"
+    },
+    {
+      "name": "o1-mini",
+      "reason": "최소 성능 기준(ECI 140) 미만: 135.7"
+    },
+    {
+      "name": "Gemini 2.0 Flash Thinking (Jan 2025)",
+      "reason": "최소 성능 기준(ECI 140) 미만: 135.24"
+    },
+    {
+      "name": "Gemini 2.0 Pro",
+      "reason": "최소 성능 기준(ECI 140) 미만: 134.95"
+    },
+    {
+      "name": "GPT-4.1 mini",
+      "reason": "최소 성능 기준(ECI 140) 미만: 134.89"
+    },
+    {
+      "name": "Gemini 2.0 Flash (Feb 2025)",
+      "reason": "최소 성능 기준(ECI 140) 미만: 134.62"
+    },
+    {
+      "name": "Gemini 2.0 Flash (Dec 2024)",
+      "reason": "최소 성능 기준(ECI 140) 미만: 134.58"
+    },
+    {
+      "name": "o1-preview",
+      "reason": "최소 성능 기준(ECI 140) 미만: 134.57"
+    },
+    {
+      "name": "Mistral Medium 3",
+      "reason": "최소 성능 기준(ECI 140) 미만: 134.02"
+    },
+    {
+      "name": "Gemini 2.5 Flash-Lite (Jun 2025)",
+      "reason": "최소 성능 기준(ECI 140) 미만: 133.82"
+    },
+    {
+      "name": "Claude 3.5 Sonnet (October 2024)",
+      "reason": "최소 성능 기준(ECI 140) 미만: 133.43"
+    },
+    {
+      "name": "Magistral Small 1.0",
+      "reason": "최소 성능 기준(ECI 140) 미만: 133.07"
+    },
+    {
+      "name": "Qwen2.5-Max",
+      "reason": "최소 성능 기준(ECI 140) 미만: 132.48"
+    },
+    {
+      "name": "DeepSeek-V3",
+      "reason": "최소 성능 기준(ECI 140) 미만: 132.3"
+    },
+    {
+      "name": "Llama 4 Maverick",
+      "reason": "최소 성능 기준(ECI 140) 미만: 132.22"
+    },
+    {
+      "name": "Gemini 1.5 Pro (Sept 2024)",
+      "reason": "최소 성능 기준(ECI 140) 미만: 131.72"
+    },
+    {
+      "name": "Phi-4",
+      "reason": "최소 성능 기준(ECI 140) 미만: 130.48"
+    },
+    {
+      "name": "Grok-2 (Dec 2024)",
+      "reason": "최소 성능 기준(ECI 140) 미만: 130.47"
+    },
+    {
+      "name": "Claude 3.5 Sonnet",
+      "reason": "최소 성능 기준(ECI 140) 미만: 130.0"
+    },
+    {
+      "name": "Gemma 3 27B",
+      "reason": "최소 성능 기준(ECI 140) 미만: 129.97"
+    },
+    {
+      "name": "Llama 4 Scout",
+      "reason": "최소 성능 기준(ECI 140) 미만: 129.63"
+    },
+    {
+      "name": "GPT-4.1 nano",
+      "reason": "최소 성능 기준(ECI 140) 미만: 129.54"
+    },
+    {
+      "name": "Gemini 1.5 Flash (Sep 2024)",
+      "reason": "최소 성능 기준(ECI 140) 미만: 129.33"
+    },
+    {
+      "name": "GPT-4o (May 2024)",
+      "reason": "최소 성능 기준(ECI 140) 미만: 128.99"
+    },
+    {
+      "name": "Qwen2.5-72B",
+      "reason": "최소 성능 기준(ECI 140) 미만: 128.97"
+    },
+    {
+      "name": "GPT-4o (Aug 2024)",
+      "reason": "최소 성능 기준(ECI 140) 미만: 128.83"
+    },
+    {
+      "name": "Llama 3.1-405B",
+      "reason": "최소 성능 기준(ECI 140) 미만: 128.77"
+    },
+    {
+      "name": "GPT-4o (Nov 2024)",
+      "reason": "최소 성능 기준(ECI 140) 미만: 128.69"
+    },
+    {
+      "name": "Mistral Large 2 (Nov 2024)",
+      "reason": "최소 성능 기준(ECI 140) 미만: 128.57"
+    },
+    {
+      "name": "Mistral Large 2 (Jul 2024)",
+      "reason": "최소 성능 기준(ECI 140) 미만: 127.57"
+    },
+    {
+      "name": "Mistral Small 3.1",
+      "reason": "최소 성능 기준(ECI 140) 미만: 127.53"
+    },
+    {
+      "name": "Llama 3.3 70B",
+      "reason": "최소 성능 기준(ECI 140) 미만: 127.33"
+    },
+    {
+      "name": "GPT-4 Turbo (Apr 2024)",
+      "reason": "최소 성능 기준(ECI 140) 미만: 127.27"
+    },
+    {
+      "name": "Claude 3.5 Haiku",
+      "reason": "최소 성능 기준(ECI 140) 미만: 127.07"
+    },
+    {
+      "name": "Gemini 1.5 Pro (May 2024)",
+      "reason": "최소 성능 기준(ECI 140) 미만: 126.94"
+    },
+    {
+      "name": "Claude 3 Opus",
+      "reason": "최소 성능 기준(ECI 140) 미만: 126.9"
+    },
+    {
+      "name": "GPT-4o mini",
+      "reason": "최소 성능 기준(ECI 140) 미만: 126.46"
+    },
+    {
+      "name": "GPT-4 Turbo (Nov 2023)",
+      "reason": "최소 성능 기준(ECI 140) 미만: 126.43"
+    },
+    {
+      "name": "Llama 3.1-70B",
+      "reason": "최소 성능 기준(ECI 140) 미만: 125.93"
+    },
+    {
+      "name": "GPT-4 (Mar 2023)",
+      "reason": "최소 성능 기준(ECI 140) 미만: 125.74"
+    },
+    {
+      "name": "Llama 3.2 90B",
+      "reason": "최소 성능 기준(ECI 140) 미만: 125.52"
+    },
+    {
+      "name": "Qwen2-72B",
+      "reason": "최소 성능 기준(ECI 140) 미만: 125.28"
+    },
+    {
+      "name": "DeepSeek-V2 (MoE-236B, May 2024)",
+      "reason": "최소 성능 기준(ECI 140) 미만: 124.8"
+    },
+    {
+      "name": "Gemma 3 12B",
+      "reason": "최소 성능 기준(ECI 140) 미만: 123.54"
+    },
+    {
+      "name": "GPT-4 (Jun 2023)",
+      "reason": "최소 성능 기준(ECI 140) 미만: 123.09"
+    },
+    {
+      "name": "Llama 3-70B",
+      "reason": "최소 성능 기준(ECI 140) 미만: 123.01"
+    },
+    {
+      "name": "Gemini 1.5 Flash (May 2024)",
+      "reason": "최소 성능 기준(ECI 140) 미만: 122.68"
+    },
+    {
+      "name": "Mistral Large",
+      "reason": "최소 성능 기준(ECI 140) 미만: 122.12"
+    },
+    {
+      "name": "Gemma 2 27B",
+      "reason": "최소 성능 기준(ECI 140) 미만: 122.12"
+    },
+    {
+      "name": "Mixtral 8x22B",
+      "reason": "최소 성능 기준(ECI 140) 미만: 122.04"
+    },
+    {
+      "name": "phi-3-small 7.4B",
+      "reason": "최소 성능 기준(ECI 140) 미만: 121.82"
+    },
+    {
+      "name": "phi-3-medium 14B",
+      "reason": "최소 성능 기준(ECI 140) 미만: 121.19"
+    },
+    {
+      "name": "Claude 3 Sonnet",
+      "reason": "최소 성능 기준(ECI 140) 미만: 120.84"
+    },
+    {
+      "name": "Claude Instant",
+      "reason": "최소 성능 기준(ECI 140) 미만: 120.21"
+    },
+    {
+      "name": "Claude 2",
+      "reason": "최소 성능 기준(ECI 140) 미만: 120.19"
+    },
+    {
+      "name": "Gemma 2 9B",
+      "reason": "최소 성능 기준(ECI 140) 미만: 119.81"
+    },
+    {
+      "name": "Qwen2.5-Coder-32B",
+      "reason": "최소 성능 기준(ECI 140) 미만: 119.45"
+    },
+    {
+      "name": "Claude 2.1",
+      "reason": "최소 성능 기준(ECI 140) 미만: 119.32"
+    },
+    {
+      "name": "Command R+",
+      "reason": "최소 성능 기준(ECI 140) 미만: 119.2"
+    },
+    {
+      "name": "Claude 3 Haiku",
+      "reason": "최소 성능 기준(ECI 140) 미만: 118.85"
+    },
+    {
+      "name": "Mistral NeMo",
+      "reason": "최소 성능 기준(ECI 140) 미만: 118.65"
+    },
+    {
+      "name": "Qwen2.5-7B",
+      "reason": "최소 성능 기준(ECI 140) 미만: 118.54"
+    },
+    {
+      "name": "GPT-3.5 Turbo (Nov 2023)",
+      "reason": "최소 성능 기준(ECI 140) 미만: 118.53"
+    },
+    {
+      "name": "Mixtral 8x7B",
+      "reason": "최소 성능 기준(ECI 140) 미만: 118.44"
+    },
+    {
+      "name": "Ministral 3B",
+      "reason": "최소 성능 기준(ECI 140) 미만: 118.04"
+    },
+    {
+      "name": "Yi-34B",
+      "reason": "최소 성능 기준(ECI 140) 미만: 117.33"
+    },
+    {
+      "name": "phi-3-mini 3.8B",
+      "reason": "최소 성능 기준(ECI 140) 미만: 117.28"
+    },
+    {
+      "name": "Gemini 1.0 Pro",
+      "reason": "최소 성능 기준(ECI 140) 미만: 117.14"
+    },
+    {
+      "name": "Stable Beluga 2",
+      "reason": "최소 성능 기준(ECI 140) 미만: 117.02"
+    },
+    {
+      "name": "Llama 3.1-8B",
+      "reason": "최소 성능 기준(ECI 140) 미만: 116.47"
+    },
+    {
+      "name": "Llama 3-8B",
+      "reason": "최소 성능 기준(ECI 140) 미만: 116.39"
+    },
+    {
+      "name": "Qwen2.5-Coder-14B",
+      "reason": "최소 성능 기준(ECI 140) 미만: 116.31"
+    },
+    {
+      "name": "Gemma 3 4B",
+      "reason": "최소 성능 기준(ECI 140) 미만: 115.88"
+    },
+    {
+      "name": "GPT-3.5 Turbo (Jan 2024)",
+      "reason": "최소 성능 기준(ECI 140) 미만: 115.68"
+    },
+    {
+      "name": "PaLM 2-L",
+      "reason": "최소 성능 기준(ECI 140) 미만: 114.9"
+    },
+    {
+      "name": "Llama 2-70B",
+      "reason": "최소 성능 기준(ECI 140) 미만: 113.67"
+    },
+    {
+      "name": "GPT-3.5 Turbo (Jun 2023)",
+      "reason": "최소 성능 기준(ECI 140) 미만: 113.22"
+    },
+    {
+      "name": "Qwen2.5-Coder (7B)",
+      "reason": "최소 성능 기준(ECI 140) 미만: 113.01"
+    },
+    {
+      "name": "Qwen-14B",
+      "reason": "최소 성능 기준(ECI 140) 미만: 112.88"
+    },
+    {
+      "name": "Mistral 7B v0.1",
+      "reason": "최소 성능 기준(ECI 140) 미만: 112.05"
+    },
+    {
+      "name": "Falcon-180B",
+      "reason": "최소 성능 기준(ECI 140) 미만: 111.96"
+    },
+    {
+      "name": "internlm-20b",
+      "reason": "최소 성능 기준(ECI 140) 미만: 111.92"
+    },
+    {
+      "name": "Gemma 7B",
+      "reason": "최소 성능 기준(ECI 140) 미만: 111.82"
+    },
+    {
+      "name": "LLaMA-65B",
+      "reason": "최소 성능 기준(ECI 140) 미만: 109.97"
+    },
+    {
+      "name": "Falcon 2 11B",
+      "reason": "최소 성능 기준(ECI 140) 미만: 109.36"
+    },
+    {
+      "name": "Mistral 7B v0.3",
+      "reason": "최소 성능 기준(ECI 140) 미만: 108.88"
+    },
+    {
+      "name": "DeepSeek-Coder-V2-Lite-Base",
+      "reason": "최소 성능 기준(ECI 140) 미만: 108.68"
+    },
+    {
+      "name": "PaLM 2-M",
+      "reason": "최소 성능 기준(ECI 140) 미만: 108.06"
+    },
+    {
+      "name": "Phi-2",
+      "reason": "최소 성능 기준(ECI 140) 미만: 107.73"
+    },
+    {
+      "name": "Qwen2.5-Coder-3B",
+      "reason": "최소 성능 기준(ECI 140) 미만: 107.52"
+    },
+    {
+      "name": "Nemotron-4 15B",
+      "reason": "최소 성능 기준(ECI 140) 미만: 107.49"
+    },
+    {
+      "name": "Yi-9B",
+      "reason": "최소 성능 기준(ECI 140) 미만: 107.39"
+    },
+    {
+      "name": "LLaMA-33B",
+      "reason": "최소 성능 기준(ECI 140) 미만: 107.18"
+    },
+    {
+      "name": "Qwen-7B",
+      "reason": "최소 성능 기준(ECI 140) 미만: 106.59"
+    },
+    {
+      "name": "PaLM 2-S",
+      "reason": "최소 성능 기준(ECI 140) 미만: 105.91"
+    },
+    {
+      "name": "Llama 2-13B",
+      "reason": "최소 성능 기준(ECI 140) 미만: 105.58"
+    },
+    {
+      "name": "Llama 2-34B",
+      "reason": "최소 성능 기준(ECI 140) 미만: 104.93"
+    },
+    {
+      "name": "StarCoder 2 15B",
+      "reason": "최소 성능 기준(ECI 140) 미만: 104.74"
+    },
+    {
+      "name": "Yi 6B",
+      "reason": "최소 성능 기준(ECI 140) 미만: 104.5"
+    },
+    {
+      "name": "Falcon-40B",
+      "reason": "최소 성능 기준(ECI 140) 미만: 104.17"
+    },
+    {
+      "name": "Baichuan2-13B",
+      "reason": "최소 성능 기준(ECI 140) 미만: 102.9"
+    },
+    {
+      "name": "Qwen2.5-Coder (1.5B)",
+      "reason": "최소 성능 기준(ECI 140) 미만: 102.71"
+    },
+    {
+      "name": "internlm-7b",
+      "reason": "최소 성능 기준(ECI 140) 미만: 102.58"
+    },
+    {
+      "name": "INTELLECT-1",
+      "reason": "최소 성능 기준(ECI 140) 미만: 100.54"
+    },
+    {
+      "name": "MPT-30B",
+      "reason": "최소 성능 기준(ECI 140) 미만: 100.33"
+    },
+    {
+      "name": "LLaMA-13B",
+      "reason": "최소 성능 기준(ECI 140) 미만: 100.32"
+    },
+    {
+      "name": "Llama 2-7B",
+      "reason": "최소 성능 기준(ECI 140) 미만: 98.61"
+    },
+    {
+      "name": "chatglm2-6b",
+      "reason": "최소 성능 기준(ECI 140) 미만: 98.59"
+    },
+    {
+      "name": "LLaMA-7B",
+      "reason": "최소 성능 기준(ECI 140) 미만: 96.62"
+    },
+    {
+      "name": "Baichuan 2-7B",
+      "reason": "최소 성능 기준(ECI 140) 미만: 95.94"
+    },
+    {
+      "name": "DeepSeek Coder 33B",
+      "reason": "최소 성능 기준(ECI 140) 미만: 95.94"
+    },
+    {
+      "name": "Falcon-7B",
+      "reason": "최소 성능 기준(ECI 140) 미만: 94.7"
+    },
+    {
+      "name": "CodeQwen1.5-7B",
+      "reason": "최소 성능 기준(ECI 140) 미만: 94.46"
+    },
+    {
+      "name": "vicuna-13b-v1.1",
+      "reason": "최소 성능 기준(ECI 140) 미만: 94.25"
+    },
+    {
+      "name": "MPT-7B",
+      "reason": "최소 성능 기준(ECI 140) 미만: 94.19"
+    },
+    {
+      "name": "Gemma 2B",
+      "reason": "최소 성능 기준(ECI 140) 미만: 93.79"
+    },
+    {
+      "name": "StarCoder 2 7B",
+      "reason": "최소 성능 기준(ECI 140) 미만: 93.14"
+    },
+    {
+      "name": "XGen-7B",
+      "reason": "최소 성능 기준(ECI 140) 미만: 92.98"
+    },
+    {
+      "name": "Qwen-1_8B",
+      "reason": "최소 성능 기준(ECI 140) 미만: 92.5"
+    },
+    {
+      "name": "open_llama_7b",
+      "reason": "최소 성능 기준(ECI 140) 미만: 91.2"
+    },
+    {
+      "name": "Phi-1.5",
+      "reason": "최소 성능 기준(ECI 140) 미만: 91.06"
+    },
+    {
+      "name": "Baichuan1-7B",
+      "reason": "최소 성능 기준(ECI 140) 미만: 90.0"
+    },
+    {
+      "name": "RedPajama-INCITE-7B-Base",
+      "reason": "최소 성능 기준(ECI 140) 미만: 89.96"
+    },
+    {
+      "name": "Dolly 2.0-12b",
+      "reason": "최소 성능 기준(ECI 140) 미만: 89.2"
+    },
+    {
+      "name": "DeepSeek Coder 6.7B",
+      "reason": "최소 성능 기준(ECI 140) 미만: 89.13"
+    },
+    {
+      "name": "StarCoder 2 3B",
+      "reason": "최소 성능 기준(ECI 140) 미만: 88.26"
+    },
+    {
+      "name": "Qwen2.5-Coder-0.5B",
+      "reason": "최소 성능 기준(ECI 140) 미만: 87.63"
+    },
+    {
+      "name": "Cerebras-GPT-13B",
+      "reason": "최소 성능 기준(ECI 140) 미만: 82.66"
+    },
+    {
+      "name": "DeepSeek Coder 1.3B",
+      "reason": "최소 성능 기준(ECI 140) 미만: 62.59"
+    },
+    {
+      "name": "stablelm-tuned-alpha-7b",
+      "reason": "최소 성능 기준(ECI 140) 미만: 54.81"
+    }
+  ]
+}

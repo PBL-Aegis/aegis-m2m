@@ -1,0 +1,36 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# 화면(Next.js)
+web/node_modules/
+web/.next/
+web/next-env.d.ts
+web/tsconfig.tsbuildinfo
+
+.env
+.env.local
+*.log
+.DS_Store
+
+# AI tool config and instruction files
+CLAUDE.md
+AGENTS.md
+GEMINI.md
+.claude/
+.codex/
+.cursor/
+.cursorrules
+.windsurfrules
+.gemini/
+.aider*
+.continue/
+.omp/
+.github/copilot-instructions.md
+
+# Foundry build output
+contracts/out/
+contracts/cache/
+contracts/broadcast/
