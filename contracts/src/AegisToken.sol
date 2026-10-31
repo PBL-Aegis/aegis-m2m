@@ -7,13 +7,14 @@ import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 import {PaymentRules} from "./rules/PaymentRules.sol";
+import {ReplayRule} from "./rules/ReplayRule.sol";
 
 /// @title AEGIS 토큰
 /// @notice 구매 에이전트가 모델 값을 치르는 ERC-20. 소수점 6자리.
 /// 구매 결제는 transfer 가 아니라 transferWithAuthorization(ERC-3009) 으로 한다.
 /// 구매자가 서명하고 중개자가 보내며, 요청 번호를 서명의 nonce 로 받아 송금 전에 감사 규칙을 돌리고 Paid 를 남긴다.
 /// 감사 규칙은 contracts/src/rules/ 에 파일로 따로 두고, 아래 상속 목록과 _checkPayment 의 override 목록에 이름만 더한다.
-contract AegisToken is ERC20, EIP712, Ownable, PaymentRules {
+contract AegisToken is ERC20, EIP712, Ownable, PaymentRules, ReplayRule {
     /// @notice ERC-3009 서명 내용. 구매자는 이 내용에 서명만 하고, 거래는 중개자가 보낸다(가스비도 중개자가 낸다).
     bytes32 public constant TRANSFER_WITH_AUTHORIZATION_TYPEHASH = keccak256(
         "TransferWithAuthorization(address from,address to,uint256 value,uint256 validAfter,uint256 validBefore,bytes32 nonce)"
@@ -84,7 +85,7 @@ contract AegisToken is ERC20, EIP712, Ownable, PaymentRules {
     function _checkPayment(address from, address to, uint256 amount, bytes32 requestId)
         internal
         virtual
-        override(PaymentRules)
+        override(PaymentRules, ReplayRule)
     {
         super._checkPayment(from, to, amount, requestId);
     }
