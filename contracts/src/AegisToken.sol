@@ -10,8 +10,8 @@ import {PaymentRules} from "./rules/PaymentRules.sol";
 
 /// @title AEGIS 토큰
 /// @notice 구매 에이전트가 모델 값을 치르는 ERC-20. 소수점 6자리.
-/// 구매 결제는 transfer 가 아니라 pay 또는 transferWithAuthorization(ERC-3009) 으로 한다.
-/// 둘 다 요청 번호를 함께 받고, 송금 전에 감사 규칙을 돌리고, Paid 를 남긴다.
+/// 구매 결제는 transfer 가 아니라 transferWithAuthorization(ERC-3009) 으로 한다.
+/// 구매자가 서명하고 중개자가 보내며, 요청 번호를 서명의 nonce 로 받아 송금 전에 감사 규칙을 돌리고 Paid 를 남긴다.
 /// 감사 규칙은 contracts/src/rules/ 에 파일로 따로 두고, 아래 상속 목록과 _checkPayment 의 override 목록에 이름만 더한다.
 contract AegisToken is ERC20, EIP712, Ownable, PaymentRules {
     /// @notice ERC-3009 서명 내용. 구매자는 이 내용에 서명만 하고, 거래는 중개자가 보낸다(가스비도 중개자가 낸다).
@@ -42,14 +42,9 @@ contract AegisToken is ERC20, EIP712, Ownable, PaymentRules {
         _mint(to, amount);
     }
 
-    /// @notice 구매 결제. 감사 규칙을 모두 통과해야 송금한다.
-    function pay(address to, uint256 amount, bytes32 requestId) external {
-        _settle(msg.sender, to, amount, requestId);
-    }
-
     /// @notice ERC-3009 구매 결제. from 이 서명한 내용 그대로, 누구든 대신 보낼 수 있다.
     /// nonce 자리에 요청 번호를 넣는다. 같은 서명(같은 요청 번호)은 한 번만 쓰인다.
-    /// 표준 함수로도 감사 규칙을 건너뛸 수 없도록 pay 와 같은 규칙을 돌린다.
+    /// 감사 규칙을 모두 통과해야 송금한다.
     function transferWithAuthorization(
         address from,
         address to,
@@ -71,7 +66,9 @@ contract AegisToken is ERC20, EIP712, Ownable, PaymentRules {
 
         _authorizationStates[from][nonce] = true;
         emit AuthorizationUsed(from, nonce);
-        _settle(from, to, value, nonce);
+        _checkPayment(from, to, value, nonce);
+        _transfer(from, to, value);
+        emit Paid(nonce, from, to, value);
     }
 
     /// @notice ERC-3009: 이 서명(요청 번호)이 이미 쓰였는지.
@@ -82,12 +79,6 @@ contract AegisToken is ERC20, EIP712, Ownable, PaymentRules {
     /// @notice 서명에 쓰는 EIP-712 도메인 구분값.
     function DOMAIN_SEPARATOR() external view returns (bytes32) {
         return _domainSeparatorV4();
-    }
-
-    function _settle(address from, address to, uint256 amount, bytes32 requestId) private {
-        _checkPayment(from, to, amount, requestId);
-        _transfer(from, to, amount);
-        emit Paid(requestId, from, to, amount);
     }
 
     function _checkPayment(address from, address to, uint256 amount, bytes32 requestId)
