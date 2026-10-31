@@ -6,7 +6,8 @@
 주소는 AEGIS_LOCAL_RPC_URL(기본 http://127.0.0.1:8545)을 따른다. 자동 테스트는 8546 으로 따로 띄운다.
 
 띄울 때마다 빈 체인에서 시작한다. 계정은 anvil 의 공개 테스트 계정이라 실제 자산이 없다.
-0번 계정이 운영자(배포·발급, 결제 거래를 대신 보내는 중개자), 1번 계정이 구매자다. agent_m2m/payment.py 의 local 모드가 같은 계정과
+0번 계정이 운영자(배포·발급), 1번 계정이 구매자다. 결제 거래를 대신 보내는 중개자는 운영자 권한이 없는
+따로 된 계정(LOCAL_RELAYER_INDEX)이고, 가스비용 ETH 를 운영자가 보내 준다. agent_m2m/payment.py 의 local 모드가 같은 계정과
 같은 토큰 주소(운영자의 첫 거래로 배포한 주소)를 쓴다. Ctrl+C 로 끄면 체인도 사라진다.
 """
 
@@ -22,10 +23,19 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from web3 import Web3  # noqa: E402
 
-from agent_m2m.payment import ANVIL_MNEMONIC, LOCAL_CHAIN_ID, anvil_account, local_rpc_url, local_token_address  # noqa: E402
+from agent_m2m.payment import (  # noqa: E402
+    ANVIL_MNEMONIC,
+    LOCAL_CHAIN_ID,
+    LOCAL_RELAYER_INDEX,
+    anvil_account,
+    local_rpc_url,
+    local_token_address,
+)
 
 # 구매자 지갑에 처음 넣는 양. 1000 AEGIS (소수점 6자리).
 INITIAL_BUYER_UNITS = 1_000_000_000
+# 중개자 지갑에 넣는 가스비용 ETH. 로컬 체인의 가짜 ETH 다.
+RELAYER_ETH = Web3.to_wei(100, "ether")
 READY = "로컬 체인 준비 완료"
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -70,7 +80,7 @@ def main() -> None:
     try:
         w3 = Web3(Web3.HTTPProvider(rpc_url))
         wait_for_chain(w3, port)
-        owner, buyer = anvil_account(0), anvil_account(1)
+        owner, buyer, relayer = anvil_account(0), anvil_account(1), anvil_account(LOCAL_RELAYER_INDEX)
         expected = local_token_address()
 
         factory = w3.eth.contract(abi=artifact["abi"], bytecode=artifact["bytecode"]["object"])
@@ -86,10 +96,14 @@ def main() -> None:
             {"from": owner.address, "nonce": 1, "chainId": LOCAL_CHAIN_ID}
         )
         send(w3, owner, mint)
+        fund = {"to": relayer.address, "value": RELAYER_ETH, "from": owner.address, "nonce": 2, "chainId": LOCAL_CHAIN_ID,
+                "gas": 21_000, "gasPrice": w3.eth.gas_price}
+        send(w3, owner, fund)
 
         say(f"{READY} · {rpc_url} (chain {LOCAL_CHAIN_ID})")
         say(f"AEGIS 토큰 {contract_address}")
         say(f"구매자 {buyer.address} · 1000 AEGIS 발급")
+        say(f"중개자 {relayer.address} · 가스비용 100 ETH")
         say("끄려면 Ctrl+C")
     except Exception as error:  # noqa: BLE001
         say(str(error))
