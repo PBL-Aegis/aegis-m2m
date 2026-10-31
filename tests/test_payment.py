@@ -1,8 +1,18 @@
 from concurrent.futures import ThreadPoolExecutor
 
 import pytest
+from web3 import Web3
 
-from agent_m2m.payment import AEGIS_ABI, PaymentError, buyer_balance, pay, payment_config, request_id_hash, web3_for
+from agent_m2m.payment import (
+    AEGIS_ABI,
+    PaymentError,
+    anvil_account,
+    buyer_balance,
+    pay,
+    payment_config,
+    request_id_hash,
+    web3_for,
+)
 
 # 결제는 pytest 가 띄운 테스트 전용 로컬 체인(tests/conftest.py)에 진짜로 보낸다.
 RECIPIENT = "0xF00E8e0ecEF3B405250242F932849edB409497a0"
@@ -21,6 +31,31 @@ def test_pay_를_체인에_보내_구매자_잔액이_줄고_요청_번호가_�
     assert receipt["status"] == 1
     assert len(receipt["logs"]) > 0
     assert any(item["type"] == "event" and item["name"] == "Paid" for item in AEGIS_ABI)
+
+
+def test_구매자는_서명만_하고_거래와_가스비는_중개자가_낸다():
+    config = payment_config()
+    w3 = web3_for(config)
+    buyer, relayer = config["buyerAddress"], anvil_account(0).address
+    buyer_eth, relayer_eth = w3.eth.get_balance(buyer), w3.eth.get_balance(relayer)
+
+    result = pay(12_960, RECIPIENT, "test-gasless", "req-gasless")
+
+    transaction = w3.eth.get_transaction(result["txHash"])
+    assert transaction["from"] == relayer == result["relayer"]
+    assert result["from"] == buyer
+    assert w3.eth.get_balance(buyer) == buyer_eth
+    assert w3.eth.get_balance(relayer) < relayer_eth
+    token = w3.eth.contract(address=config["tokenAddress"], abi=AEGIS_ABI)
+    assert token.functions.authorizationState(buyer, request_id_hash("req-gasless")).call() is True
+
+
+def test_같은_요청_번호의_서명은_체인이_한_번만_받는다():
+    pay(1_000, RECIPIENT, "once-1", "req-once")
+    already_used = Web3.to_hex(Web3.keccak(text="AuthorizationAlreadyUsed(address,bytes32)")[:4])
+    with pytest.raises(Exception, match=already_used):
+        pay(1_000, RECIPIENT, "once-2", "req-once")
+    assert buyer_balance()["units"] == 1_000_000_000 - 1_000
 
 
 def test_같은_지갑으로_동시에_여러_건_보내도_거래_순번이_겹치지_않고_모두_들어간다():

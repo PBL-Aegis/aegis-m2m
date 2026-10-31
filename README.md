@@ -12,7 +12,7 @@ AI 구매 에이전트가 벤치마크 표로 모델을 고르고 AEGIS 토큰�
 2. **선택**: 후보마다 금액 계산 → 필요 기능으로 거르기 → 가격·속도·성능 점수 → 우선순위별 비중으로 합산 → 고정 규칙으로 동점 처리(`agent_m2m/selection.py`).
 3. **기록(처리 중)**: 결제 직전에 `PROCESSING` 상태로 MongoDB에 먼저 남깁니다.
 4. **감사**: `agent_m2m/rules/` 에 등록한 규칙을 세 자리에서 돌립니다. 막으면 "차단", 알리기만 하면 "경고" 알림이 대시보드의 이상 거래에 뜹니다.
-5. **결제**: 선택된 모델의 판매자 주소로 AEGIS `pay(수신자, 금액, 요청 번호)`. 요청 번호는 문자열의 keccak256 으로 넘깁니다. 이때 체인의 감사 규칙(`contracts/src/rules/`)이 한 번 더 검사합니다.
+5. **결제**: ERC-3009 방식입니다. 구매자 지갑이 "이 판매자에게 이 금액을, 이 요청 번호로, 10분 안에만"이라는 내용에 서명만 하고, 중개자(운영자) 지갑이 AEGIS `transferWithAuthorization` 거래를 보내며 가스비를 냅니다. 그래서 구매자 지갑에는 AEGIS 만 있으면 됩니다. 요청 번호(문자열의 keccak256)가 서명의 일회용 번호(nonce)라 같은 요청 번호는 체인이 한 번만 받습니다. 송금 전에 체인의 감사 규칙(`contracts/src/rules/`)이 한 번 더 검사합니다.
 6. **확인**: 판매창구가 체인의 `Paid` 기록에서 요청 번호·수신자·금액을 대조합니다.
 7. **결과**: Mock 응답 문장.
 8. **기록(성공·실패)**: 상태를 `SETTLED` 또는 `FAILED` 로 바꿉니다. 실패는 송금 전(`before-send`)·송금 후(`after-send`)를 구분합니다.
@@ -169,7 +169,7 @@ abstract contract MaxAmountRule is PaymentRules {
 2. `contracts/src/AegisToken.sol` 에서 상속 목록과 `_checkPayment` 의 override 목록에 이름을 더합니다.
 
 ```solidity
-contract AegisToken is ERC20, Ownable, PaymentRules, MaxAmountRule {
+contract AegisToken is ERC20, EIP712, Ownable, PaymentRules, MaxAmountRule {
     // ...
     function _checkPayment(address from, address to, uint256 amount, bytes32 requestId)
         internal virtual override(PaymentRules, MaxAmountRule)
@@ -190,6 +190,8 @@ contract AegisToken is ERC20, Ownable, PaymentRules, MaxAmountRule {
 - 체인 시계를 앞으로 돌려야 하면 `tests/helpers.py` 의 `increase_chain_time(초)` 를 씁니다.
 - 서버 쪽 기록(MongoDB)은 테스트 파일마다 새 임시 DB 를 쓰고, 한 파일 안의 테스트끼리는 이어집니다. 테스트마다 다른 `userId`·`requestId` 를 쓰면 섞이지 않습니다.
 - 동시 요청은 `concurrent.futures.ThreadPoolExecutor` 로 보냅니다(`tests/test_payment.py` 참고).
+- Solidity 테스트는 `contracts/test/AegisTest.sol` 을 상속하고 `_pay(token, 구매자키, 수신자, 금액, 요청번호)` 로 결제합니다. 구매자 서명과 중개자 전송을 대신 해 줍니다. 구매자는 `makeAddrAndKey("buyer")` 로 만듭니다(`contracts/test/AegisToken.t.sol` 참고).
+- 같은 구매자가 같은 요청 번호로 두 번 결제하면 토큰이 규칙 없이도 `AuthorizationAlreadyUsed` 로 막습니다.
 - 설정값을 바꿔 가며 시험할 때는 규칙 파일의 상수를 pytest 의 `monkeypatch.setattr(규칙모듈, "상수이름", 값)` 으로 바꿉니다. 규칙 파일을 다시 불러오면(`importlib.reload`) 규칙이 두 번 등록되니 쓰지 않습니다.
 
 ## 테스트가 확인하는 것
@@ -197,7 +199,7 @@ contract AegisToken is ERC20, Ownable, PaymentRules, MaxAmountRule {
 | 명령 | 확인하는 것 | 가짜로 두는 것 | 확인하지 않는 것 |
 | --- | --- | --- | --- |
 | `uv run pytest` | 선택 계산, 기록, 감사 흐름, API, 로컬 체인 결제(서버 규칙 + 체인 규칙) | 벤치마크 숫자(고정 픽스처), Ollama 응답, 판매창구 일부 | Base Sepolia 결제 |
-| `forge test` | 컨트랙트(발급, `pay`, 규칙이 `pay` 를 막는지) | 없음(메모리 안의 체인) | 서버와 이어진 흐름 |
+| `forge test` | 컨트랙트(발급, ERC-3009 결제, 서명 재사용·변조·만료 거절, 규칙이 결제를 막는지) | 없음(메모리 안의 체인) | 서버와 이어진 흐름 |
 | 로컬 체인 + 서버 + 화면 | 전체 흐름: 서버 규칙, 로컬 체인 결제·체인 규칙, 판매창구 확인 | 모델 응답(Mock 문장) | Base Sepolia 결제 |
 
 ## 환경변수
@@ -209,10 +211,11 @@ contract AegisToken is ERC20, Ownable, PaymentRules, MaxAmountRule {
 | `AEGIS_PAYMENT_MODE` | `local` | `local`: 로컬 체인 · `live`: Base Sepolia 전송을 요청 |
 | `AEGIS_LOCAL_RPC_URL` | `http://127.0.0.1:8545` | 로컬 체인 주소. 이 컴퓨터 주소만 받음. 자동 테스트는 `8546` 을 씀 |
 | `AEGIS_REAL_PAYMENT_APPROVED` | `no` | `yes`여야 live가 실제로 켜짐 |
-| `AEGIS_TOKEN_ADDRESS` | `0xE208…142b` | live 에서 쓰는 Base Sepolia AEGIS 토큰. 지금 값은 `pay` 가 없는 이전 토큰 |
+| `AEGIS_TOKEN_ADDRESS` | `0xE208…142b` | live 에서 쓰는 Base Sepolia AEGIS 토큰. 지금 값은 `transferWithAuthorization` 이 없는 이전 토큰 |
 | `AEGIS_CHAIN_ID` | `84532` | Base Sepolia |
 | `AEGIS_RPC_URL` | `https://sepolia.base.org` | RPC |
-| `AEGIS_BUYER_PRIVATE_KEY` | (비움) | 구매자 지갑 개인키. live에서만 필요 |
+| `AEGIS_BUYER_PRIVATE_KEY` | (비움) | 구매자 지갑 개인키. 서명에만 쓰므로 이 지갑에 ETH 는 필요 없음. live에서만 필요 |
+| `AEGIS_RELAYER_PRIVATE_KEY` | (비움) | 결제 거래를 대신 보내는 중개자(운영자) 지갑 개인키. 가스비용 ETH 가 필요. live에서만 필요 |
 | `AA_API_KEY` | (비움) | Artificial Analysis API 키. 속도 값의 자동 갱신·판매 목록 생성에 필요. 없으면 저장된 숫자로 계속 돔 |
 | `MONGODB_URI` | `mongodb://127.0.0.1:27017` | MongoDB 접속 주소 |
 | `MONGODB_DB` | `agent_m2m` | 기록을 담을 데이터베이스 이름 |
@@ -226,11 +229,11 @@ contract AegisToken is ERC20, Ownable, PaymentRules, MaxAmountRule {
 | 모드 | 어디로 | 필요한 것 |
 | --- | --- | --- |
 | `local` (기본) | 이 컴퓨터의 anvil | `scripts/local_chain.py` 를 켜 둠 |
-| `live` | Base Sepolia | 아래 두 변수, 개인키, `pay` 가 있는 토큰 주소 |
+| `live` | Base Sepolia | 아래 두 변수, 구매자·중개자 개인키, `transferWithAuthorization` 이 있는 토큰 주소 |
 
-`local` 은 감사 규칙이 담긴 컨트랙트를 그대로 올려 쓰므로, 체인에서 막히는 것까지 화면에서 확인할 수 있습니다. 로컬 체인을 끄면 체인과 그 위의 잔액도 사라지고, 다시 켜면 빈 체인에 같은 주소로 새로 배포합니다. 계정은 anvil 의 공개 테스트 계정(0번 운영자, 1번 구매자)이라 실제 자산이 없습니다.
+`local` 은 감사 규칙이 담긴 컨트랙트를 그대로 올려 쓰므로, 체인에서 막히는 것까지 화면에서 확인할 수 있습니다. 로컬 체인을 끄면 체인과 그 위의 잔액도 사라지고, 다시 켜면 빈 체인에 같은 주소로 새로 배포합니다. 계정은 anvil 의 공개 테스트 계정(0번 운영자 겸 중개자, 1번 구매자)이라 실제 자산이 없습니다.
 
-> **경고** — 실제 토큰 전송은 기본적으로 일어나지 않습니다(local). `AEGIS_PAYMENT_MODE=live` **와** `AEGIS_REAL_PAYMENT_APPROVED=yes` 두 변수가 모두 켜져 있고 개인키가 있을 때만 Base Sepolia에서 실제 `pay`가 실행됩니다. 1건당 금액 상한은 없으므로 live로 켤 때는 예산과 잔액을 직접 확인하세요. 개인키는 절대 커밋하지 마세요.
+> **경고** — 실제 토큰 전송은 기본적으로 일어나지 않습니다(local). `AEGIS_PAYMENT_MODE=live` **와** `AEGIS_REAL_PAYMENT_APPROVED=yes` 두 변수가 모두 켜져 있고 개인키가 있을 때만 Base Sepolia에서 실제 `transferWithAuthorization`이 실행됩니다. 1건당 금액 상한은 없으므로 live로 켤 때는 예산과 잔액을 직접 확인하세요. 개인키는 절대 커밋하지 마세요.
 
 ## 벤치마크와 판매 모델
 

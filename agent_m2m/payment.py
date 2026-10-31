@@ -1,7 +1,9 @@
 """
-결제. AEGIS 토큰(ERC-20)의 pay 로 선택된 모델의 수신자 주소에 보낸다.
-pay 는 요청 번호를 함께 받아 체인의 감사 규칙(contracts/)을 돌린 뒤 송금한다.
-그래서 live 는 pay 가 있는 토큰(contracts/src/AegisToken.sol)을 배포한 주소에서만 동작한다.
+결제. AEGIS 토큰(ERC-20)의 ERC-3009 transferWithAuthorization 으로 선택된 모델의 수신자 주소에 보낸다.
+구매자 지갑은 "이 수신자에게 이 금액을, 이 요청 번호로, 10분 안에만"이라는 내용에 서명만 한다.
+거래는 중개자(운영자) 지갑이 보내고 가스비도 중개자가 낸다. 그래서 구매자 지갑에는 AEGIS 만 있으면 된다.
+토큰은 서명을 확인하고 체인의 감사 규칙(contracts/)을 돌린 뒤 구매자 지갑에서 송금한다.
+live 는 transferWithAuthorization 이 있는 토큰(contracts/src/AegisToken.sol)을 배포한 주소에서만 동작한다.
 
 기본값은 local 이다. 이 컴퓨터의 anvil(scripts/local_chain.py)에 올린 토큰으로 보낸다. 실제 자산은 오가지 않는다.
 자동 테스트(pytest)도 테스트 전용 anvil(AEGIS_LOCAL_RPC_URL)을 띄워 같은 local 경로로 진짜 결제한다.
@@ -27,14 +29,27 @@ from agent_m2m.domain import PaymentResult
 AEGIS_ABI: list[dict[str, Any]] = [
     {
         "type": "function",
-        "name": "pay",
+        "name": "transferWithAuthorization",
         "stateMutability": "nonpayable",
         "inputs": [
+            {"name": "from", "type": "address"},
             {"name": "to", "type": "address"},
-            {"name": "amount", "type": "uint256"},
-            {"name": "requestId", "type": "bytes32"},
+            {"name": "value", "type": "uint256"},
+            {"name": "validAfter", "type": "uint256"},
+            {"name": "validBefore", "type": "uint256"},
+            {"name": "nonce", "type": "bytes32"},
+            {"name": "v", "type": "uint8"},
+            {"name": "r", "type": "bytes32"},
+            {"name": "s", "type": "bytes32"},
         ],
         "outputs": [],
+    },
+    {
+        "type": "function",
+        "name": "authorizationState",
+        "stateMutability": "view",
+        "inputs": [{"name": "authorizer", "type": "address"}, {"name": "nonce", "type": "bytes32"}],
+        "outputs": [{"name": "", "type": "bool"}],
     },
     {
         "type": "function",
@@ -89,6 +104,21 @@ BASE_SEPOLIA_CHAIN_ID = 84532
 # 로컬 체인은 거래를 바로 블록에 넣으므로 결과를 짧은 간격으로 확인한다.
 LOCAL_POLL_SECONDS = 0.1
 LIVE_POLL_SECONDS = 4.0
+# 구매자 서명이 유효한 시간. 체인 시각 기준이라 테스트가 체인 시각을 앞당겨도 어긋나지 않는다.
+AUTHORIZATION_SECONDS = 600
+# 토큰의 EIP712("AEGIS", "1") 과 같아야 서명이 맞는다.
+TOKEN_DOMAIN_NAME = "AEGIS"
+TOKEN_DOMAIN_VERSION = "1"
+TRANSFER_WITH_AUTHORIZATION_TYPES = {
+    "TransferWithAuthorization": [
+        {"name": "from", "type": "address"},
+        {"name": "to", "type": "address"},
+        {"name": "value", "type": "uint256"},
+        {"name": "validAfter", "type": "uint256"},
+        {"name": "validBefore", "type": "uint256"},
+        {"name": "nonce", "type": "bytes32"},
+    ]
+}
 
 Account.enable_unaudited_hdwallet_features()
 
@@ -111,7 +141,7 @@ def local_rpc_url() -> str:
 
 @functools.cache
 def anvil_account(index: int) -> LocalAccount:
-    """anvil 공개 테스트 계정. 0번은 운영자(토큰 배포·발급), 1번은 구매자, 2번부터 판매자다."""
+    """anvil 공개 테스트 계정. 0번은 운영자(토큰 배포·발급, 결제 거래를 대신 보내는 중개자), 1번은 구매자, 2번부터 판매자다."""
     return Account.from_mnemonic(ANVIL_MNEMONIC, account_path=f"m/44'/60'/0'/0/{index}")
 
 
@@ -183,9 +213,32 @@ def buyer_balance() -> dict[str, Any]:
     return {"units": int(balance), "status": f"{where} 온체인 잔액 조회 완료"}
 
 
-# 같은 지갑으로 거의 동시에 보내면 거래 순번(nonce)이 겹쳐 뒤의 거래가 거절된다.
+# 중개자 지갑 하나로 거의 동시에 보내면 거래 순번(nonce)이 겹쳐 뒤의 거래가 거절된다.
 # 이 프로세스 안에서는 보내기를 한 줄로 세워, 앞 거래가 체인에 들어간 뒤 다음 거래가 순번을 받게 한다.
 _sending = threading.Lock()
+
+
+def sign_authorization(
+    buyer: LocalAccount, token_address: str, chain_id: int, to: str, amount_units: int, request_hash: str, valid_before: int
+) -> Any:
+    """구매자가 ERC-3009 결제 내용에 서명한다. 요청 번호가 서명의 일회용 번호(nonce)다. 체인에 보내지 않는다."""
+    return buyer.sign_typed_data(
+        domain_data={
+            "name": TOKEN_DOMAIN_NAME,
+            "version": TOKEN_DOMAIN_VERSION,
+            "chainId": chain_id,
+            "verifyingContract": token_address,
+        },
+        message_types=TRANSFER_WITH_AUTHORIZATION_TYPES,
+        message_data={
+            "from": buyer.address,
+            "to": to,
+            "value": amount_units,
+            "validAfter": 0,
+            "validBefore": valid_before,
+            "nonce": Web3.to_bytes(hexstr=request_hash),
+        },
+    )
 
 
 def pay(amount_units: int, recipient: str, purchase_id: str, request_id: str) -> PaymentResult:
@@ -195,24 +248,38 @@ def pay(amount_units: int, recipient: str, purchase_id: str, request_id: str) ->
 
     live = config["mode"] == "live"
     token_address = Web3.to_checksum_address(_required_env("AEGIS_TOKEN_ADDRESS") if live else config["tokenAddress"])
-    account: LocalAccount = Account.from_key(_required_env("AEGIS_BUYER_PRIVATE_KEY")) if live else anvil_account(1)
+    buyer: LocalAccount = Account.from_key(_required_env("AEGIS_BUYER_PRIVATE_KEY")) if live else anvil_account(1)
+    relayer: LocalAccount = Account.from_key(_required_env("AEGIS_RELAYER_PRIVATE_KEY")) if live else anvil_account(0)
     w3 = web3_for(config)
     token = token_contract(w3, token_address)
 
-    balance = token.functions.balanceOf(account.address).call()
+    balance = token.functions.balanceOf(buyer.address).call()
     if balance < amount_units:
         raise PaymentError(f"지갑 잔액이 부족합니다: 보유 {balance} / 필요 {amount_units}")
 
-    # 여기서 나는 오류(체인 규칙의 revert 포함)는 거래를 보내기 전이다. 가스 추정에서 먼저 걸린다.
+    valid_before = int(w3.eth.get_block("latest")["timestamp"]) + AUTHORIZATION_SECONDS
+    signature = sign_authorization(buyer, token_address, config["chainId"], to, amount_units, request_hash, valid_before)
+
+    # 여기서 나는 오류(서명·유효기간·체인 규칙의 revert 포함)는 거래를 보내기 전이다. 가스 추정에서 먼저 걸린다.
     with _sending:
-        transaction = token.functions.pay(to, amount_units, request_hash).build_transaction(
+        transaction = token.functions.transferWithAuthorization(
+            buyer.address,
+            to,
+            amount_units,
+            0,
+            valid_before,
+            request_hash,
+            signature.v,
+            signature.r.to_bytes(32, "big"),
+            signature.s.to_bytes(32, "big"),
+        ).build_transaction(
             {
-                "from": account.address,
-                "nonce": w3.eth.get_transaction_count(account.address, "pending"),
+                "from": relayer.address,
+                "nonce": w3.eth.get_transaction_count(relayer.address, "pending"),
                 "chainId": config["chainId"],
             }
         )
-        signed = account.sign_transaction(transaction)
+        signed = relayer.sign_transaction(transaction)
         tx_hash = Web3.to_hex(w3.eth.send_raw_transaction(signed.raw_transaction))
 
     # 여기부터는 거래가 체인에 나간 뒤다. 어떤 실패든 송금 후 실패로 알린다.
@@ -228,7 +295,8 @@ def pay(amount_units: int, recipient: str, purchase_id: str, request_id: str) ->
     return {
         "mode": config["mode"],
         "txHash": tx_hash,
-        "from": account.address,
+        "from": buyer.address,
+        "relayer": relayer.address,
         "to": to,
         "amountUnits": amount_units,
         "tokenAddress": token_address,
