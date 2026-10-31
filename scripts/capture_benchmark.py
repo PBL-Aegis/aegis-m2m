@@ -24,7 +24,7 @@ from agent_m2m.payment import anvil_account  # noqa: E402
 ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "data"
 SELLERS_FILE = DATA / "sellers.json"
-# 0번은 운영자, 1번은 구매자라 판매자는 2번부터 쓴다.
+# 0번은 운영자, 1번은 구매자라 판매자는 2번부터 쓴다. 중개자(agent_m2m/payment.py 의 LOCAL_RELAYER_INDEX)와는 겹치지 않는다.
 FIRST_SELLER_INDEX = 2
 
 

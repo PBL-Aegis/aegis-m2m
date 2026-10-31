@@ -12,7 +12,7 @@ AI 구매 에이전트가 벤치마크 표로 모델을 고르고 AEGIS 토큰�
 2. **선택**: 후보마다 금액 계산 → 필요 기능으로 거르기 → 가격·속도·성능 점수 → 우선순위별 비중으로 합산 → 고정 규칙으로 동점 처리(`agent_m2m/selection.py`).
 3. **기록(처리 중)**: 결제 직전에 `PROCESSING` 상태로 MongoDB에 먼저 남깁니다.
 4. **감사**: `agent_m2m/rules/` 에 등록한 규칙을 세 자리에서 돌립니다. 막으면 "차단", 알리기만 하면 "경고" 알림이 대시보드의 이상 거래에 뜹니다.
-5. **결제**: ERC-3009 방식입니다. 구매자 지갑이 "이 판매자에게 이 금액을, 이 요청 번호로, 10분 안에만"이라는 내용에 서명만 하고, 중개자(운영자) 지갑이 AEGIS `transferWithAuthorization` 거래를 보내며 가스비를 냅니다. 그래서 구매자 지갑에는 AEGIS 만 있으면 됩니다. 요청 번호(문자열의 keccak256)가 서명의 일회용 번호(nonce)라 같은 요청 번호는 체인이 한 번만 받습니다. 송금 전에 체인의 감사 규칙(`contracts/src/rules/`)이 한 번 더 검사합니다.
+5. **결제**: ERC-3009 방식입니다. 구매자 지갑이 "이 판매자에게 이 금액을, 이 요청 번호로, 10분 안에만"이라는 내용에 서명만 하고, 중개자 지갑이 AEGIS `transferWithAuthorization` 거래를 보내며 가스비를 냅니다. 그래서 구매자 지갑에는 AEGIS 만 있으면 됩니다. 요청 번호(문자열의 keccak256)가 서명의 일회용 번호(nonce)라 같은 요청 번호는 체인이 한 번만 받습니다. 송금 전에 체인의 감사 규칙(`contracts/src/rules/`)이 한 번 더 검사합니다.
 6. **확인**: 판매창구가 체인의 `Paid` 기록에서 요청 번호·수신자·금액을 대조합니다.
 7. **결과**: Mock 응답 문장.
 8. **기록(성공·실패)**: 상태를 `SETTLED` 또는 `FAILED` 로 바꿉니다. 실패는 송금 전(`before-send`)·송금 후(`after-send`)를 구분합니다.
@@ -147,7 +147,7 @@ BEFORE_PAYMENT_CHECKS.append(check_max_amount)
 
 ### 체인 규칙 (Solidity)
 
-1. `contracts/src/rules/<규칙이름>Rule.sol` 에 `PaymentRules` 를 상속한 abstract contract 를 만듭니다. 먼저 `super._checkPayment(...)` 를 불러 다른 규칙도 돌게 하고, 막을 때 revert 합니다. 체인에서는 구매자 지갑 하나(`from`)를 사용자 한 명으로 봅니다.
+1. `contracts/src/rules/<규칙이름>Rule.sol` 에 `PaymentRules` 를 상속한 abstract contract 를 만듭니다. 먼저 `super._checkPayment(...)` 를 불러 다른 규칙도 돌게 하고, 막을 때 revert 합니다. 체인에서는 구매자 지갑 하나(`from`)를 사용자 한 명으로 봅니다. 결제 거래는 중개자가 보내므로 `msg.sender` 는 구매자가 아니라 중개자입니다. 지갑별 한도·횟수는 반드시 `from` 으로 셉니다(`msg.sender` 로 세면 모든 결제가 중개자 한 명으로 잡힙니다).
 
 ```solidity
 // contracts/src/rules/MaxAmountRule.sol — 예시
@@ -215,7 +215,7 @@ contract AegisToken is ERC20, EIP712, Ownable, PaymentRules, MaxAmountRule {
 | `AEGIS_CHAIN_ID` | `84532` | Base Sepolia |
 | `AEGIS_RPC_URL` | `https://sepolia.base.org` | RPC |
 | `AEGIS_BUYER_PRIVATE_KEY` | (비움) | 구매자 지갑 개인키. 서명에만 쓰므로 이 지갑에 ETH 는 필요 없음. live에서만 필요 |
-| `AEGIS_RELAYER_PRIVATE_KEY` | (비움) | 결제 거래를 대신 보내는 중개자(운영자) 지갑 개인키. 가스비용 ETH 가 필요. live에서만 필요 |
+| `AEGIS_RELAYER_PRIVATE_KEY` | (비움) | 결제 거래를 대신 보내는 중개자 지갑 개인키. 가스비용 ETH 만 넣는 새 지갑을 씀. 운영자(토큰 배포·발급) 지갑을 쓰지 않음. live에서만 필요 |
 | `AA_API_KEY` | (비움) | Artificial Analysis API 키. 속도 값의 자동 갱신·판매 목록 생성에 필요. 없으면 저장된 숫자로 계속 돔 |
 | `MONGODB_URI` | `mongodb://127.0.0.1:27017` | MongoDB 접속 주소 |
 | `MONGODB_DB` | `agent_m2m` | 기록을 담을 데이터베이스 이름 |
@@ -231,7 +231,7 @@ contract AegisToken is ERC20, EIP712, Ownable, PaymentRules, MaxAmountRule {
 | `local` (기본) | 이 컴퓨터의 anvil | `scripts/local_chain.py` 를 켜 둠 |
 | `live` | Base Sepolia | 아래 두 변수, 구매자·중개자 개인키, `transferWithAuthorization` 이 있는 토큰 주소 |
 
-`local` 은 감사 규칙이 담긴 컨트랙트를 그대로 올려 쓰므로, 체인에서 막히는 것까지 화면에서 확인할 수 있습니다. 로컬 체인을 끄면 체인과 그 위의 잔액도 사라지고, 다시 켜면 빈 체인에 같은 주소로 새로 배포합니다. 계정은 anvil 의 공개 테스트 계정(0번 운영자 겸 중개자, 1번 구매자)이라 실제 자산이 없습니다.
+`local` 은 감사 규칙이 담긴 컨트랙트를 그대로 올려 쓰므로, 체인에서 막히는 것까지 화면에서 확인할 수 있습니다. 로컬 체인을 끄면 체인과 그 위의 잔액도 사라지고, 다시 켜면 빈 체인에 같은 주소로 새로 배포합니다. 계정은 anvil 의 공개 테스트 계정(0번 운영자, 1번 구매자, 100번 중개자)이라 실제 자산이 없습니다. 중개자는 운영자 권한이 없는 따로 된 지갑입니다. 중개자 키는 결제 서버에 있어야 해서, 운영자와 같은 지갑이면 서버가 뚫렸을 때 토큰 발급과 체인 한도 변경 권한까지 넘어가기 때문입니다.
 
 > **경고** — 실제 토큰 전송은 기본적으로 일어나지 않습니다(local). `AEGIS_PAYMENT_MODE=live` **와** `AEGIS_REAL_PAYMENT_APPROVED=yes` 두 변수가 모두 켜져 있고 개인키가 있을 때만 Base Sepolia에서 실제 `transferWithAuthorization`이 실행됩니다. 1건당 금액 상한은 없으므로 live로 켤 때는 예산과 잔액을 직접 확인하세요. 개인키는 절대 커밋하지 마세요.
 

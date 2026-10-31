@@ -1,7 +1,9 @@
 """
 결제. AEGIS 토큰(ERC-20)의 ERC-3009 transferWithAuthorization 으로 선택된 모델의 수신자 주소에 보낸다.
 구매자 지갑은 "이 수신자에게 이 금액을, 이 요청 번호로, 10분 안에만"이라는 내용에 서명만 한다.
-거래는 중개자(운영자) 지갑이 보내고 가스비도 중개자가 낸다. 그래서 구매자 지갑에는 AEGIS 만 있으면 된다.
+거래는 중개자 지갑이 보내고 가스비도 중개자가 낸다. 그래서 구매자 지갑에는 AEGIS 만 있으면 된다.
+중개자 키는 결제 서버에 있어야 하므로 운영자(토큰 발급·규칙 설정 권한)와 다른, 권한 없는 지갑을 쓴다.
+같은 지갑이면 서버가 뚫렸을 때 토큰 발급과 체인 한도 변경 권한까지 함께 넘어간다.
 토큰은 서명을 확인하고 체인의 감사 규칙(contracts/)을 돌린 뒤 구매자 지갑에서 송금한다.
 live 는 transferWithAuthorization 이 있는 토큰(contracts/src/AegisToken.sol)을 배포한 주소에서만 동작한다.
 
@@ -104,6 +106,9 @@ BASE_SEPOLIA_CHAIN_ID = 84532
 # 로컬 체인은 거래를 바로 블록에 넣으므로 결과를 짧은 간격으로 확인한다.
 LOCAL_POLL_SECONDS = 0.1
 LIVE_POLL_SECONDS = 4.0
+# local 중개자. 운영자 권한이 없는 지갑이다. 판매자 번호(2번부터 차례로 붙음)와 겹치지 않게 멀리 둔다.
+# anvil 이 처음부터 ETH 를 주는 계정이 아니라서 scripts/local_chain.py 가 운영자 ETH 를 보내 준다.
+LOCAL_RELAYER_INDEX = 100
 # 구매자 서명이 유효한 시간. 체인 시각 기준이라 테스트가 체인 시각을 앞당겨도 어긋나지 않는다.
 AUTHORIZATION_SECONDS = 600
 # 토큰의 EIP712("AEGIS", "1") 과 같아야 서명이 맞는다.
@@ -141,12 +146,12 @@ def local_rpc_url() -> str:
 
 @functools.cache
 def anvil_account(index: int) -> LocalAccount:
-    """anvil 공개 테스트 계정. 0번은 운영자(토큰 배포·발급, 결제 거래를 대신 보내는 중개자), 1번은 구매자, 2번부터 판매자다."""
+    """anvil 공개 테스트 계정. 0번은 운영자(토큰 배포·발급), 1번은 구매자, 2번부터 판매자, LOCAL_RELAYER_INDEX 번은 중개자다."""
     return Account.from_mnemonic(ANVIL_MNEMONIC, account_path=f"m/44'/60'/0'/0/{index}")
 
 
 def local_accounts() -> dict[str, LocalAccount]:
-    return {"owner": anvil_account(0), "buyer": anvil_account(1)}
+    return {"owner": anvil_account(0), "buyer": anvil_account(1), "relayer": anvil_account(LOCAL_RELAYER_INDEX)}
 
 
 def local_token_address() -> str:
@@ -249,7 +254,7 @@ def pay(amount_units: int, recipient: str, purchase_id: str, request_id: str) ->
     live = config["mode"] == "live"
     token_address = Web3.to_checksum_address(_required_env("AEGIS_TOKEN_ADDRESS") if live else config["tokenAddress"])
     buyer: LocalAccount = Account.from_key(_required_env("AEGIS_BUYER_PRIVATE_KEY")) if live else anvil_account(1)
-    relayer: LocalAccount = Account.from_key(_required_env("AEGIS_RELAYER_PRIVATE_KEY")) if live else anvil_account(0)
+    relayer: LocalAccount = Account.from_key(_required_env("AEGIS_RELAYER_PRIVATE_KEY")) if live else anvil_account(LOCAL_RELAYER_INDEX)
     w3 = web3_for(config)
     token = token_contract(w3, token_address)
 

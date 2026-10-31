@@ -6,6 +6,7 @@ from web3 import Web3
 from agent_m2m.payment import (
     AEGIS_ABI,
     PaymentError,
+    LOCAL_RELAYER_INDEX,
     anvil_account,
     buyer_balance,
     pay,
@@ -36,7 +37,7 @@ def test_pay_를_체인에_보내_구매자_잔액이_줄고_요청_번호가_�
 def test_구매자는_서명만_하고_거래와_가스비는_중개자가_낸다():
     config = payment_config()
     w3 = web3_for(config)
-    buyer, relayer = config["buyerAddress"], anvil_account(0).address
+    buyer, relayer = config["buyerAddress"], anvil_account(LOCAL_RELAYER_INDEX).address
     buyer_eth, relayer_eth = w3.eth.get_balance(buyer), w3.eth.get_balance(relayer)
 
     result = pay(12_960, RECIPIENT, "test-gasless", "req-gasless")
@@ -48,6 +49,10 @@ def test_구매자는_서명만_하고_거래와_가스비는_중개자가_낸�
     assert w3.eth.get_balance(relayer) < relayer_eth
     token = w3.eth.contract(address=config["tokenAddress"], abi=AEGIS_ABI)
     assert token.functions.authorizationState(buyer, request_id_hash("req-gasless")).call() is True
+
+
+def test_중개자는_운영자와_다른_지갑이다():
+    assert anvil_account(LOCAL_RELAYER_INDEX).address != anvil_account(0).address
 
 
 def test_같은_요청_번호의_서명은_체인이_한_번만_받는다():
