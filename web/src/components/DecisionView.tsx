@@ -33,7 +33,10 @@ export function PurchaseSummary({ record }: { record: PurchaseRecord }) {
             <th>결제 금액</th>
             <td>
               {aegisText(decision.winner.amountUnits)}
-              <span className="muted"> (예산 {aegisText(decision.budgetUnits)})</span>
+              <span className="muted">
+                {decision.winner.listAmountUnits === undefined ? "" : ` (호가 ${aegisText(decision.winner.listAmountUnits)})`} (예산{" "}
+                {aegisText(decision.budgetUnits)})
+              </span>
             </td>
           </tr>
           <tr>
@@ -71,6 +74,32 @@ export function PurchaseSummary({ record }: { record: PurchaseRecord }) {
           </tr>
         </tbody>
       </table>
+
+      {decision.negotiation === undefined ? null : (
+        <>
+          <h2>흥정</h2>
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>누가</th>
+                  <th>내용</th>
+                  <th className="num">값 (AEGIS)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {decision.negotiation.transcript.map((turn, index) => (
+                  <tr key={index}>
+                    <td>{turn.from === "buyer" ? "구매 에이전트" : "판매 에이전트"}</td>
+                    <td>{turn.text}</td>
+                    <td className="num">{toAegis(turn.priceUnits)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
 
       <h2>결과</h2>
       {record.resultText === null ? (

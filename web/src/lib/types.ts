@@ -152,6 +152,23 @@ export interface ScoredCandidate {
   rank: number;
 }
 
+/** 흥정 대화 한 줄. */
+export interface NegotiationTurn {
+  from: "buyer" | "seller";
+  action: "offer" | "counter" | "accept" | "reject";
+  priceUnits: number;
+  text: string;
+}
+
+/** 구매 에이전트와 판매 에이전트의 흥정 결과. 판매자의 최저가는 담기지 않는다. */
+export interface Negotiation {
+  status: "agreed";
+  askUnits: number;
+  maxUnits: number;
+  agreedUnits: number;
+  transcript: NegotiationTurn[];
+}
+
 /** 선택이 끝난 뒤 남는 기록 전체. */
 export interface Decision {
   snapshotId: string;
@@ -198,7 +215,10 @@ export interface Decision {
   };
   candidates: ScoredCandidate[];
   rejected: RejectedCandidate[];
-  winner: ScoredCandidate;
+  /** amountUnits 는 합의가, listAmountUnits 는 호가다. 흥정이 생기기 전 기록에는 listAmountUnits 가 없다. */
+  winner: ScoredCandidate & { listAmountUnits?: number };
+  /** 이 칸이 생기기 전 기록에는 없다. */
+  negotiation?: Negotiation;
 }
 
 /** local 은 이 컴퓨터의 anvil(자동 테스트 포함), live 는 Base Sepolia. 예전 기록에는 체인 없이 흐름만 잇던 "mock" 이 남아 있을 수 있다. */

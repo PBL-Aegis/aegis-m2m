@@ -1,7 +1,7 @@
 """
 구매 한 건의 전체 흐름.
 
-  요청 → 감사(요청 직후) → 모델 선택 → 기록(처리 중) → 감사(송금 직전) → 결제 → 판매창구 확인
+  요청 → 감사(요청 직후) → 모델 선택 → 흥정 → 기록(처리 중) → 감사(송금 직전) → 결제 → 판매창구 확인
   → 결과 → 기록(성공·실패) → 감사(결제 후)
 
 실패하면 결과 없이 실패 사유와 송금 전·후 여부를 남긴다. 실패한 건을 자동으로 다시 결제하지 않는다.
@@ -16,6 +16,7 @@ from agent_m2m import store
 from agent_m2m.audit import run_after_payment, run_before_payment, run_on_request
 from agent_m2m.benchmark import load_fresh_snapshot
 from agent_m2m.domain import PaymentResult, PurchaseRecord, now_iso
+from agent_m2m.negotiation import negotiate
 from agent_m2m.payment import PaymentError, pay
 from agent_m2m.priority_llm import infer_priority
 from agent_m2m.provider import mock_result, verify_payment
@@ -54,6 +55,12 @@ def run_purchase(purchase_input: dict[str, Any]) -> PurchaseRecord:
     decision["prioritySource"] = "request" if inferred is None else "local-llm"
     if inferred is not None:
         decision["priorityModel"] = inferred["model"]
+
+    # 흥정 — 결렬되면 기록 없이 멈춘다. 합의가를 winner 금액에 넣어 뒤의 감사·결제·확인이 모두 이 값을 본다.
+    ask_units = decision["winner"]["amountUnits"]
+    negotiation = negotiate(ask_units, request["budgetUnits"])
+    decision["negotiation"] = negotiation
+    decision["winner"] = {**decision["winner"], "amountUnits": negotiation["agreedUnits"], "listAmountUnits": ask_units}
 
     # 결제 직전에 처리 중으로 먼저 남긴다. 중간에 멈춰도 기록이 남는다.
     record: PurchaseRecord = {
