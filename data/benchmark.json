@@ -124,24 +124,6 @@
       "aaModelNames": [
         "GPT-6 Luna (Xhigh)"
       ]
-    },
-    {
-      "key": "google/gemini-3.5-flash-lite",
-      "epochModel": "Gemini 3.5 Flash-Lite",
-      "epochDate": "2026-07-21",
-      "eci": "144.91",
-      "eciCiLow": "142.41",
-      "eciCiHigh": "146.26",
-      "inputPricePerMillion": "0.3",
-      "outputPricePerMillion": "2.5",
-      "outputTokensPerSecond": "429.32",
-      "openRouterId": "google/gemini-3.5-flash-lite",
-      "aaSlugs": [
-        "gemini-3-5-flash-lite"
-      ],
-      "aaModelNames": [
-        "Gemini 3.5 Flash-Lite"
-      ]
     }
   ]
 }

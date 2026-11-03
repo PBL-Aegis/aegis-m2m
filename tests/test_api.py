@@ -40,8 +40,13 @@ def test_budget_형식이_틀리면_400_이다():
     assert response.status_code == 400
 
 
+def test_빠르게_우선순위는_받지_않는다():
+    response = client.post("/api/purchase", json={"prompt": "빨리 해 줘", "budget": "0.5", "priority": "speed"})
+    assert response.status_code == 400
+
+
 def test_화면이_쓰는_조회_API_가_기록과_알림을_돌려준다():
-    record = client.post("/api/purchase", json={"prompt": "조회 확인", "budget": "0.5", "priority": "speed"}).json()
+    record = client.post("/api/purchase", json={"prompt": "조회 확인", "budget": "0.5", "priority": "intelligence"}).json()
     assert client.get(f"/api/purchases/{record['id']}").json()["id"] == record["id"]
     assert client.get("/api/purchases/없는-id").status_code == 404
     assert record["id"] in [item["id"] for item in client.get("/api/purchases").json()]

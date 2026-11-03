@@ -21,7 +21,6 @@ SYSTEM_PROMPT = "\n".join(
     [
         "You decide which aspect matters most when buying an AI model for the user's request. Return JSON only.",
         "price: the request asks for low cost (e.g. 싸게, 저렴하게, 비용 아껴, 예산이 적어).",
-        "speed: the request asks for a fast answer (e.g. 빨리, 급해, 바로, 실시간).",
         "intelligence: the request asks for high quality or careful reasoning (e.g. 정확하게, 꼼꼼히, 깊이 있게).",
         "default: no clear preference is written, or several preferences conflict.",
         "Judge only from preferences the request states. Do not guess from the task topic.",

@@ -29,7 +29,7 @@ def test_Qwen_이_고른_우선순위와_모델_이름을_돌려준다(monkeypat
     assert infer_priority("최대한 싸게 요약해 줘") == {"priority": "price", "model": "qwen3.5:4b"}
     url, body = calls[0]
     assert url == "http://127.0.0.1:11434/api/chat"
-    assert body["format"]["properties"]["priority"]["enum"] == ["default", "price", "speed", "intelligence"]
+    assert body["format"]["properties"]["priority"]["enum"] == ["default", "price", "intelligence"]
     assert body["messages"][1] == {"role": "user", "content": "최대한 싸게 요약해 줘"}
 
 

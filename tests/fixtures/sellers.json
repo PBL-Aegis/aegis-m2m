@@ -27,9 +27,6 @@
     ],
     "intelligence": [
       "anthropic/test-haiku"
-    ],
-    "speed": [
-      "google/test-flash"
     ]
   }
 }

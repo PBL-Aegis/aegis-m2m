@@ -1,12 +1,11 @@
 /** 이 프로젝트에서 쓰는 값의 모양만 모아둔 곳. */
 
-/** 요청이 무엇을 중요하게 보는지. 이 네 값이 가중치 한 줄을 고른다. */
+/** 요청이 무엇을 중요하게 보는지. speed 는 옛 기록에만 있고 새 요청에서는 받지 않는다. */
 export type Priority = "default" | "price" | "speed" | "intelligence";
 
 export const PRIORITIES: readonly Priority[] = [
   "default",
   "price",
-  "speed",
   "intelligence",
 ];
 

@@ -107,23 +107,6 @@
         "tools",
         "vision"
       ]
-    },
-    {
-      "key": "google/gemini-3.5-flash-lite",
-      "providerId": "google",
-      "providerModelId": "gemini-3.5-flash-lite",
-      "displayName": "Gemini 3.5 Flash-Lite",
-      "epochModel": "Gemini 3.5 Flash-Lite",
-      "openRouterId": "google/gemini-3.5-flash-lite",
-      "aaSlugs": [
-        "gemini-3-5-flash-lite"
-      ],
-      "recipient": "0xBcd4042DE499D14e55001CcbB24a551F3b954096",
-      "capabilities": [
-        "reasoning",
-        "tools",
-        "vision"
-      ]
     }
   ],
   "excluded": [
@@ -1177,6 +1160,10 @@
     },
     {
       "name": "Gemini 3.5 Flash",
+      "reason": "판매 에이전트가 팔지 않는 모델: google"
+    },
+    {
+      "name": "Gemini 3.5 Flash-Lite",
       "reason": "판매 에이전트가 팔지 않는 모델: google"
     }
   ]
