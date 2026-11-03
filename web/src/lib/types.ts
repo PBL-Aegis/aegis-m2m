@@ -163,6 +163,7 @@ export interface NegotiationTurn {
 /** 구매 에이전트와 판매 에이전트의 흥정 결과. 판매자의 최저가는 담기지 않는다. */
 export interface Negotiation {
   status: "agreed";
+  sellerName: string;
   askUnits: number;
   maxUnits: number;
   agreedUnits: number;

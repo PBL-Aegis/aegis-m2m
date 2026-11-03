@@ -280,24 +280,6 @@
       ]
     },
     {
-      "key": "x-ai/grok-4.6",
-      "epochModel": "Grok 4.6",
-      "epochDate": "2026-08-12",
-      "eci": "156.57",
-      "eciCiLow": "154.68",
-      "eciCiHigh": "159.19",
-      "inputPricePerMillion": "2",
-      "outputPricePerMillion": "6",
-      "outputTokensPerSecond": "72.8",
-      "openRouterId": "x-ai/grok-4.6",
-      "aaSlugs": [
-        "grok-4-6-medium"
-      ],
-      "aaModelNames": [
-        "Grok 4.6 (Medium)"
-      ]
-    },
-    {
       "key": "openai/gpt-5.6-luna",
       "epochModel": "GPT-5.6 Luna",
       "epochDate": "2026-07-09",
@@ -336,42 +318,6 @@
       ]
     },
     {
-      "key": "meta/muse-spark-open",
-      "epochModel": "Muse Spark Open",
-      "epochDate": "2026-10-15",
-      "eci": "155.11",
-      "eciCiLow": "152.66",
-      "eciCiHigh": "157.97",
-      "inputPricePerMillion": "1.25",
-      "outputPricePerMillion": "4.25",
-      "outputTokensPerSecond": "183.23",
-      "openRouterId": "meta/muse-spark-open",
-      "aaSlugs": [
-        "muse-spark-open"
-      ],
-      "aaModelNames": [
-        "Muse Spark Open (Xhigh)"
-      ]
-    },
-    {
-      "key": "meta/muse-spark-1.2",
-      "epochModel": "Muse Spark 1.2",
-      "epochDate": "2026-08-05",
-      "eci": "155.05",
-      "eciCiLow": "152.82",
-      "eciCiHigh": "157.56",
-      "inputPricePerMillion": "1.25",
-      "outputPricePerMillion": "4.25",
-      "outputTokensPerSecond": "311.95",
-      "openRouterId": "meta/muse-spark-1.2",
-      "aaSlugs": [
-        "muse-spark-1-2"
-      ],
-      "aaModelNames": [
-        "Muse Spark 1.2 (Xhigh)"
-      ]
-    },
-    {
       "key": "google/gemini-3.5-flash",
       "epochModel": "Gemini 3.5 Flash",
       "epochDate": "2026-05-19",
@@ -392,44 +338,6 @@
       ]
     },
     {
-      "key": "x-ai/grok-4.7",
-      "epochModel": "Grok 4.7",
-      "epochDate": "2026-09-21",
-      "eci": "154.37",
-      "eciCiLow": "152.6",
-      "eciCiHigh": "157.08",
-      "inputPricePerMillion": "2",
-      "outputPricePerMillion": "6",
-      "outputTokensPerSecond": "82.7",
-      "openRouterId": "x-ai/grok-4.7",
-      "aaSlugs": [
-        "grok-4-7-high",
-        "grok-4-7-low"
-      ],
-      "aaModelNames": [
-        "Grok 4.7 (High)",
-        "Grok 4.7 (Low)"
-      ]
-    },
-    {
-      "key": "z-ai/glm-5.3-flash",
-      "epochModel": "GLM-5.3-Flash",
-      "epochDate": "2026-08-20",
-      "eci": "153.08",
-      "eciCiLow": "150.76",
-      "eciCiHigh": "155.53",
-      "inputPricePerMillion": "0.15",
-      "outputPricePerMillion": "0.5",
-      "outputTokensPerSecond": "74.73",
-      "openRouterId": "z-ai/glm-5.3-flash",
-      "aaSlugs": [
-        "glm-5-3-flash"
-      ],
-      "aaModelNames": [
-        "GLM-5.3-Flash"
-      ]
-    },
-    {
       "key": "anthropic/claude-sonnet-4.6",
       "epochModel": "Claude Sonnet 4.6",
       "epochDate": "2026-02-17",
@@ -445,44 +353,6 @@
       ],
       "aaModelNames": [
         "Claude Sonnet 4.6 (Non-reasoning, High)"
-      ]
-    },
-    {
-      "key": "qwen/qwen3.8-27b",
-      "epochModel": "Qwen 3.8 27B",
-      "epochDate": "2026-08-14",
-      "eci": "151.69",
-      "eciCiLow": "149.75",
-      "eciCiHigh": "153.72",
-      "inputPricePerMillion": "0.2",
-      "outputPricePerMillion": "2.5",
-      "outputTokensPerSecond": "48.47",
-      "openRouterId": "qwen/qwen3.8-27b",
-      "aaSlugs": [
-        "qwen3-8-27b-non-reasoning"
-      ],
-      "aaModelNames": [
-        "Qwen3.8 27B (Non-reasoning)"
-      ]
-    },
-    {
-      "key": "moonshotai/kimi-k2.6",
-      "epochModel": "Kimi K2.6",
-      "epochDate": "2026-04-20",
-      "eci": "150.94",
-      "eciCiLow": "149.04",
-      "eciCiHigh": "152.72",
-      "inputPricePerMillion": "0.65",
-      "outputPricePerMillion": "3.41",
-      "outputTokensPerSecond": "96.81",
-      "openRouterId": "moonshotai/kimi-k2.6",
-      "aaSlugs": [
-        "kimi-k2-6",
-        "kimi-k2-6-non-reasoning"
-      ],
-      "aaModelNames": [
-        "Kimi K2.6 (Reasoning)",
-        "Kimi K2.6 (Non-reasoning)"
       ]
     },
     {
@@ -524,62 +394,6 @@
       ]
     },
     {
-      "key": "thinkingmachines/inkling",
-      "epochModel": "Inkling",
-      "epochDate": "2026-07-15",
-      "eci": "148.41",
-      "eciCiLow": "145.96",
-      "eciCiHigh": "150.21",
-      "inputPricePerMillion": "1",
-      "outputPricePerMillion": "4.05",
-      "outputTokensPerSecond": "212.3",
-      "openRouterId": "thinkingmachines/inkling",
-      "aaSlugs": [
-        "inkling"
-      ],
-      "aaModelNames": [
-        "Inkling (Xhigh)"
-      ]
-    },
-    {
-      "key": "minimax/minimax-m3",
-      "epochModel": "MiniMax-M3",
-      "epochDate": "2026-06-01",
-      "eci": "146.87",
-      "eciCiLow": "142.34",
-      "eciCiHigh": "150.17",
-      "inputPricePerMillion": "0.3",
-      "outputPricePerMillion": "1.2",
-      "outputTokensPerSecond": "106.95",
-      "openRouterId": "minimax/minimax-m3",
-      "aaSlugs": [
-        "minimax-m3"
-      ],
-      "aaModelNames": [
-        "MiniMax-M3"
-      ]
-    },
-    {
-      "key": "qwen/qwen3.5-397b-a17b",
-      "epochModel": "Qwen3.5 397B-A17B",
-      "epochDate": "2026-02-13",
-      "eci": "146.8",
-      "eciCiLow": "145.24",
-      "eciCiHigh": "148.86",
-      "inputPricePerMillion": "0.5",
-      "outputPricePerMillion": "3.6",
-      "outputTokensPerSecond": "58.46",
-      "openRouterId": "qwen/qwen3.5-397b-a17b",
-      "aaSlugs": [
-        "qwen3-5-397b-a17b",
-        "qwen3-5-397b-a17b-non-reasoning"
-      ],
-      "aaModelNames": [
-        "Qwen3.5 397B A17B (Reasoning)",
-        "Qwen3.5 397B A17B (Non-reasoning)"
-      ]
-    },
-    {
       "key": "openai/o3",
       "epochModel": "o3",
       "epochDate": "2025-04-16",
@@ -595,60 +409,6 @@
       ],
       "aaModelNames": [
         "o3"
-      ]
-    },
-    {
-      "key": "minimax/minimax-m2.5",
-      "epochModel": "MiniMax-M2.5",
-      "epochDate": "2026-02-12",
-      "eci": "146.59",
-      "eciCiLow": "142.21",
-      "eciCiHigh": "147.9",
-      "inputPricePerMillion": "0.3",
-      "outputPricePerMillion": "1.2",
-      "outputTokensPerSecond": "59.53",
-      "openRouterId": "minimax/minimax-m2.5",
-      "aaSlugs": [
-        "minimax-m2-5"
-      ],
-      "aaModelNames": [
-        "MiniMax-M2.5"
-      ]
-    },
-    {
-      "key": "qwen/qwen3.6-27b",
-      "epochModel": "Qwen3.6 27B",
-      "epochDate": "2026-04-22",
-      "eci": "146.23",
-      "eciCiLow": "144.13",
-      "eciCiHigh": "147.65",
-      "inputPricePerMillion": "0.32",
-      "outputPricePerMillion": "3.2",
-      "outputTokensPerSecond": "58.22",
-      "openRouterId": "qwen/qwen3.6-27b",
-      "aaSlugs": [
-        "qwen3-6-27b-non-reasoning"
-      ],
-      "aaModelNames": [
-        "Qwen3.6 27B (Non-reasoning)"
-      ]
-    },
-    {
-      "key": "z-ai/glm-5",
-      "epochModel": "GLM-5",
-      "epochDate": "2026-02-11",
-      "eci": "145.8",
-      "eciCiLow": "143.77",
-      "eciCiHigh": "147.67",
-      "inputPricePerMillion": "1",
-      "outputPricePerMillion": "3.2",
-      "outputTokensPerSecond": "71.77",
-      "openRouterId": "z-ai/glm-5",
-      "aaSlugs": [
-        "glm-5"
-      ],
-      "aaModelNames": [
-        "GLM-5 (Reasoning)"
       ]
     },
     {

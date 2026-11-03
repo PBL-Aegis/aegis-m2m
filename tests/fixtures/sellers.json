@@ -1,0 +1,20 @@
+{
+  "note": "테스트 전용 판매 에이전트",
+  "sellers": {
+    "openai": {
+      "name": "테스트 openai 판매 에이전트",
+      "address": "0xF00E8e0ecEF3B405250242F932849edB409497a0",
+      "floorRatio": 0.8
+    },
+    "anthropic": {
+      "name": "테스트 anthropic 판매 에이전트",
+      "address": "0xC77492d3AD5c97B09C6529284e71c417Be8926d8",
+      "floorRatio": 0.85
+    },
+    "google": {
+      "name": "테스트 google 판매 에이전트",
+      "address": "0x5363903850f7AD4bF5FdbceFe9769A9e5b7080E4",
+      "floorRatio": 0.75
+    }
+  }
+}

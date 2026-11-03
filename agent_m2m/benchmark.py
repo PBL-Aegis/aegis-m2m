@@ -36,6 +36,11 @@ def _read_json(file_name: str) -> tuple[Any, str]:
     return json.loads(raw), f"sha256:{hashlib.sha256(raw).hexdigest()}"
 
 
+def load_sellers() -> dict[str, dict[str, Any]]:
+    """회사 → 판매 에이전트 설정(이름·주소·floorRatio)."""
+    return _read_json("sellers.json")[0]["sellers"]
+
+
 def load_snapshot() -> dict[str, Any]:
     """시작값 {snapshot, hash}."""
     snapshot, digest = _read_json("benchmark.json")

@@ -21,6 +21,7 @@ from agent_m2m.payment import PaymentError, pay
 from agent_m2m.priority_llm import infer_priority
 from agent_m2m.provider import mock_result, verify_payment
 from agent_m2m.selection import decide
+from agent_m2m.seller import find_seller
 
 
 def run_purchase(purchase_input: dict[str, Any]) -> PurchaseRecord:
@@ -58,7 +59,8 @@ def run_purchase(purchase_input: dict[str, Any]) -> PurchaseRecord:
 
     # 흥정 — 결렬되면 기록 없이 멈춘다. 합의가를 winner 금액에 넣어 뒤의 감사·결제·확인이 모두 이 값을 본다.
     ask_units = decision["winner"]["amountUnits"]
-    negotiation = negotiate(ask_units, request["budgetUnits"])
+    seller = find_seller(decision["winner"]["providerId"])
+    negotiation = {**negotiate(ask_units, request["budgetUnits"], seller["floorRatio"]), "sellerName": seller["name"]}
     decision["negotiation"] = negotiation
     decision["winner"] = {**decision["winner"], "amountUnits": negotiation["agreedUnits"], "listAmountUnits": ask_units}
 

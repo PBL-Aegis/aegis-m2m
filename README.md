@@ -10,7 +10,7 @@ AI 구매 에이전트가 벤치마크 표로 모델을 고르고 AEGIS 토큰�
 
 1. **요청**: 요청 내용, 예산(AEGIS), 우선순위(싸게·빠르게·똑똑하게), 필요 기능, 요청 번호(`requestId`), 사용자(`userId`). 요청 번호를 비우면 서버가 만듭니다. 우선순위를 비우면 로컬 Qwen이 요청 문장을 읽고 정하고, Qwen이 응답하지 않으면 결제 전에 멈춥니다(503).
 2. **선택**: 후보마다 금액 계산 → 필요 기능으로 거르기 → 가격·속도·성능 점수 → 우선순위별 비중으로 합산 → 고정 규칙으로 동점 처리(`agent_m2m/selection.py`).
-3. **흥정**: 구매 에이전트가 고른 모델의 판매 에이전트와 고정 규칙으로 값을 맞춥니다(`agent_m2m/negotiation.py`, `seller.py`, `strategy.py`). 구매자는 예산과 호가 중 낮은 값을 넘겨 부르지 않고, 판매자는 최저가(판매 단가 × `AEGIS_SELLER_FLOOR_RATIO`, 데모용 값) 아래로 내리지 않습니다. 합의가가 `decision.winner.amountUnits` 가 되어 뒤의 감사·결제·확인이 모두 이 값을 봅니다. 호가는 `listAmountUnits` 에 남습니다. 결렬되면 기록 없이 409 로 멈추고 돈은 나가지 않습니다.
+3. **흥정**: 구매 에이전트가 고른 모델의 판매 에이전트와 고정 규칙으로 값을 맞춥니다(`agent_m2m/negotiation.py`, `seller.py`, `strategy.py`). 판매 에이전트는 `data/sellers.json` 의 세 회사(Anthropic·OpenAI·Google)이고, 판매 목록도 이 세 회사의 모델만 둡니다. 구매자는 예산과 호가 중 낮은 값을 넘겨 부르지 않고, 판매자는 최저가(호가 × 회사별 `floorRatio`) 아래로 내리지 않습니다. `floorRatio` 는 판매자의 비공개 설정으로 보는 데모용 값이고, 0.9 를 넘으면 흥정이 결렬됩니다. 합의가가 `decision.winner.amountUnits` 가 되어 뒤의 감사·결제·확인이 모두 이 값을 봅니다. 호가는 `listAmountUnits` 에 남습니다. 결렬되면 기록 없이 409 로 멈추고 돈은 나가지 않습니다.
 4. **기록(처리 중)**: 결제 직전에 `PROCESSING` 상태로 MongoDB에 먼저 남깁니다.
 5. **감사**: `agent_m2m/rules/` 에 등록한 규칙을 세 자리에서 돌립니다. 막으면 "차단", 알리기만 하면 "경고" 알림이 대시보드의 이상 거래에 뜹니다.
 6. **결제**: ERC-3009 방식입니다. 구매자 지갑이 "이 판매자에게 이 금액을, 이 요청 번호로, 10분 안에만"이라는 내용에 서명만 하고, 중개자 지갑이 AEGIS `transferWithAuthorization` 거래를 보내며 가스비를 냅니다. 그래서 구매자 지갑에는 AEGIS 만 있으면 됩니다. 요청 번호(문자열의 keccak256)가 서명의 일회용 번호(nonce)라 같은 요청 번호는 체인이 한 번만 받습니다. 송금 전에 체인의 감사 규칙(`contracts/src/rules/`)이 한 번 더 검사합니다.
@@ -217,7 +217,6 @@ contract AegisToken is ERC20, EIP712, Ownable, PaymentRules, MaxAmountRule {
 | `AEGIS_RPC_URL` | `https://sepolia.base.org` | RPC |
 | `AEGIS_BUYER_PRIVATE_KEY` | (비움) | 구매자 지갑 개인키. 서명에만 쓰므로 이 지갑에 ETH 는 필요 없음. live에서만 필요 |
 | `AEGIS_RELAYER_PRIVATE_KEY` | (비움) | 결제 거래를 대신 보내는 중개자 지갑 개인키. 가스비용 ETH 만 넣는 새 지갑을 씀. 운영자(토큰 배포·발급) 지갑을 쓰지 않음. live에서만 필요 |
-| `AEGIS_SELLER_FLOOR_RATIO` | `0.8` | 판매 에이전트의 최저가 = 판매 단가 × 이 비율. 데모용 값 |
 | `AA_API_KEY` | (비움) | Artificial Analysis API 키. 속도 값의 자동 갱신·판매 목록 생성에 필요. 없으면 저장된 숫자로 계속 돔 |
 | `MONGODB_URI` | `mongodb://127.0.0.1:27017` | MongoDB 접속 주소 |
 | `MONGODB_DB` | `agent_m2m` | 기록을 담을 데이터베이스 이름 |
@@ -252,7 +251,7 @@ contract AegisToken is ERC20, EIP712, Ownable, PaymentRules, MaxAmountRule {
 
 ```bash
 uv run python scripts/capture_benchmark.py --list   # 저장하지 않고 짝지어진 모델과 뺀 모델만 보기
-uv run python scripts/capture_benchmark.py          # data/catalog.json · benchmark.json · sellers.json 갱신
+uv run python scripts/capture_benchmark.py          # data/catalog.json · benchmark.json 갱신. sellers.json 에 등록된 회사만
 ```
 
 ## 기록 저장소

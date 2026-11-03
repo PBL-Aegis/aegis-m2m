@@ -250,23 +250,6 @@
       ]
     },
     {
-      "key": "x-ai/grok-4.6",
-      "providerId": "x-ai",
-      "providerModelId": "grok-4.6",
-      "displayName": "Grok 4.6",
-      "epochModel": "Grok 4.6",
-      "openRouterId": "x-ai/grok-4.6",
-      "aaSlugs": [
-        "grok-4-6-medium"
-      ],
-      "recipient": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
-      "capabilities": [
-        "reasoning",
-        "tools",
-        "vision"
-      ]
-    },
-    {
       "key": "openai/gpt-5.6-luna",
       "providerId": "openai",
       "providerModelId": "gpt-5.6-luna",
@@ -302,40 +285,6 @@
       ]
     },
     {
-      "key": "meta/muse-spark-open",
-      "providerId": "meta",
-      "providerModelId": "muse-spark-open",
-      "displayName": "Muse Spark Open",
-      "epochModel": "Muse Spark Open",
-      "openRouterId": "meta/muse-spark-open",
-      "aaSlugs": [
-        "muse-spark-open"
-      ],
-      "recipient": "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc",
-      "capabilities": [
-        "reasoning",
-        "tools",
-        "vision"
-      ]
-    },
-    {
-      "key": "meta/muse-spark-1.2",
-      "providerId": "meta",
-      "providerModelId": "muse-spark-1.2",
-      "displayName": "Muse Spark 1.2",
-      "epochModel": "Muse Spark 1.2",
-      "openRouterId": "meta/muse-spark-1.2",
-      "aaSlugs": [
-        "muse-spark-1-2"
-      ],
-      "recipient": "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc",
-      "capabilities": [
-        "reasoning",
-        "tools",
-        "vision"
-      ]
-    },
-    {
       "key": "google/gemini-3.5-flash",
       "providerId": "google",
       "providerModelId": "gemini-3.5-flash",
@@ -354,41 +303,6 @@
       ]
     },
     {
-      "key": "x-ai/grok-4.7",
-      "providerId": "x-ai",
-      "providerModelId": "grok-4.7",
-      "displayName": "Grok 4.7",
-      "epochModel": "Grok 4.7",
-      "openRouterId": "x-ai/grok-4.7",
-      "aaSlugs": [
-        "grok-4-7-high",
-        "grok-4-7-low"
-      ],
-      "recipient": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
-      "capabilities": [
-        "reasoning",
-        "tools",
-        "vision"
-      ]
-    },
-    {
-      "key": "z-ai/glm-5.3-flash",
-      "providerId": "z-ai",
-      "providerModelId": "glm-5.3-flash",
-      "displayName": "GLM-5.3-Flash",
-      "epochModel": "GLM-5.3-Flash",
-      "openRouterId": "z-ai/glm-5.3-flash",
-      "aaSlugs": [
-        "glm-5-3-flash"
-      ],
-      "recipient": "0x976EA74026E726554dB657fA54763abd0C3a0aa9",
-      "capabilities": [
-        "reasoning",
-        "tools",
-        "vision"
-      ]
-    },
-    {
       "key": "anthropic/claude-sonnet-4.6",
       "providerId": "anthropic",
       "providerModelId": "claude-sonnet-4.6",
@@ -399,41 +313,6 @@
         "claude-sonnet-4-6"
       ],
       "recipient": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
-      "capabilities": [
-        "reasoning",
-        "tools",
-        "vision"
-      ]
-    },
-    {
-      "key": "qwen/qwen3.8-27b",
-      "providerId": "qwen",
-      "providerModelId": "qwen3.8-27b",
-      "displayName": "Qwen 3.8 27B",
-      "epochModel": "Qwen 3.8 27B",
-      "openRouterId": "qwen/qwen3.8-27b",
-      "aaSlugs": [
-        "qwen3-8-27b-non-reasoning"
-      ],
-      "recipient": "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955",
-      "capabilities": [
-        "reasoning",
-        "tools",
-        "vision"
-      ]
-    },
-    {
-      "key": "moonshotai/kimi-k2.6",
-      "providerId": "moonshotai",
-      "providerModelId": "kimi-k2.6",
-      "displayName": "Kimi K2.6",
-      "epochModel": "Kimi K2.6",
-      "openRouterId": "moonshotai/kimi-k2.6",
-      "aaSlugs": [
-        "kimi-k2-6",
-        "kimi-k2-6-non-reasoning"
-      ],
-      "recipient": "0xFABB0ac9d68B0B445fB7357272Ff202C5651694a",
       "capabilities": [
         "reasoning",
         "tools",
@@ -476,58 +355,6 @@
       ]
     },
     {
-      "key": "thinkingmachines/inkling",
-      "providerId": "thinkingmachines",
-      "providerModelId": "inkling",
-      "displayName": "Inkling",
-      "epochModel": "Inkling",
-      "openRouterId": "thinkingmachines/inkling",
-      "aaSlugs": [
-        "inkling"
-      ],
-      "recipient": "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f",
-      "capabilities": [
-        "reasoning",
-        "tools",
-        "vision"
-      ]
-    },
-    {
-      "key": "minimax/minimax-m3",
-      "providerId": "minimax",
-      "providerModelId": "minimax-m3",
-      "displayName": "MiniMax-M3",
-      "epochModel": "MiniMax-M3",
-      "openRouterId": "minimax/minimax-m3",
-      "aaSlugs": [
-        "minimax-m3"
-      ],
-      "recipient": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
-      "capabilities": [
-        "reasoning",
-        "tools",
-        "vision"
-      ]
-    },
-    {
-      "key": "qwen/qwen3.5-397b-a17b",
-      "providerId": "qwen",
-      "providerModelId": "qwen3.5-397b-a17b",
-      "displayName": "Qwen3.5 397B-A17B",
-      "epochModel": "Qwen3.5 397B-A17B",
-      "openRouterId": "qwen/qwen3.5-397b-a17b",
-      "aaSlugs": [
-        "qwen3-5-397b-a17b",
-        "qwen3-5-397b-a17b-non-reasoning"
-      ],
-      "recipient": "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955",
-      "capabilities": [
-        "reasoning",
-        "tools",
-        "vision"
-      ]
-    },
-    {
       "key": "openai/o3",
       "providerId": "openai",
       "providerModelId": "o3",
@@ -542,55 +369,6 @@
         "reasoning",
         "tools",
         "vision"
-      ]
-    },
-    {
-      "key": "minimax/minimax-m2.5",
-      "providerId": "minimax",
-      "providerModelId": "minimax-m2.5",
-      "displayName": "MiniMax-M2.5",
-      "epochModel": "MiniMax-M2.5",
-      "openRouterId": "minimax/minimax-m2.5",
-      "aaSlugs": [
-        "minimax-m2-5"
-      ],
-      "recipient": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
-      "capabilities": [
-        "reasoning",
-        "tools"
-      ]
-    },
-    {
-      "key": "qwen/qwen3.6-27b",
-      "providerId": "qwen",
-      "providerModelId": "qwen3.6-27b",
-      "displayName": "Qwen3.6 27B",
-      "epochModel": "Qwen3.6 27B",
-      "openRouterId": "qwen/qwen3.6-27b",
-      "aaSlugs": [
-        "qwen3-6-27b-non-reasoning"
-      ],
-      "recipient": "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955",
-      "capabilities": [
-        "reasoning",
-        "tools",
-        "vision"
-      ]
-    },
-    {
-      "key": "z-ai/glm-5",
-      "providerId": "z-ai",
-      "providerModelId": "glm-5",
-      "displayName": "GLM-5",
-      "epochModel": "GLM-5",
-      "openRouterId": "z-ai/glm-5",
-      "aaSlugs": [
-        "glm-5"
-      ],
-      "recipient": "0x976EA74026E726554dB657fA54763abd0C3a0aa9",
-      "capabilities": [
-        "reasoning",
-        "tools"
       ]
     },
     {
@@ -1564,6 +1342,58 @@
     {
       "name": "stablelm-tuned-alpha-7b",
       "reason": "최소 성능 기준(ECI 140) 미만: 54.81"
+    },
+    {
+      "name": "Grok 4.6",
+      "reason": "판매 에이전트 없음: x-ai"
+    },
+    {
+      "name": "Muse Spark Open",
+      "reason": "판매 에이전트 없음: meta"
+    },
+    {
+      "name": "Muse Spark 1.2",
+      "reason": "판매 에이전트 없음: meta"
+    },
+    {
+      "name": "Grok 4.7",
+      "reason": "판매 에이전트 없음: x-ai"
+    },
+    {
+      "name": "GLM-5.3-Flash",
+      "reason": "판매 에이전트 없음: z-ai"
+    },
+    {
+      "name": "Qwen 3.8 27B",
+      "reason": "판매 에이전트 없음: qwen"
+    },
+    {
+      "name": "Kimi K2.6",
+      "reason": "판매 에이전트 없음: moonshotai"
+    },
+    {
+      "name": "Inkling",
+      "reason": "판매 에이전트 없음: thinkingmachines"
+    },
+    {
+      "name": "MiniMax-M3",
+      "reason": "판매 에이전트 없음: minimax"
+    },
+    {
+      "name": "Qwen3.5 397B-A17B",
+      "reason": "판매 에이전트 없음: qwen"
+    },
+    {
+      "name": "MiniMax-M2.5",
+      "reason": "판매 에이전트 없음: minimax"
+    },
+    {
+      "name": "Qwen3.6 27B",
+      "reason": "판매 에이전트 없음: qwen"
+    },
+    {
+      "name": "GLM-5",
+      "reason": "판매 에이전트 없음: z-ai"
     }
   ]
 }

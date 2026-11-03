@@ -1,13 +1,17 @@
 """
 판매 에이전트. 호가에서 시작해 구매 에이전트의 제안에 답한다.
 
+판매 에이전트는 data/sellers.json 에 등록된 회사마다 하나다. 호가는 토큰 단가로 계산하고, 최저가는 호가 × floorRatio 다.
+floorRatio 는 판매자가 스스로 정해 공개하지 않는 값으로 본다. 실제 판매 회사가 낸 값이 아니라 데모용 설정값이다.
+구매자는 호가의 REQUIRED_DISCOUNT(10%) 이상 내려온 판매자에게만 끝까지 값을 올리므로, 0.9 를 넘으면 흥정이 결렬된다.
+
 최저가는 이 객체 안에만 있고 답에도 기록에도 나가지 않는다. 구매 쪽은 판매자가 부른 값만 본다.
-실제 판매 회사가 정한 값은 없으므로, 최저가는 판매 단가에 AEGIS_SELLER_FLOOR_RATIO 를 곱한 데모용 값이다.
 """
 
 import math
-import os
+from typing import Any
 
+from agent_m2m.benchmark import load_sellers
 from agent_m2m.format import aegis_text
 from agent_m2m.strategy import price_step, seller_reply
 
@@ -16,21 +20,21 @@ class GuardrailError(Exception):
     """세이프가드가 막았다. 이 값으로는 답하거나 제안하지 않는다."""
 
 
-def floor_ratio() -> float:
-    text = os.environ.get("AEGIS_SELLER_FLOOR_RATIO") or "0.8"
-    try:
-        ratio = float(text)
-    except ValueError as error:
-        raise ValueError(f"AEGIS_SELLER_FLOOR_RATIO 는 숫자여야 합니다: {text}") from error
-    if not 0 < ratio <= 1:
-        raise ValueError(f"AEGIS_SELLER_FLOOR_RATIO 는 0 초과 1 이하여야 합니다: {text}")
-    return ratio
+def find_seller(provider_id: str) -> dict[str, Any]:
+    """이 회사의 판매 에이전트 설정. 등록되지 않은 회사거나 비율이 틀리면 ValueError."""
+    seller = load_sellers().get(provider_id)
+    if seller is None:
+        raise ValueError(f"판매 에이전트가 없는 회사입니다: {provider_id}")
+    ratio = seller.get("floorRatio")
+    if isinstance(ratio, bool) or not isinstance(ratio, (int, float)) or not 0 < ratio <= 1:
+        raise ValueError(f"{provider_id} 의 floorRatio 는 0 초과 1 이하여야 합니다: {ratio}")
+    return seller
 
 
 class SellerAgent:
-    def __init__(self, ask_units: int) -> None:
+    def __init__(self, ask_units: int, floor_ratio: float) -> None:
         self.ask_units = ask_units
-        self._floor_units = math.ceil(ask_units * floor_ratio())
+        self._floor_units = math.ceil(ask_units * floor_ratio)
         self._last_counter = ask_units
         self._last_offer: int | None = None
         self._rounds = 0

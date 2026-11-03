@@ -26,11 +26,12 @@ def _check_buyer_price(price: int, max_units: int) -> None:
         raise GuardrailError(f"구매 세이프가드: 최대가보다 높은 값입니다: {aegis_text(price)}")
 
 
-def negotiate(ask_units: int, budget_units: int) -> dict[str, Any]:
-    """호가에서 시작해 합의가를 찾는다. 합의하면 합의가와 대화 기록을 돌려주고, 못 하면 NegotiationError."""
+def negotiate(ask_units: int, budget_units: int, floor_ratio: float) -> dict[str, Any]:
+    """호가에서 시작해 합의가를 찾는다. floor_ratio 는 판매 에이전트만 쓴다.
+    합의하면 합의가와 대화 기록을 돌려주고, 못 하면 NegotiationError."""
     max_units = min(budget_units, ask_units)
     step = price_step(ask_units)
-    seller = SellerAgent(ask_units)
+    seller = SellerAgent(ask_units, floor_ratio)
     transcript: list[dict[str, Any]] = []
 
     def say(speaker: str, action: str, price: int, text: str) -> None:

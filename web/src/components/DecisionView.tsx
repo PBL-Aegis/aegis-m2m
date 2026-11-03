@@ -90,7 +90,7 @@ export function PurchaseSummary({ record }: { record: PurchaseRecord }) {
               <tbody>
                 {decision.negotiation.transcript.map((turn, index) => (
                   <tr key={index}>
-                    <td>{turn.from === "buyer" ? "구매 에이전트" : "판매 에이전트"}</td>
+                    <td>{turn.from === "buyer" ? "구매 에이전트" : decision.negotiation?.sellerName}</td>
                     <td>{turn.text}</td>
                     <td className="num">{toAegis(turn.priceUnits)}</td>
                   </tr>
