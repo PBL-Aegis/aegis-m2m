@@ -5,7 +5,7 @@
       "name": "Anthropic 판매 에이전트",
       "index": 2,
       "address": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
-      "floorRatio": 0.85,
+      "floorRatio": 0.8,
       "models": [
         "Claude Haiku 5.5",
         "Claude Opus 5.5"

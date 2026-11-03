@@ -95,7 +95,7 @@ def test_실제_판매_목록은_두_판매_에이전트의_4개_모델이고_�
     registry = json.loads((data / "sellers.json").read_text())
     sellers = registry["sellers"]
     assert set(sellers) == {"anthropic", "openai"}
-    assert all(0 < seller["floorRatio"] <= 0.9 for seller in sellers.values())
+    assert {seller["floorRatio"] for seller in sellers.values()} == {0.8}
     entries = json.loads((data / "catalog.json").read_text())["entries"]
     assert len(entries) == 4
     assert all(entry["displayName"] in sellers[entry["providerId"]]["models"] for entry in entries)
@@ -108,8 +108,8 @@ def test_실제_판매_목록은_두_판매_에이전트의_4개_모델이고_�
     assert registry["priorityModels"]["default"] == ["anthropic/claude-haiku-5.5"]
 
 
-def candidate(provider: str, key: str, amount: int) -> dict:
-    return {"key": key, "displayName": key, "providerId": provider, "amountUnits": amount}
+def candidate(provider: str, key: str, amount: int, eci: float = 150) -> dict:
+    return {"key": key, "displayName": key, "providerId": provider, "amountUnits": amount, "eci": eci}
 
 
 def use_table(monkeypatch, table: dict) -> None:
@@ -133,6 +133,16 @@ def test_여러_모델과_흥정해_합의가가_가장_낮은_곳에서_사고_
     assert {quote["key"]: quote["status"] for quote in result["quotes"]} == {"a": "cancelled", "b": "agreed"}
     cancelled = next(quote for quote in result["quotes"] if quote["key"] == "a")
     assert cancelled["transcript"][-1]["action"] == "reject"
+
+
+def test_합의가가_같으면_표_순서와_상관없이_성능이_높은_모델을_산다(monkeypatch):
+    use_table(monkeypatch, {"price": ["low", "high"]})
+    candidates = [candidate("openai", "low", 4_001, eci=150), candidate("openai", "high", 4_001, eci=160)]
+    result = shop(candidates, "price", LARGE_BUDGET)
+    assert result["winner"]["key"] == "high"
+    over = shop(candidates, "price", 3_300)
+    assert over["winner"]["key"] == "high"
+    assert over["negotiation"]["overBudget"] is True
 
 
 def test_일부가_결렬돼도_합의한_곳에서_산다(monkeypatch):
