@@ -6,7 +6,7 @@ agent_m2m/benchmark_sources.py 에 있고, 앱도 구매 때 같은 로직으로
   uv run python scripts/capture_benchmark.py --list   저장하지 않고 짝지어진 모델과 뺀 모델만 보여 줌
 
 판매 목록이 바뀌는 곳은 여기뿐이다. 결과를 확인하고 커밋한다.
-판매 에이전트는 data/sellers.json 에 사람이 등록한다. 등록된 회사의 모델만 판매 목록에 넣고, 이 파일은 고치지 않는다.
+판매 에이전트와 파는 모델은 data/sellers.json 에 사람이 등록한다. 등록된 모델만 판매 목록에 넣고, 이 파일은 고치지 않는다.
 AA 키는 .env.local 의 AA_API_KEY 에서만 읽고, 저장 파일에는 넣지 않는다.
 """
 
@@ -41,12 +41,16 @@ def main() -> None:
         return sellers[provider_id]["address"] if provider_id in sellers else ""
 
     catalog = build_catalog(epoch_rows, openrouter_models, aa_models, recipient_of)
+
+    def is_sold(entry: dict[str, object]) -> bool:
+        return entry["displayName"] in sellers.get(entry["providerId"], {}).get("models", [])
+
     catalog["excluded"] += [
-        {"name": entry["displayName"], "reason": f"판매 에이전트 없음: {entry['providerId']}"}
+        {"name": entry["displayName"], "reason": f"판매 에이전트가 팔지 않는 모델: {entry['providerId']}"}
         for entry in catalog["entries"]
-        if entry["providerId"] not in sellers
+        if not is_sold(entry)
     ]
-    catalog["entries"] = [entry for entry in catalog["entries"] if entry["providerId"] in sellers]
+    catalog["entries"] = [entry for entry in catalog["entries"] if is_sold(entry)]
     snapshot = build_snapshot(catalog, epoch_rows, openrouter_models, aa_models)
 
     print(f"짝지어진 모델 {len(catalog['entries'])}개 · 뺀 모델 {len(catalog['excluded'])}개 (Epoch {len(epoch_rows)}개 중)")

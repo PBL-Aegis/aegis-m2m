@@ -162,11 +162,15 @@ export interface NegotiationTurn {
 
 /** 구매 에이전트와 판매 에이전트의 흥정 결과. 판매자의 최저가는 담기지 않는다. */
 export interface Negotiation {
-  status: "agreed";
+  key: string;
+  displayName: string;
   sellerName: string;
+  /** agreed 는 산 곳, cancelled 는 합의했지만 더 싼 곳이 있어 취소한 곳, no-deal 은 결렬된 곳이다. */
+  status: "agreed" | "cancelled" | "no-deal" | "blocked";
   askUnits: number;
   maxUnits: number;
-  agreedUnits: number;
+  /** 결렬된 곳에는 없다. */
+  agreedUnits?: number;
   transcript: NegotiationTurn[];
 }
 
@@ -218,8 +222,10 @@ export interface Decision {
   rejected: RejectedCandidate[];
   /** amountUnits 는 합의가, listAmountUnits 는 호가다. 흥정이 생기기 전 기록에는 listAmountUnits 가 없다. */
   winner: ScoredCandidate & { listAmountUnits?: number };
-  /** 이 칸이 생기기 전 기록에는 없다. */
+  /** 산 곳과의 흥정. 이 칸이 생기기 전 기록에는 없다. */
   negotiation?: Negotiation;
+  /** 후보로 남아 흥정한 곳 전부. 이 칸이 생기기 전 기록에는 없다. */
+  quotes?: Negotiation[];
 }
 
 /** local 은 이 컴퓨터의 anvil(자동 테스트 포함), live 는 Base Sepolia. 예전 기록에는 체인 없이 흐름만 잇던 "mock" 이 남아 있을 수 있다. */

@@ -75,6 +75,36 @@ export function PurchaseSummary({ record }: { record: PurchaseRecord }) {
         </tbody>
       </table>
 
+      {decision.quotes === undefined ? null : (
+        <>
+          <h2>비교한 판매자</h2>
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>판매자</th>
+                  <th>모델</th>
+                  <th className="num">호가 (AEGIS)</th>
+                  <th className="num">합의 (AEGIS)</th>
+                  <th>결과</th>
+                </tr>
+              </thead>
+              <tbody>
+                {decision.quotes.map((quote) => (
+                  <tr key={quote.key} className={quote.status === "agreed" ? "winner" : undefined}>
+                    <td>{quote.sellerName}</td>
+                    <td>{quote.displayName}</td>
+                    <td className="num">{toAegis(quote.askUnits)}</td>
+                    <td className="num">{quote.agreedUnits === undefined ? "-" : toAegis(quote.agreedUnits)}</td>
+                    <td>{quote.status === "agreed" ? "구매" : quote.status === "cancelled" ? "취소" : "결렬"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+
       {decision.negotiation === undefined ? null : (
         <>
           <h2>흥정</h2>

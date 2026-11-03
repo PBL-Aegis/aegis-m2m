@@ -28,26 +28,6 @@
       ]
     },
     {
-      "key": "openai/gpt-6-astra",
-      "epochModel": "GPT-6 Astra",
-      "epochDate": "2026-09-03",
-      "eci": "168.81",
-      "eciCiLow": "165.45",
-      "eciCiHigh": "174.51",
-      "inputPricePerMillion": "10",
-      "outputPricePerMillion": "50",
-      "outputTokensPerSecond": "67.57",
-      "openRouterId": "openai/gpt-6-astra",
-      "aaSlugs": [
-        "gpt-6-astra",
-        "gpt-6-astra-xhigh"
-      ],
-      "aaModelNames": [
-        "GPT-6 Astra (Max)",
-        "GPT-6 Astra (Xhigh)"
-      ]
-    },
-    {
       "key": "openai/gpt-6.1-sol",
       "epochModel": "GPT-6.1 Sol",
       "epochDate": "2026-09-29",
@@ -65,28 +45,6 @@
       "aaModelNames": [
         "GPT-6.1 Sol (High)",
         "GPT-6.1 Sol (Xhigh)"
-      ]
-    },
-    {
-      "key": "anthropic/claude-fable-5.1",
-      "epochModel": "Claude Fable 5.1",
-      "epochDate": "2026-09-01",
-      "eci": "166.49",
-      "eciCiLow": "163.47",
-      "eciCiHigh": "171.35",
-      "inputPricePerMillion": "10",
-      "outputPricePerMillion": "50",
-      "outputTokensPerSecond": "60.72",
-      "openRouterId": "anthropic/claude-fable-5.1",
-      "aaSlugs": [
-        "claude-fable-5-1",
-        "claude-fable-5-1-low",
-        "claude-fable-5-1-medium"
-      ],
-      "aaModelNames": [
-        "Claude Fable 5.1 (Max, Default Fallback)",
-        "Claude Fable 5.1 (Low, Default Fallback)",
-        "Claude Fable 5.1 (Medium, Default Fallback)"
       ]
     },
     {
@@ -110,26 +68,6 @@
       ]
     },
     {
-      "key": "anthropic/claude-opus-5",
-      "epochModel": "Claude Opus 5",
-      "epochDate": "2026-07-24",
-      "eci": "163.94",
-      "eciCiLow": "161.12",
-      "eciCiHigh": "168.24",
-      "inputPricePerMillion": "5",
-      "outputPricePerMillion": "25",
-      "outputTokensPerSecond": "52.63",
-      "openRouterId": "anthropic/claude-opus-5",
-      "aaSlugs": [
-        "claude-opus-5-low",
-        "claude-opus-5-xhigh"
-      ],
-      "aaModelNames": [
-        "Claude Opus 5 (Low)",
-        "Claude Opus 5 (Xhigh)"
-      ]
-    },
-    {
       "key": "openai/gpt-6-sol",
       "epochModel": "GPT-6 Sol",
       "epochDate": "2026-09-22",
@@ -145,60 +83,6 @@
       ],
       "aaModelNames": [
         "GPT-6 Sol (Low)"
-      ]
-    },
-    {
-      "key": "openai/gpt-5.6-sol",
-      "epochModel": "GPT-5.6 Sol",
-      "epochDate": "2026-07-09",
-      "eci": "162.79",
-      "eciCiLow": "160.15",
-      "eciCiHigh": "167.06",
-      "inputPricePerMillion": "4",
-      "outputPricePerMillion": "20",
-      "outputTokensPerSecond": "79.12",
-      "openRouterId": "openai/gpt-5.6-sol",
-      "aaSlugs": [
-        "gpt-5-6-sol-low"
-      ],
-      "aaModelNames": [
-        "GPT-5.6 Sol (Low)"
-      ]
-    },
-    {
-      "key": "openai/gpt-5.6-terra",
-      "epochModel": "GPT-5.6 Terra",
-      "epochDate": "2026-07-09",
-      "eci": "160.09",
-      "eciCiLow": "157.3",
-      "eciCiHigh": "163.31",
-      "inputPricePerMillion": "2",
-      "outputPricePerMillion": "12",
-      "outputTokensPerSecond": "119.89",
-      "openRouterId": "openai/gpt-5.6-terra",
-      "aaSlugs": [
-        "gpt-5-6-terra-medium"
-      ],
-      "aaModelNames": [
-        "GPT-5.6 Terra (Medium)"
-      ]
-    },
-    {
-      "key": "openai/gpt-5.5",
-      "epochModel": "GPT-5.5",
-      "epochDate": "2026-04-23",
-      "eci": "159.68",
-      "eciCiLow": "157.33",
-      "eciCiHigh": "163.67",
-      "inputPricePerMillion": "5",
-      "outputPricePerMillion": "30",
-      "outputTokensPerSecond": "89.88",
-      "openRouterId": "openai/gpt-5.5",
-      "aaSlugs": [
-        "gpt-5-5"
-      ],
-      "aaModelNames": [
-        "GPT-5.5 (Xhigh)"
       ]
     },
     {
@@ -224,44 +108,6 @@
       ]
     },
     {
-      "key": "anthropic/claude-sonnet-5",
-      "epochModel": "Claude Sonnet 5",
-      "epochDate": "2026-06-30",
-      "eci": "156.88",
-      "eciCiLow": "154.1",
-      "eciCiHigh": "159.65",
-      "inputPricePerMillion": "2",
-      "outputPricePerMillion": "10",
-      "outputTokensPerSecond": "75.32",
-      "openRouterId": "anthropic/claude-sonnet-5",
-      "aaSlugs": [
-        "claude-sonnet-5",
-        "claude-sonnet-5-low"
-      ],
-      "aaModelNames": [
-        "Claude Sonnet 5 (Max)",
-        "Claude Sonnet 5 (Low)"
-      ]
-    },
-    {
-      "key": "anthropic/claude-opus-4.7",
-      "epochModel": "Claude Opus 4.7",
-      "epochDate": "2026-04-16",
-      "eci": "156.79",
-      "eciCiLow": "154.91",
-      "eciCiHigh": "159.19",
-      "inputPricePerMillion": "5",
-      "outputPricePerMillion": "25",
-      "outputTokensPerSecond": "48.69",
-      "openRouterId": "anthropic/claude-opus-4.7",
-      "aaSlugs": [
-        "claude-opus-4-7-non-reasoning"
-      ],
-      "aaModelNames": [
-        "Claude Opus 4.7 (Non-reasoning, High)"
-      ]
-    },
-    {
       "key": "openai/gpt-6-luna",
       "epochModel": "GPT-6 Luna",
       "epochDate": "2026-09-22",
@@ -277,44 +123,6 @@
       ],
       "aaModelNames": [
         "GPT-6 Luna (Xhigh)"
-      ]
-    },
-    {
-      "key": "openai/gpt-5.6-luna",
-      "epochModel": "GPT-5.6 Luna",
-      "epochDate": "2026-07-09",
-      "eci": "156.5",
-      "eciCiLow": "154.19",
-      "eciCiHigh": "159.26",
-      "inputPricePerMillion": "0.2",
-      "outputPricePerMillion": "1.2",
-      "outputTokensPerSecond": "120.82",
-      "openRouterId": "openai/gpt-5.6-luna",
-      "aaSlugs": [
-        "gpt-5-6-luna",
-        "gpt-5-6-luna-low"
-      ],
-      "aaModelNames": [
-        "GPT-5.6 Luna (Max)",
-        "GPT-5.6 Luna (Low)"
-      ]
-    },
-    {
-      "key": "anthropic/claude-opus-4.6",
-      "epochModel": "Claude Opus 4.6",
-      "epochDate": "2026-02-05",
-      "eci": "155.66",
-      "eciCiLow": "153.82",
-      "eciCiHigh": "158.07",
-      "inputPricePerMillion": "5",
-      "outputPricePerMillion": "25",
-      "outputTokensPerSecond": "43.25",
-      "openRouterId": "anthropic/claude-opus-4.6",
-      "aaSlugs": [
-        "claude-opus-4-6"
-      ],
-      "aaModelNames": [
-        "Claude Opus 4.6 (Non-reasoning, High)"
       ]
     },
     {
@@ -335,98 +143,6 @@
       "aaModelNames": [
         "Gemini 3.5 Flash (High)",
         "Gemini 3.5 Flash (Minimal)"
-      ]
-    },
-    {
-      "key": "anthropic/claude-sonnet-4.6",
-      "epochModel": "Claude Sonnet 4.6",
-      "epochDate": "2026-02-17",
-      "eci": "152.79",
-      "eciCiLow": "150.2",
-      "eciCiHigh": "155.06",
-      "inputPricePerMillion": "3",
-      "outputPricePerMillion": "15",
-      "outputTokensPerSecond": "51.01",
-      "openRouterId": "anthropic/claude-sonnet-4.6",
-      "aaSlugs": [
-        "claude-sonnet-4-6"
-      ],
-      "aaModelNames": [
-        "Claude Sonnet 4.6 (Non-reasoning, High)"
-      ]
-    },
-    {
-      "key": "anthropic/claude-opus-4.5",
-      "epochModel": "Claude Opus 4.5",
-      "epochDate": "2025-11-24",
-      "eci": "150.11",
-      "eciCiLow": "147.81",
-      "eciCiHigh": "153.01",
-      "inputPricePerMillion": "5",
-      "outputPricePerMillion": "25",
-      "outputTokensPerSecond": "52.94",
-      "openRouterId": "anthropic/claude-opus-4.5",
-      "aaSlugs": [
-        "claude-opus-4-5",
-        "claude-opus-4-5-thinking"
-      ],
-      "aaModelNames": [
-        "Claude Opus 4.5 (Non-reasoning)",
-        "Claude Opus 4.5 (Reasoning)"
-      ]
-    },
-    {
-      "key": "openai/gpt-5.4-mini",
-      "epochModel": "GPT-5.4 Mini",
-      "epochDate": "2026-03-17",
-      "eci": "148.7",
-      "eciCiLow": "146.87",
-      "eciCiHigh": "150.47",
-      "inputPricePerMillion": "0.75",
-      "outputPricePerMillion": "4.5",
-      "outputTokensPerSecond": "238.84",
-      "openRouterId": "openai/gpt-5.4-mini",
-      "aaSlugs": [
-        "gpt-5-4-mini-medium"
-      ],
-      "aaModelNames": [
-        "GPT-5.4 mini (Medium)"
-      ]
-    },
-    {
-      "key": "openai/o3",
-      "epochModel": "o3",
-      "epochDate": "2025-04-16",
-      "eci": "146.73",
-      "eciCiLow": "144.83",
-      "eciCiHigh": "148.52",
-      "inputPricePerMillion": "2",
-      "outputPricePerMillion": "8",
-      "outputTokensPerSecond": "167.82",
-      "openRouterId": "openai/o3",
-      "aaSlugs": [
-        "o3"
-      ],
-      "aaModelNames": [
-        "o3"
-      ]
-    },
-    {
-      "key": "openai/gpt-5-mini",
-      "epochModel": "GPT-5 mini",
-      "epochDate": "2025-08-07",
-      "eci": "145.34",
-      "eciCiLow": "143.33",
-      "eciCiHigh": "147.11",
-      "inputPricePerMillion": "0.25",
-      "outputPricePerMillion": "2",
-      "outputTokensPerSecond": "105.5",
-      "openRouterId": "openai/gpt-5-mini",
-      "aaSlugs": [
-        "gpt-5-mini"
-      ],
-      "aaModelNames": [
-        "GPT-5 mini (High)"
       ]
     },
     {

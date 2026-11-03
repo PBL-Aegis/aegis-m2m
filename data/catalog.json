@@ -20,24 +20,6 @@
       ]
     },
     {
-      "key": "openai/gpt-6-astra",
-      "providerId": "openai",
-      "providerModelId": "gpt-6-astra",
-      "displayName": "GPT-6 Astra",
-      "epochModel": "GPT-6 Astra",
-      "openRouterId": "openai/gpt-6-astra",
-      "aaSlugs": [
-        "gpt-6-astra",
-        "gpt-6-astra-xhigh"
-      ],
-      "recipient": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
-      "capabilities": [
-        "reasoning",
-        "tools",
-        "vision"
-      ]
-    },
-    {
       "key": "openai/gpt-6.1-sol",
       "providerId": "openai",
       "providerModelId": "gpt-6.1-sol",
@@ -49,25 +31,6 @@
         "gpt-6-1-sol-xhigh"
       ],
       "recipient": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
-      "capabilities": [
-        "reasoning",
-        "tools",
-        "vision"
-      ]
-    },
-    {
-      "key": "anthropic/claude-fable-5.1",
-      "providerId": "anthropic",
-      "providerModelId": "claude-fable-5.1",
-      "displayName": "Claude Fable 5.1",
-      "epochModel": "Claude Fable 5.1",
-      "openRouterId": "anthropic/claude-fable-5.1",
-      "aaSlugs": [
-        "claude-fable-5-1",
-        "claude-fable-5-1-low",
-        "claude-fable-5-1-medium"
-      ],
-      "recipient": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
       "capabilities": [
         "reasoning",
         "tools",
@@ -93,24 +56,6 @@
       ]
     },
     {
-      "key": "anthropic/claude-opus-5",
-      "providerId": "anthropic",
-      "providerModelId": "claude-opus-5",
-      "displayName": "Claude Opus 5",
-      "epochModel": "Claude Opus 5",
-      "openRouterId": "anthropic/claude-opus-5",
-      "aaSlugs": [
-        "claude-opus-5-low",
-        "claude-opus-5-xhigh"
-      ],
-      "recipient": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
-      "capabilities": [
-        "reasoning",
-        "tools",
-        "vision"
-      ]
-    },
-    {
       "key": "openai/gpt-6-sol",
       "providerId": "openai",
       "providerModelId": "gpt-6-sol",
@@ -119,57 +64,6 @@
       "openRouterId": "openai/gpt-6-sol",
       "aaSlugs": [
         "gpt-6-sol-low"
-      ],
-      "recipient": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
-      "capabilities": [
-        "reasoning",
-        "tools",
-        "vision"
-      ]
-    },
-    {
-      "key": "openai/gpt-5.6-sol",
-      "providerId": "openai",
-      "providerModelId": "gpt-5.6-sol",
-      "displayName": "GPT-5.6 Sol",
-      "epochModel": "GPT-5.6 Sol",
-      "openRouterId": "openai/gpt-5.6-sol",
-      "aaSlugs": [
-        "gpt-5-6-sol-low"
-      ],
-      "recipient": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
-      "capabilities": [
-        "reasoning",
-        "tools",
-        "vision"
-      ]
-    },
-    {
-      "key": "openai/gpt-5.6-terra",
-      "providerId": "openai",
-      "providerModelId": "gpt-5.6-terra",
-      "displayName": "GPT-5.6 Terra",
-      "epochModel": "GPT-5.6 Terra",
-      "openRouterId": "openai/gpt-5.6-terra",
-      "aaSlugs": [
-        "gpt-5-6-terra-medium"
-      ],
-      "recipient": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
-      "capabilities": [
-        "reasoning",
-        "tools",
-        "vision"
-      ]
-    },
-    {
-      "key": "openai/gpt-5.5",
-      "providerId": "openai",
-      "providerModelId": "gpt-5.5",
-      "displayName": "GPT-5.5",
-      "epochModel": "GPT-5.5",
-      "openRouterId": "openai/gpt-5.5",
-      "aaSlugs": [
-        "gpt-5-5"
       ],
       "recipient": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
       "capabilities": [
@@ -198,41 +92,6 @@
       ]
     },
     {
-      "key": "anthropic/claude-sonnet-5",
-      "providerId": "anthropic",
-      "providerModelId": "claude-sonnet-5",
-      "displayName": "Claude Sonnet 5",
-      "epochModel": "Claude Sonnet 5",
-      "openRouterId": "anthropic/claude-sonnet-5",
-      "aaSlugs": [
-        "claude-sonnet-5",
-        "claude-sonnet-5-low"
-      ],
-      "recipient": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
-      "capabilities": [
-        "reasoning",
-        "tools",
-        "vision"
-      ]
-    },
-    {
-      "key": "anthropic/claude-opus-4.7",
-      "providerId": "anthropic",
-      "providerModelId": "claude-opus-4.7",
-      "displayName": "Claude Opus 4.7",
-      "epochModel": "Claude Opus 4.7",
-      "openRouterId": "anthropic/claude-opus-4.7",
-      "aaSlugs": [
-        "claude-opus-4-7-non-reasoning"
-      ],
-      "recipient": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
-      "capabilities": [
-        "reasoning",
-        "tools",
-        "vision"
-      ]
-    },
-    {
       "key": "openai/gpt-6-luna",
       "providerId": "openai",
       "providerModelId": "gpt-6-luna",
@@ -243,41 +102,6 @@
         "gpt-6-luna-xhigh"
       ],
       "recipient": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
-      "capabilities": [
-        "reasoning",
-        "tools",
-        "vision"
-      ]
-    },
-    {
-      "key": "openai/gpt-5.6-luna",
-      "providerId": "openai",
-      "providerModelId": "gpt-5.6-luna",
-      "displayName": "GPT-5.6 Luna",
-      "epochModel": "GPT-5.6 Luna",
-      "openRouterId": "openai/gpt-5.6-luna",
-      "aaSlugs": [
-        "gpt-5-6-luna",
-        "gpt-5-6-luna-low"
-      ],
-      "recipient": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
-      "capabilities": [
-        "reasoning",
-        "tools",
-        "vision"
-      ]
-    },
-    {
-      "key": "anthropic/claude-opus-4.6",
-      "providerId": "anthropic",
-      "providerModelId": "claude-opus-4.6",
-      "displayName": "Claude Opus 4.6",
-      "epochModel": "Claude Opus 4.6",
-      "openRouterId": "anthropic/claude-opus-4.6",
-      "aaSlugs": [
-        "claude-opus-4-6"
-      ],
-      "recipient": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
       "capabilities": [
         "reasoning",
         "tools",
@@ -296,92 +120,6 @@
         "gemini-3-5-flash-minimal"
       ],
       "recipient": "0xBcd4042DE499D14e55001CcbB24a551F3b954096",
-      "capabilities": [
-        "reasoning",
-        "tools",
-        "vision"
-      ]
-    },
-    {
-      "key": "anthropic/claude-sonnet-4.6",
-      "providerId": "anthropic",
-      "providerModelId": "claude-sonnet-4.6",
-      "displayName": "Claude Sonnet 4.6",
-      "epochModel": "Claude Sonnet 4.6",
-      "openRouterId": "anthropic/claude-sonnet-4.6",
-      "aaSlugs": [
-        "claude-sonnet-4-6"
-      ],
-      "recipient": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
-      "capabilities": [
-        "reasoning",
-        "tools",
-        "vision"
-      ]
-    },
-    {
-      "key": "anthropic/claude-opus-4.5",
-      "providerId": "anthropic",
-      "providerModelId": "claude-opus-4.5",
-      "displayName": "Claude Opus 4.5",
-      "epochModel": "Claude Opus 4.5",
-      "openRouterId": "anthropic/claude-opus-4.5",
-      "aaSlugs": [
-        "claude-opus-4-5",
-        "claude-opus-4-5-thinking"
-      ],
-      "recipient": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
-      "capabilities": [
-        "reasoning",
-        "tools",
-        "vision"
-      ]
-    },
-    {
-      "key": "openai/gpt-5.4-mini",
-      "providerId": "openai",
-      "providerModelId": "gpt-5.4-mini",
-      "displayName": "GPT-5.4 Mini",
-      "epochModel": "GPT-5.4 Mini",
-      "openRouterId": "openai/gpt-5.4-mini",
-      "aaSlugs": [
-        "gpt-5-4-mini-medium"
-      ],
-      "recipient": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
-      "capabilities": [
-        "reasoning",
-        "tools",
-        "vision"
-      ]
-    },
-    {
-      "key": "openai/o3",
-      "providerId": "openai",
-      "providerModelId": "o3",
-      "displayName": "o3",
-      "epochModel": "o3",
-      "openRouterId": "openai/o3",
-      "aaSlugs": [
-        "o3"
-      ],
-      "recipient": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
-      "capabilities": [
-        "reasoning",
-        "tools",
-        "vision"
-      ]
-    },
-    {
-      "key": "openai/gpt-5-mini",
-      "providerId": "openai",
-      "providerModelId": "gpt-5-mini",
-      "displayName": "GPT-5 mini",
-      "epochModel": "GPT-5 mini",
-      "openRouterId": "openai/gpt-5-mini",
-      "aaSlugs": [
-        "gpt-5-mini"
-      ],
-      "recipient": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
       "capabilities": [
         "reasoning",
         "tools",
@@ -1394,6 +1132,66 @@
     {
       "name": "GLM-5",
       "reason": "판매 에이전트 없음: z-ai"
+    },
+    {
+      "name": "GPT-6 Astra",
+      "reason": "판매 에이전트가 팔지 않는 모델: openai"
+    },
+    {
+      "name": "Claude Fable 5.1",
+      "reason": "판매 에이전트가 팔지 않는 모델: anthropic"
+    },
+    {
+      "name": "Claude Opus 5",
+      "reason": "판매 에이전트가 팔지 않는 모델: anthropic"
+    },
+    {
+      "name": "GPT-5.6 Sol",
+      "reason": "판매 에이전트가 팔지 않는 모델: openai"
+    },
+    {
+      "name": "GPT-5.6 Terra",
+      "reason": "판매 에이전트가 팔지 않는 모델: openai"
+    },
+    {
+      "name": "GPT-5.5",
+      "reason": "판매 에이전트가 팔지 않는 모델: openai"
+    },
+    {
+      "name": "Claude Sonnet 5",
+      "reason": "판매 에이전트가 팔지 않는 모델: anthropic"
+    },
+    {
+      "name": "Claude Opus 4.7",
+      "reason": "판매 에이전트가 팔지 않는 모델: anthropic"
+    },
+    {
+      "name": "GPT-5.6 Luna",
+      "reason": "판매 에이전트가 팔지 않는 모델: openai"
+    },
+    {
+      "name": "Claude Opus 4.6",
+      "reason": "판매 에이전트가 팔지 않는 모델: anthropic"
+    },
+    {
+      "name": "Claude Sonnet 4.6",
+      "reason": "판매 에이전트가 팔지 않는 모델: anthropic"
+    },
+    {
+      "name": "Claude Opus 4.5",
+      "reason": "판매 에이전트가 팔지 않는 모델: anthropic"
+    },
+    {
+      "name": "GPT-5.4 Mini",
+      "reason": "판매 에이전트가 팔지 않는 모델: openai"
+    },
+    {
+      "name": "o3",
+      "reason": "판매 에이전트가 팔지 않는 모델: openai"
+    },
+    {
+      "name": "GPT-5 mini",
+      "reason": "판매 에이전트가 팔지 않는 모델: openai"
     }
   ]
 }
