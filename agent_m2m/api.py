@@ -106,7 +106,7 @@ async def post_purchase(http_request: Request) -> JSONResponse:
         # 요청 직후 감사 규칙이 막은 경우. 모델을 고르기 전이라 기록 없이 409 로 알린다.
         return _error(409, str(error), rule=error.rule)
     except NegotiationError as error:
-        # 흥정이 결렬된 경우. 결제 전이라 기록 없이 409 로 알리고 대화 기록을 함께 준다.
+        # 판매자 값을 하나도 받지 못한 경우. 결제 전이라 기록 없이 409 로 알리고 대화 기록을 함께 준다.
         return _error(409, str(error), negotiation=error.negotiation)
     except PriorityInferenceError as error:
         # 우선순위 추론이 안 되면 결제 전이다. 기본값으로 메우지 않고 멈춘다.

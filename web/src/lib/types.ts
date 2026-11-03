@@ -171,6 +171,8 @@ export interface Negotiation {
   maxUnits: number;
   /** 결렬된 곳에는 없다. */
   agreedUnits?: number;
+  /** 비교 모델이 모두 결렬돼 예산을 넘겨 산 경우에만 있다. */
+  overBudget?: boolean;
   transcript: NegotiationTurn[];
 }
 

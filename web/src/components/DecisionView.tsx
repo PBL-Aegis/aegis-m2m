@@ -36,6 +36,7 @@ export function PurchaseSummary({ record }: { record: PurchaseRecord }) {
               <span className="muted">
                 {decision.winner.listAmountUnits === undefined ? "" : ` (호가 ${aegisText(decision.winner.listAmountUnits)})`} (예산{" "}
                 {aegisText(decision.budgetUnits)})
+                {decision.negotiation?.overBudget ? " · 예산 초과" : ""}
               </span>
             </td>
           </tr>

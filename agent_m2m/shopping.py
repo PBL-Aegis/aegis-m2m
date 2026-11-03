@@ -4,6 +4,7 @@
   1. 우선순위별 비교 모델을 data/sellers.json 의 priorityModels 에서 읽는다. 벤치마크 값을 보고 사람이 정해 둔 표다.
   2. 그 모델의 판매 에이전트와 각각 흥정한다.
   3. 합의가가 가장 낮은 곳에서 산다. 값이 같으면 표에서 앞에 있는 모델이다. 나머지 합의는 취소한다.
+  4. 모두 결렬되면 판매자가 마지막에 부른 값이 가장 낮은 곳을 그 값에 산다. 예산을 넘는 구매라 경고 알림을 남긴다(rules/over_budget.py).
 
 다른 판매자의 값은 상대에게 알리지 않는다.
 """
@@ -26,8 +27,30 @@ def compared_models(candidates: list[dict[str, Any]], priority: str) -> list[dic
     return compared
 
 
+def _last_seller_price(quote: dict[str, Any]) -> int | None:
+    prices = [turn["priceUnits"] for turn in quote["transcript"] if turn["from"] == "seller"]
+    return prices[-1] if prices else None
+
+
+def _buy_over_budget(quotes: list[dict[str, Any]]) -> dict[str, Any]:
+    """모두 결렬됐을 때 판매자가 마지막에 부른 값이 가장 낮은 곳을 그 값에 산다. 예산을 넘는 구매로 표시한다."""
+    priced = [quote for quote in quotes if quote["status"] == "no-deal" and _last_seller_price(quote) is not None]
+    if not priced:
+        raise NegotiationError("흥정할 수 있는 판매자가 없어 결제하지 않았습니다", {"status": "no-deal", "quotes": quotes})
+    quote = min(priced, key=_last_seller_price)
+    price = _last_seller_price(quote)
+    quote["transcript"].append(
+        {"from": "buyer", "action": "accept", "priceUnits": price, "text": f"예산을 넘지만 {aegis_text(price)}에 살게요."}
+    )
+    quote["transcript"].append(
+        {"from": "seller", "action": "accept", "priceUnits": price, "text": f"좋아요, {aegis_text(price)}에 거래할게요."}
+    )
+    quote.update({"status": "agreed", "agreedUnits": price, "overBudget": True})
+    return quote
+
+
 def shop(candidates: list[dict[str, Any]], priority: str, budget_units: int) -> dict[str, Any]:
-    """비교 모델과 흥정해 산 곳을 고른다. {winner, negotiation, quotes}. 모두 결렬되면 NegotiationError."""
+    """비교 모델과 흥정해 산 곳을 고른다. {winner, negotiation, quotes}. 판매자 값을 하나도 못 받았을 때만 NegotiationError."""
     compared = compared_models(candidates, priority)
     quotes: list[dict[str, Any]] = []
     for candidate in compared:
@@ -41,9 +64,7 @@ def shop(candidates: list[dict[str, Any]], priority: str, budget_units: int) -> 
 
     agreed = [quote for quote in quotes if quote["status"] == "agreed"]
     if not agreed:
-        raise NegotiationError(
-            f"흥정이 모두 결렬돼 결제하지 않았습니다. 예산 {aegis_text(budget_units)}", {"status": "no-deal", "quotes": quotes}
-        )
+        agreed = [_buy_over_budget(quotes)]
 
     chosen = min(agreed, key=lambda quote: quote["agreedUnits"])
     for quote in agreed:

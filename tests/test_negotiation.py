@@ -9,6 +9,7 @@ from agent_m2m.api import app
 from agent_m2m.negotiation import NegotiationError, negotiate
 from agent_m2m.payment import buyer_balance, request_id_hash
 from agent_m2m.purchase import run_purchase
+from agent_m2m.rules import over_budget
 from agent_m2m.selection import SelectionError
 from agent_m2m.seller import SellerAgent, find_seller
 from agent_m2m.shopping import compared_models, shop
@@ -140,12 +141,20 @@ def test_일부가_결렬돼도_합의한_곳에서_산다(monkeypatch):
     assert {quote["key"]: quote["status"] for quote in result["quotes"]} == {"a": "no-deal", "b": "agreed"}
 
 
-def test_비교_모델이_모두_결렬되면_대화_기록과_함께_멈춘다(monkeypatch):
+def test_비교_모델이_모두_결렬되면_판매자_마지막_값이_가장_낮은_곳에서_예산을_넘겨_산다(monkeypatch):
     use_table(monkeypatch, {"price": ["a", "b"]})
-    with pytest.raises(NegotiationError) as caught:
-        shop([candidate("anthropic", "a", 4_001), candidate("openai", "b", 4_001)], "price", 1)
-    assert caught.value.negotiation["status"] == "no-deal"
-    assert len(caught.value.negotiation["quotes"]) == 2
+    result = shop([candidate("anthropic", "a", 4_001), candidate("openai", "b", 4_001)], "price", 3_300)
+    assert result["winner"]["key"] == "b"
+    assert result["winner"]["amountUnits"] > 3_300
+    assert result["negotiation"]["overBudget"] is True
+    assert {quote["key"]: quote["status"] for quote in result["quotes"]} == {"a": "no-deal", "b": "agreed"}
+
+
+def test_판매자_값을_하나도_못_받으면_멈춘다(monkeypatch):
+    use_table(monkeypatch, {"price": ["a"]})
+    monkeypatch.setattr(shopping, "negotiate", lambda *args: (_ for _ in ()).throw(NegotiationError("막힘", {"status": "blocked", "transcript": []})))
+    with pytest.raises(NegotiationError):
+        shop([candidate("anthropic", "a", 4_001)], "price", 1)
 
 
 def test_산_곳의_판매_에이전트_최저가_아래로_내려가지_않는다():
@@ -198,19 +207,20 @@ def test_송금_직전_감사_규칙은_합의가를_본다():
     assert seen == [record["payment"]["amountUnits"]]
 
 
-def test_결렬되면_기록도_결제도_결제_후_규칙도_없다():
-    after_payment = []
-    audit.AFTER_PAYMENT_CHECKS.append(lambda ctx, record: after_payment.append(record))
-    before_balance = buyer_balance()["units"]
-    before_records = len(store.list_purchases(500))
-    with pytest.raises(NegotiationError):
-        run_purchase({**INPUT, "budgetUnits": 1})
-    assert buyer_balance()["units"] == before_balance
-    assert len(store.list_purchases(500)) == before_records
-    assert after_payment == []
+def test_예산이_너무_낮아도_결제하고_예산_초과_경고를_남긴다():
+    audit.BEFORE_PAYMENT_CHECKS.append(over_budget.check_over_budget)
+    before = buyer_balance()["units"]
+    record = run_purchase({**INPUT, "budgetUnits": 1, "requestId": "req-over-budget", "userId": "user-over"})
+    amount = record["payment"]["amountUnits"]
+    assert record["status"] == "SETTLED"
+    assert record["decision"]["negotiation"]["overBudget"] is True
+    assert amount == record["decision"]["winner"]["amountUnits"] > 1
+    assert buyer_balance()["units"] == before - amount
+    alerts = store.list_alerts_for_purchase(record["id"])
+    assert [(item["rule"], item["blocked"]) for item in alerts] == [("over-budget", False)]
 
 
-def test_API_는_결렬을_대화_기록과_함께_409_로_알린다():
-    response = TestClient(app).post("/api/purchase", json={"prompt": "결렬 확인", "budget": "0.000001", "priority": "price"})
-    assert response.status_code == 409
-    assert response.json()["negotiation"]["status"] == "no-deal"
+def test_API_는_예산이_낮아도_구매_기록을_돌려준다():
+    response = TestClient(app).post("/api/purchase", json={"prompt": "예산 확인", "budget": "0.000001", "priority": "price"})
+    assert response.status_code == 200
+    assert response.json()["status"] == "SETTLED"
