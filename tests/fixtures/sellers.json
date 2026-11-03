@@ -16,5 +16,20 @@
       "address": "0x5363903850f7AD4bF5FdbceFe9769A9e5b7080E4",
       "floorRatio": 0.75
     }
+  },
+  "priorityModels": {
+    "price": [
+      "openai/test-mini"
+    ],
+    "default": [
+      "anthropic/test-haiku",
+      "openai/test-mini"
+    ],
+    "intelligence": [
+      "anthropic/test-haiku"
+    ],
+    "speed": [
+      "google/test-flash"
+    ]
   }
 }

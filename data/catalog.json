@@ -109,24 +109,6 @@
       ]
     },
     {
-      "key": "google/gemini-3.5-flash",
-      "providerId": "google",
-      "providerModelId": "gemini-3.5-flash",
-      "displayName": "Gemini 3.5 Flash",
-      "epochModel": "Gemini 3.5 Flash",
-      "openRouterId": "google/gemini-3.5-flash",
-      "aaSlugs": [
-        "gemini-3-5-flash",
-        "gemini-3-5-flash-minimal"
-      ],
-      "recipient": "0xBcd4042DE499D14e55001CcbB24a551F3b954096",
-      "capabilities": [
-        "reasoning",
-        "tools",
-        "vision"
-      ]
-    },
-    {
       "key": "google/gemini-3.5-flash-lite",
       "providerId": "google",
       "providerModelId": "gemini-3.5-flash-lite",
@@ -1192,6 +1174,10 @@
     {
       "name": "GPT-5 mini",
       "reason": "판매 에이전트가 팔지 않는 모델: openai"
+    },
+    {
+      "name": "Gemini 3.5 Flash",
+      "reason": "판매 에이전트가 팔지 않는 모델: google"
     }
   ]
 }

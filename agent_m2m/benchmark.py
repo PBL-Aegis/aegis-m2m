@@ -5,9 +5,8 @@
 같이 만들어 두고, 결정 기록에 그 지문을 남긴다. 나중에 같은 계산을 다시 해볼 때
 "그때 본 숫자"가 무엇이었는지 확인할 수 있다.
 
-구매 때는 load_fresh_snapshot 을 쓴다. 가장 최근 값이 1시간보다 오래됐으면 세 출처(Epoch·OpenRouter·AA)에서 새로 받아
-MongoDB 에 쌓고, 받다가 실패하면 마지막 값으로 계속하면서 실패 사유를 결정 기록에 남긴다.
-data/benchmark.json 은 한 번도 받지 않았을 때 쓰는 시작값이다.
+구매 때는 data/benchmark.json 에 고정한 값을 쓴다. 모델을 바꿀 때만 scripts/capture_benchmark.py 로 다시 뜬다.
+load_fresh_snapshot 은 세 출처(Epoch·OpenRouter·AA)에서 새로 받아 MongoDB 에 쌓는 함수로, 지금 구매 흐름에서는 부르지 않는다.
 """
 
 import hashlib
@@ -41,8 +40,13 @@ def load_sellers() -> dict[str, dict[str, Any]]:
     return _read_json("sellers.json")[0]["sellers"]
 
 
+def load_priority_models() -> dict[str, list[str]]:
+    """우선순위 → 비교할 모델 key 목록."""
+    return _read_json("sellers.json")[0]["priorityModels"]
+
+
 def load_snapshot() -> dict[str, Any]:
-    """시작값 {snapshot, hash}."""
+    """저장된 값 {snapshot, hash}. 구매 때는 이 값을 쓴다."""
     snapshot, digest = _read_json("benchmark.json")
     return {"snapshot": snapshot, "hash": digest}
 

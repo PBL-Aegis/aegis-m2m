@@ -14,7 +14,7 @@ from typing import Any
 import agent_m2m.rules  # noqa: F401
 from agent_m2m import store
 from agent_m2m.audit import run_after_payment, run_before_payment, run_on_request
-from agent_m2m.benchmark import load_fresh_snapshot
+from agent_m2m.benchmark import load_snapshot
 from agent_m2m.domain import PaymentResult, PurchaseRecord, now_iso
 from agent_m2m.payment import PaymentError, pay
 from agent_m2m.priority_llm import infer_priority
@@ -47,11 +47,8 @@ def run_purchase(purchase_input: dict[str, Any]) -> PurchaseRecord:
     inferred = infer_priority(incoming["prompt"]) if incoming.get("priority") is None else None
     request = {**incoming, "priority": inferred["priority"] if inferred else incoming["priority"]}
 
-    # 1) 선택 — 여기서 실패하면 결제는 시작조차 하지 않는다.
-    source = load_fresh_snapshot()
-    decision = decide(request, source)
-    if source["refreshError"] is not None:
-        decision["snapshotRefreshError"] = source["refreshError"]
+    # 1) 호가 계산 — 고정된 단가로 후보마다 금액을 낸다. 여기서 실패하면 결제는 시작조차 하지 않는다.
+    decision = decide(request, load_snapshot())
     decision["prioritySource"] = "request" if inferred is None else "local-llm"
     if inferred is not None:
         decision["priorityModel"] = inferred["model"]

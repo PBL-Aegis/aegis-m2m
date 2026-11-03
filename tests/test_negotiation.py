@@ -4,13 +4,14 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from agent_m2m import audit, seller as seller_module, store
+from agent_m2m import audit, benchmark, seller as seller_module, shopping, store
 from agent_m2m.api import app
 from agent_m2m.negotiation import NegotiationError, negotiate
 from agent_m2m.payment import buyer_balance, request_id_hash
 from agent_m2m.purchase import run_purchase
+from agent_m2m.selection import SelectionError
 from agent_m2m.seller import SellerAgent, find_seller
-from agent_m2m.shopping import shop, shortlist
+from agent_m2m.shopping import compared_models, shop
 from agent_m2m.strategy import price_step
 
 ASKS = [4_001, 12_960, 100_000, 400_000, 1_234_567]
@@ -75,56 +76,59 @@ def test_값을_내리지_않는_판매자에게서는_예산이_맞아도_사�
     assert caught.value.negotiation["status"] == "no-deal"
 
 
-def test_실제_판매_목록은_세_판매_에이전트가_등록한_8개_모델만_있다():
+def test_실제_판매_목록은_세_판매_에이전트의_7개_모델이고_비교_표도_그_안에_있다():
     data = Path(__file__).resolve().parent.parent / "data"
-    sellers = json.loads((data / "sellers.json").read_text())["sellers"]
+    registry = json.loads((data / "sellers.json").read_text())
+    sellers = registry["sellers"]
     assert set(sellers) == {"anthropic", "openai", "google"}
     assert all(0 < seller["floorRatio"] <= 0.9 for seller in sellers.values())
     entries = json.loads((data / "catalog.json").read_text())["entries"]
-    assert len(entries) == 8
+    assert len(entries) == 7
     assert all(entry["displayName"] in sellers[entry["providerId"]]["models"] for entry in entries)
     assert all(entry["recipient"] == sellers[entry["providerId"]]["address"] for entry in entries)
     models = json.loads((data / "benchmark.json").read_text())["models"]
-    assert {model["key"] for model in models} == {entry["key"] for entry in entries}
+    keys = {entry["key"] for entry in entries}
+    assert {model["key"] for model in models} == keys
+    assert set(registry["priorityModels"]) == {"price", "default", "intelligence", "speed"}
+    assert set().union(*registry["priorityModels"].values()) == keys
 
 
-def candidate(provider: str, key: str, amount: int, speed: float = 100, eci: float = 150, score: float = 50) -> dict:
-    return {"key": key, "displayName": key, "providerId": provider, "amountUnits": amount, "outputTokensPerSecond": speed, "eci": eci, "totalScore": score}
+def candidate(provider: str, key: str, amount: int) -> dict:
+    return {"key": key, "displayName": key, "providerId": provider, "amountUnits": amount}
 
 
-def test_우선순위가_보는_지표로_회사별_대표를_뽑고_1등과_가까운_곳만_남긴다():
-    candidates = [
-        candidate("a", "a-small", 4_000, speed=180, eci=159, score=90),
-        candidate("a", "a-big", 160_000, speed=90, eci=168.8, score=70),
-        candidate("b", "b-small", 4_000, speed=120, eci=156, score=80),
-        candidate("b", "b-big", 80_000, speed=60, eci=168.4, score=60),
-        candidate("c", "c-fast", 20_000, speed=430, eci=145, score=55),
-    ]
-    keys = lambda priority: [item["key"] for item in shortlist(candidates, priority)]
-    assert keys("price") == ["a-small", "b-small"]
-    assert keys("speed") == ["c-fast"]
-    assert keys("intelligence") == ["a-big", "b-big"]
-    assert keys("default") == ["a-small", "b-small"]
+def use_table(monkeypatch, table: dict) -> None:
+    monkeypatch.setattr(shopping, "load_priority_models", lambda: table)
 
 
-def test_여러_후보와_흥정해_합의가가_가장_낮은_곳에서_사고_나머지는_취소한다():
+def test_우선순위별_비교_모델은_표에서_읽고_없는_모델은_건너뛴다(monkeypatch):
+    use_table(monkeypatch, {"price": ["z", "b", "a"], "speed": ["z"]})
+    candidates = [candidate("anthropic", "a", 1_000), candidate("openai", "b", 1_000)]
+    assert [item["key"] for item in compared_models(candidates, "price")] == ["b", "a"]
+    with pytest.raises(SelectionError):
+        compared_models(candidates, "speed")
+
+
+def test_여러_모델과_흥정해_합의가가_가장_낮은_곳에서_사고_나머지는_취소한다(monkeypatch):
+    use_table(monkeypatch, {"price": ["a", "b"]})
     result = shop([candidate("anthropic", "a", 4_001), candidate("openai", "b", 4_001)], "price", LARGE_BUDGET)
     assert result["winner"]["key"] == "b"
     assert result["winner"]["listAmountUnits"] == 4_001
     assert result["winner"]["amountUnits"] == result["negotiation"]["agreedUnits"] < 4_001
-    statuses = {quote["key"]: quote["status"] for quote in result["quotes"]}
-    assert statuses == {"a": "cancelled", "b": "agreed"}
+    assert {quote["key"]: quote["status"] for quote in result["quotes"]} == {"a": "cancelled", "b": "agreed"}
     cancelled = next(quote for quote in result["quotes"] if quote["key"] == "a")
     assert cancelled["transcript"][-1]["action"] == "reject"
 
 
-def test_일부가_결렬돼도_합의한_곳에서_산다():
+def test_일부가_결렬돼도_합의한_곳에서_산다(monkeypatch):
+    use_table(monkeypatch, {"price": ["a", "b"]})
     result = shop([candidate("anthropic", "a", 4_001), candidate("openai", "b", 4_001)], "price", 3_300)
     assert result["winner"]["key"] == "b"
     assert {quote["key"]: quote["status"] for quote in result["quotes"]} == {"a": "no-deal", "b": "agreed"}
 
 
-def test_후보가_모두_결렬되면_대화_기록과_함께_멈춘다():
+def test_비교_모델이_모두_결렬되면_대화_기록과_함께_멈춘다(monkeypatch):
+    use_table(monkeypatch, {"price": ["a", "b"]})
     with pytest.raises(NegotiationError) as caught:
         shop([candidate("anthropic", "a", 4_001), candidate("openai", "b", 4_001)], "price", 1)
     assert caught.value.negotiation["status"] == "no-deal"
@@ -139,6 +143,14 @@ def test_산_곳의_판매_에이전트_최저가_아래로_내려가지_않는�
         assert record["decision"]["negotiation"]["sellerName"] == seller["name"]
         assert winner["amountUnits"] >= winner["listAmountUnits"] * seller["floorRatio"]
         assert record["payment"]["to"].lower() == winner["recipient"].lower()
+
+
+def test_구매_때_벤치마크를_새로_받지_않는다(monkeypatch):
+    def fail(*args):
+        raise AssertionError("외부 벤치마크를 불렀습니다")
+
+    monkeypatch.setattr(benchmark, "_refresh", fail)
+    assert run_purchase(INPUT)["status"] == "SETTLED"
 
 
 def test_판매_에이전트가_없는_회사거나_비율이_틀리면_받지_않는다(monkeypatch):

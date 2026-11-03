@@ -126,26 +126,6 @@
       ]
     },
     {
-      "key": "google/gemini-3.5-flash",
-      "epochModel": "Gemini 3.5 Flash",
-      "epochDate": "2026-05-19",
-      "eci": "154.88",
-      "eciCiLow": "152.91",
-      "eciCiHigh": "157.41",
-      "inputPricePerMillion": "1.5",
-      "outputPricePerMillion": "9",
-      "outputTokensPerSecond": "192.9",
-      "openRouterId": "google/gemini-3.5-flash",
-      "aaSlugs": [
-        "gemini-3-5-flash",
-        "gemini-3-5-flash-minimal"
-      ],
-      "aaModelNames": [
-        "Gemini 3.5 Flash (High)",
-        "Gemini 3.5 Flash (Minimal)"
-      ]
-    },
-    {
       "key": "google/gemini-3.5-flash-lite",
       "epochModel": "Gemini 3.5 Flash-Lite",
       "epochDate": "2026-07-21",

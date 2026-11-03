@@ -149,6 +149,8 @@ function maybe(value: number | undefined): string {
 /** 후보 점수표 + 성능 점수 내역 + 탈락 후보표. */
 export function CandidateTables({ record }: { record: PurchaseRecord }) {
   const { decision } = record;
+  // 비교 모델을 표로 정한 뒤의 기록은 점수로 고르지 않는다.
+  if (decision.quotes !== undefined) return null;
   const sources = decision.performanceSources;
   return (
     <>

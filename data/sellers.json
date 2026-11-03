@@ -1,5 +1,5 @@
 {
-  "note": "판매 에이전트 등록부. 사람이 고친다. models 는 이 에이전트가 파는 모델이고, floorRatio 는 호가 대비 최저가 비율로 판매자의 비공개 설정으로 보는 데모용 값이다. 주소는 anvil 공개 테스트 계정(index)이라 실제 자산이 없다.",
+  "note": "판매 에이전트 등록부와 우선순위별 비교 표. 사람이 고친다. models 는 파는 모델, floorRatio 는 호가 대비 최저가 비율로 판매자의 비공개 설정으로 보는 데모용 값이다. priorityModels 는 벤치마크 값을 보고 정한 비교 모델이다. 주소는 anvil 공개 테스트 계정(index)이라 실제 자산이 없다.",
   "sellers": {
     "anthropic": {
       "name": "Anthropic 판매 에이전트",
@@ -29,9 +29,25 @@
       "address": "0xBcd4042DE499D14e55001CcbB24a551F3b954096",
       "floorRatio": 0.75,
       "models": [
-        "Gemini 3.5 Flash-Lite",
-        "Gemini 3.5 Flash"
+        "Gemini 3.5 Flash-Lite"
       ]
     }
+  },
+  "priorityModels": {
+    "price": [
+      "anthropic/claude-haiku-5.5",
+      "openai/gpt-6-luna"
+    ],
+    "default": [
+      "anthropic/claude-sonnet-5.5",
+      "openai/gpt-6-sol"
+    ],
+    "intelligence": [
+      "anthropic/claude-opus-5.5",
+      "openai/gpt-6.1-sol"
+    ],
+    "speed": [
+      "google/gemini-3.5-flash-lite"
+    ]
   }
 }
