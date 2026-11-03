@@ -70,10 +70,23 @@ def test_기록에_판매자_최저가가_담기지_않는다():
     assert not hasattr(SellerAgent(100_000, RATIO), "floor_units")
 
 
-def test_값을_내리지_않는_판매자에게서는_예산이_맞아도_사지_않는다():
+def test_첫_제안은_호가의_75퍼센트고_양쪽은_차이의_절반씩_움직인다():
+    turns = negotiate(4_000, LARGE_BUDGET, 0.5)["transcript"]
+    assert [turn["priceUnits"] for turn in turns[:4]] == [3_000, 3_500, 3_250, 3_380]
+
+
+def test_값을_내리지_않는_판매자는_마지막에_최대가_안이면_호가로_산다():
+    result = negotiate(100_000, LARGE_BUDGET, 1)
+    assert result["agreedUnits"] == 100_000
+    assert sum(turn["action"] == "offer" for turn in result["transcript"]) == 5
+
+
+def test_판매자의_마지막_값이_최대가를_넘으면_결렬이다():
     with pytest.raises(NegotiationError) as caught:
-        negotiate(100_000, LARGE_BUDGET, 1)
-    assert caught.value.negotiation["status"] == "no-deal"
+        negotiate(100_000, 80_000, 0.85)
+    negotiation = caught.value.negotiation
+    assert negotiation["status"] == "no-deal"
+    assert negotiation["transcript"][-1]["action"] == "reject"
 
 
 def test_실제_판매_목록은_세_판매_에이전트의_7개_모델이고_비교_표도_그_안에_있다():
@@ -122,7 +135,7 @@ def test_여러_모델과_흥정해_합의가가_가장_낮은_곳에서_사고_
 
 def test_일부가_결렬돼도_합의한_곳에서_산다(monkeypatch):
     use_table(monkeypatch, {"price": ["a", "b"]})
-    result = shop([candidate("anthropic", "a", 4_001), candidate("openai", "b", 4_001)], "price", 3_300)
+    result = shop([candidate("anthropic", "a", 4_001), candidate("openai", "b", 4_001)], "price", 3_350)
     assert result["winner"]["key"] == "b"
     assert {quote["key"]: quote["status"] for quote in result["quotes"]} == {"a": "no-deal", "b": "agreed"}
 

@@ -3,7 +3,6 @@
 
 판매 에이전트는 data/sellers.json 에 등록된 회사마다 하나다. 호가는 토큰 단가로 계산하고, 최저가는 호가 × floorRatio 다.
 floorRatio 는 판매자가 스스로 정해 공개하지 않는 값으로 본다. 실제 판매 회사가 낸 값이 아니라 데모용 설정값이다.
-구매자는 호가의 REQUIRED_DISCOUNT(10%) 이상 내려온 판매자에게만 끝까지 값을 올리므로, 0.9 를 넘으면 흥정이 결렬된다.
 
 최저가는 이 객체 안에만 있고 답에도 기록에도 나가지 않는다. 구매 쪽은 판매자가 부른 값만 본다.
 """
@@ -36,21 +35,15 @@ class SellerAgent:
         self.ask_units = ask_units
         self._floor_units = math.ceil(ask_units * floor_ratio)
         self._last_counter = ask_units
-        self._last_offer: int | None = None
-        self._rounds = 0
         self._step = price_step(ask_units)
 
     def reply_to_offer(self, offer: int) -> tuple[str, int, str]:
-        """구매자의 제안에 (행동, 값, 문장) 으로 답한다. 행동은 accept·counter·reject 중 하나다."""
-        self._rounds += 1
-        action, price = seller_reply(self._floor_units, self._last_counter, offer, self._rounds, self._last_offer, self._step)
-        self._last_offer = offer
-        if action != "reject" and price < self._floor_units:
+        """구매자의 제안에 (행동, 값, 문장) 으로 답한다. 행동은 accept·counter 중 하나다."""
+        action, price = seller_reply(self._floor_units, self._last_counter, offer, self._step)
+        if price < self._floor_units:
             raise GuardrailError(f"판매 세이프가드: 최저가보다 낮은 값입니다: {aegis_text(price)}")
         if action == "accept":
             return action, price, f"좋아요, {aegis_text(price)}에 드릴게요."
-        if action == "reject":
-            return action, price, f"죄송해요, {aegis_text(offer)}에는 팔 수 없어요."
         self._last_counter = price
         return action, price, f"{aegis_text(offer)}까지는 어렵고, {aegis_text(price)}까지는 해 드릴 수 있어요."
 

@@ -10,7 +10,7 @@ from typing import Any
 
 from agent_m2m.format import aegis_text
 from agent_m2m.seller import GuardrailError, SellerAgent
-from agent_m2m.strategy import buyer_opening, buyer_reply, price_step
+from agent_m2m.strategy import MAX_ROUNDS, buyer_opening, buyer_reply, price_step
 
 
 class NegotiationError(Exception):
@@ -50,12 +50,15 @@ def negotiate(ask_units: int, budget_units: int, floor_ratio: float) -> dict[str
     try:
         offer = buyer_opening(ask_units, max_units, step)
         action, price = offer_to_seller(offer, f"{aegis_text(ask_units)}에 올리셨네요. {aegis_text(offer)}에 주실 수 있나요?")
-        previous_counter = ask_units
         rounds = 1
         while action == "counter":
             counter = price
-            reply, value = buyer_reply(max_units, offer, counter, rounds + 1, previous_counter, ask_units, step)
-            previous_counter = counter
+            # 마지막 제안까지 값이 맞지 않았으면 판매자의 마지막 값이 최대가 이하일 때만 받는다.
+            if rounds == MAX_ROUNDS and counter > max_units:
+                say("buyer", "reject", counter, f"{aegis_text(counter)}는 제 최대가를 넘어요. 이번에는 어렵겠어요.")
+                action = "reject"
+                break
+            reply, value = ("accept", counter) if rounds == MAX_ROUNDS else buyer_reply(max_units, offer, counter, step)
             if reply == "accept":
                 _check_buyer_price(value, max_units)
                 say("buyer", "accept", value, f"좋아요, {aegis_text(value)}에 살게요.")
