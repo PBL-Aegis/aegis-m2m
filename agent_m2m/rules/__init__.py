@@ -6,5 +6,3 @@
 purchase.py 가 이 패키지를 한 번 불러오므로, 새 규칙은 아래에 import 한 줄만 더하면 된다.
 예: from agent_m2m.rules import limit  # noqa: F401
 """
-
-from agent_m2m.rules import over_budget  # noqa: F401

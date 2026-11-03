@@ -12,6 +12,7 @@ from typing import Any
 
 # 감사 규칙 파일들을 불러와 audit.py 의 규칙 목록에 등록한다.
 import agent_m2m.rules  # noqa: F401
+import agent_m2m.rules.over_budget  # noqa: F401
 from agent_m2m import store
 from agent_m2m.audit import run_after_payment, run_before_payment, run_on_request
 from agent_m2m.benchmark import load_snapshot
