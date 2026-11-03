@@ -38,41 +38,6 @@
       ]
     },
     {
-      "key": "anthropic/claude-sonnet-5.5",
-      "providerId": "anthropic",
-      "providerModelId": "claude-sonnet-5.5",
-      "displayName": "Claude Sonnet 5.5",
-      "epochModel": "Claude Sonnet 5.5",
-      "openRouterId": "anthropic/claude-sonnet-5.5",
-      "aaSlugs": [
-        "claude-sonnet-5-5-high",
-        "claude-sonnet-5-5-medium"
-      ],
-      "recipient": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
-      "capabilities": [
-        "reasoning",
-        "tools",
-        "vision"
-      ]
-    },
-    {
-      "key": "openai/gpt-6-sol",
-      "providerId": "openai",
-      "providerModelId": "gpt-6-sol",
-      "displayName": "GPT-6 Sol",
-      "epochModel": "GPT-6 Sol",
-      "openRouterId": "openai/gpt-6-sol",
-      "aaSlugs": [
-        "gpt-6-sol-low"
-      ],
-      "recipient": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
-      "capabilities": [
-        "reasoning",
-        "tools",
-        "vision"
-      ]
-    },
-    {
       "key": "anthropic/claude-haiku-5.5",
       "providerId": "anthropic",
       "providerModelId": "claude-haiku-5.5",
@@ -1165,6 +1130,14 @@
     {
       "name": "Gemini 3.5 Flash-Lite",
       "reason": "판매 에이전트가 팔지 않는 모델: google"
+    },
+    {
+      "name": "Claude Sonnet 5.5",
+      "reason": "판매 에이전트가 팔지 않는 모델: anthropic"
+    },
+    {
+      "name": "GPT-6 Sol",
+      "reason": "판매 에이전트가 팔지 않는 모델: openai"
     }
   ]
 }

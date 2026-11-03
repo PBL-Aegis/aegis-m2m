@@ -48,44 +48,6 @@
       ]
     },
     {
-      "key": "anthropic/claude-sonnet-5.5",
-      "epochModel": "Claude Sonnet 5.5",
-      "epochDate": "2026-09-28",
-      "eci": "166.18",
-      "eciCiLow": "163.06",
-      "eciCiHigh": "171.34",
-      "inputPricePerMillion": "2",
-      "outputPricePerMillion": "10",
-      "outputTokensPerSecond": "105.2",
-      "openRouterId": "anthropic/claude-sonnet-5.5",
-      "aaSlugs": [
-        "claude-sonnet-5-5-high",
-        "claude-sonnet-5-5-medium"
-      ],
-      "aaModelNames": [
-        "Claude Sonnet 5.5 (High, Default Fallback)",
-        "Claude Sonnet 5.5 (Medium, Default Fallback)"
-      ]
-    },
-    {
-      "key": "openai/gpt-6-sol",
-      "epochModel": "GPT-6 Sol",
-      "epochDate": "2026-09-22",
-      "eci": "163.73",
-      "eciCiLow": "160.92",
-      "eciCiHigh": "167.44",
-      "inputPricePerMillion": "2",
-      "outputPricePerMillion": "10",
-      "outputTokensPerSecond": "121.07",
-      "openRouterId": "openai/gpt-6-sol",
-      "aaSlugs": [
-        "gpt-6-sol-low"
-      ],
-      "aaModelNames": [
-        "GPT-6 Sol (Low)"
-      ]
-    },
-    {
       "key": "anthropic/claude-haiku-5.5",
       "epochModel": "Claude Haiku 5.5",
       "epochDate": "2026-10-07",
