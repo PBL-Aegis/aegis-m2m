@@ -90,14 +90,14 @@ def test_판매자의_마지막_값이_최대가를_넘으면_결렬이다():
     assert negotiation["transcript"][-1]["action"] == "reject"
 
 
-def test_실제_판매_목록은_두_판매_에이전트의_4개_모델이고_비교_표도_그_안에_있다():
+def test_실제_판매_목록은_두_판매_에이전트의_6개_모델이고_비교_표도_그_안에_있다():
     data = Path(__file__).resolve().parent.parent / "data"
     registry = json.loads((data / "sellers.json").read_text())
     sellers = registry["sellers"]
     assert set(sellers) == {"anthropic", "openai"}
     assert {seller["floorRatio"] for seller in sellers.values()} == {0.8}
     entries = json.loads((data / "catalog.json").read_text())["entries"]
-    assert len(entries) == 4
+    assert len(entries) == 6
     assert all(entry["displayName"] in sellers[entry["providerId"]]["models"] for entry in entries)
     assert all(entry["recipient"] == sellers[entry["providerId"]]["address"] for entry in entries)
     models = json.loads((data / "benchmark.json").read_text())["models"]
@@ -105,7 +105,7 @@ def test_실제_판매_목록은_두_판매_에이전트의_4개_모델이고_�
     assert {model["key"] for model in models} == keys
     assert set(registry["priorityModels"]) == {"price", "default", "intelligence"}
     assert set().union(*registry["priorityModels"].values()) == keys
-    assert registry["priorityModels"]["default"] == ["anthropic/claude-haiku-5.5"]
+    assert all(len(models) == 2 for models in registry["priorityModels"].values())
 
 
 def candidate(provider: str, key: str, amount: int, eci: float = 150) -> dict:

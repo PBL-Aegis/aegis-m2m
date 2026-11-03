@@ -1,42 +1,7 @@
 {
-  "catalogVersion": "agent-m2m-2026-10-26",
+  "catalogVersion": "agent-m2m-2026-11-03",
   "matching": "ECI 140 이상이고, Epoch·OpenRouter·AA 이름(기호 제거, 소문자)이 정확히 같은 모델만. 속도는 AA 가 잰 생각 단계들의 출력 속도 평균",
   "entries": [
-    {
-      "key": "anthropic/claude-opus-5.5",
-      "providerId": "anthropic",
-      "providerModelId": "claude-opus-5.5",
-      "displayName": "Claude Opus 5.5",
-      "epochModel": "Claude Opus 5.5",
-      "openRouterId": "anthropic/claude-opus-5.5",
-      "aaSlugs": [
-        "claude-opus-5-5"
-      ],
-      "recipient": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
-      "capabilities": [
-        "reasoning",
-        "tools",
-        "vision"
-      ]
-    },
-    {
-      "key": "openai/gpt-6.1-sol",
-      "providerId": "openai",
-      "providerModelId": "gpt-6.1-sol",
-      "displayName": "GPT-6.1 Sol",
-      "epochModel": "GPT-6.1 Sol",
-      "openRouterId": "openai/gpt-6.1-sol",
-      "aaSlugs": [
-        "gpt-6-1-sol-high",
-        "gpt-6-1-sol-xhigh"
-      ],
-      "recipient": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
-      "capabilities": [
-        "reasoning",
-        "tools",
-        "vision"
-      ]
-    },
     {
       "key": "anthropic/claude-haiku-5.5",
       "providerId": "anthropic",
@@ -57,6 +22,41 @@
       ]
     },
     {
+      "key": "anthropic/claude-sonnet-5.5",
+      "providerId": "anthropic",
+      "providerModelId": "claude-sonnet-5.5",
+      "displayName": "Claude Sonnet 5.5",
+      "epochModel": "Claude Sonnet 5.5",
+      "openRouterId": "anthropic/claude-sonnet-5.5",
+      "aaSlugs": [
+        "claude-sonnet-5-5-high",
+        "claude-sonnet-5-5-medium"
+      ],
+      "recipient": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+      "capabilities": [
+        "reasoning",
+        "tools",
+        "vision"
+      ]
+    },
+    {
+      "key": "anthropic/claude-opus-5.5",
+      "providerId": "anthropic",
+      "providerModelId": "claude-opus-5.5",
+      "displayName": "Claude Opus 5.5",
+      "epochModel": "Claude Opus 5.5",
+      "openRouterId": "anthropic/claude-opus-5.5",
+      "aaSlugs": [
+        "claude-opus-5-5"
+      ],
+      "recipient": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+      "capabilities": [
+        "reasoning",
+        "tools",
+        "vision"
+      ]
+    },
+    {
       "key": "openai/gpt-6-luna",
       "providerId": "openai",
       "providerModelId": "gpt-6-luna",
@@ -65,6 +65,42 @@
       "openRouterId": "openai/gpt-6-luna",
       "aaSlugs": [
         "gpt-6-luna-xhigh"
+      ],
+      "recipient": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+      "capabilities": [
+        "reasoning",
+        "tools",
+        "vision"
+      ]
+    },
+    {
+      "key": "openai/gpt-6.1-terra",
+      "providerId": "openai",
+      "providerModelId": "gpt-6.1-terra",
+      "displayName": "GPT-6.1 Terra",
+      "epochModel": "GPT-6.1 Terra",
+      "openRouterId": "openai/gpt-6.1-terra",
+      "aaSlugs": [
+        "gpt-6-1-terra-high",
+        "gpt-6-1-terra-xhigh"
+      ],
+      "recipient": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+      "capabilities": [
+        "reasoning",
+        "tools",
+        "vision"
+      ]
+    },
+    {
+      "key": "openai/gpt-6-astra",
+      "providerId": "openai",
+      "providerModelId": "gpt-6-astra",
+      "displayName": "GPT-6 Astra",
+      "epochModel": "GPT-6 Astra",
+      "openRouterId": "openai/gpt-6-astra",
+      "aaSlugs": [
+        "gpt-6-astra",
+        "gpt-6-astra-xhigh"
       ],
       "recipient": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
       "capabilities": [
@@ -1064,10 +1100,6 @@
       "reason": "판매 에이전트 없음: z-ai"
     },
     {
-      "name": "GPT-6 Astra",
-      "reason": "판매 에이전트가 팔지 않는 모델: openai"
-    },
-    {
       "name": "Claude Fable 5.1",
       "reason": "판매 에이전트가 팔지 않는 모델: anthropic"
     },
@@ -1132,8 +1164,12 @@
       "reason": "판매 에이전트가 팔지 않는 모델: google"
     },
     {
-      "name": "Claude Sonnet 5.5",
-      "reason": "판매 에이전트가 팔지 않는 모델: anthropic"
+      "name": "GPT-6 Sol",
+      "reason": "판매 에이전트가 팔지 않는 모델: openai"
+    },
+    {
+      "name": "GPT-6.1 Sol",
+      "reason": "판매 에이전트가 팔지 않는 모델: openai"
     },
     {
       "name": "GPT-6 Sol",

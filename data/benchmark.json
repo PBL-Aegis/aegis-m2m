@@ -1,59 +1,21 @@
 {
-  "snapshotId": "epoch-openrouter-aa-2026-10-26T18:31",
-  "capturedAt": "2026-10-26T18:31:08.492Z",
+  "snapshotId": "epoch-openrouter-2026-11-03",
+  "capturedAt": "2026-11-03T11:20:00.000Z",
   "source": "epoch.ai + openrouter.ai + artificialanalysis.ai",
   "sources": {
     "epoch": "https://epoch.ai/data/eci_scores.csv",
     "openRouter": "https://openrouter.ai/api/v1/models",
     "aa": "https://artificialanalysis.ai/api/v2/language/models/free"
   },
-  "note": "성능은 Epoch Capabilities Index(95% 신뢰구간 포함), 가격은 OpenRouter 판매 단가, 속도는 Artificial Analysis 가 잰 출력 속도(토큰/초) 최근 72시간 중앙값을 생각 단계별로 평균낸 값입니다.",
+  "note": "성능은 Epoch Capabilities Index(95% 신뢰구간 포함), 가격은 OpenRouter 판매 단가로 2026-11-03에 받았다. 속도는 구매 결정에 쓰지 않아 다시 받지 않았고, GPT-6.1 Terra 속도는 Artificial Analysis 페이지의 High·Xhigh 평균이다.",
   "models": [
-    {
-      "key": "anthropic/claude-opus-5.5",
-      "epochModel": "Claude Opus 5.5",
-      "epochDate": "2026-09-22",
-      "eci": "168.83",
-      "eciCiLow": "165.25",
-      "eciCiHigh": "173.95",
-      "inputPricePerMillion": "4",
-      "outputPricePerMillion": "20",
-      "outputTokensPerSecond": "98.13",
-      "openRouterId": "anthropic/claude-opus-5.5",
-      "aaSlugs": [
-        "claude-opus-5-5"
-      ],
-      "aaModelNames": [
-        "Claude Opus 5.5 (Max, Default Fallback)"
-      ]
-    },
-    {
-      "key": "openai/gpt-6.1-sol",
-      "epochModel": "GPT-6.1 Sol",
-      "epochDate": "2026-09-29",
-      "eci": "168.37",
-      "eciCiLow": "165.0",
-      "eciCiHigh": "174.43",
-      "inputPricePerMillion": "2",
-      "outputPricePerMillion": "10",
-      "outputTokensPerSecond": "60.11",
-      "openRouterId": "openai/gpt-6.1-sol",
-      "aaSlugs": [
-        "gpt-6-1-sol-high",
-        "gpt-6-1-sol-xhigh"
-      ],
-      "aaModelNames": [
-        "GPT-6.1 Sol (High)",
-        "GPT-6.1 Sol (Xhigh)"
-      ]
-    },
     {
       "key": "anthropic/claude-haiku-5.5",
       "epochModel": "Claude Haiku 5.5",
       "epochDate": "2026-10-07",
-      "eci": "159.32",
-      "eciCiLow": "156.19",
-      "eciCiHigh": "162.47",
+      "eci": "160.37",
+      "eciCiLow": "157.33",
+      "eciCiHigh": "163.84",
       "inputPricePerMillion": "0.1",
       "outputPricePerMillion": "0.5",
       "outputTokensPerSecond": "185.73",
@@ -70,12 +32,50 @@
       ]
     },
     {
+      "key": "anthropic/claude-sonnet-5.5",
+      "epochModel": "Claude Sonnet 5.5",
+      "epochDate": "2026-09-28",
+      "eci": "166.74",
+      "eciCiLow": "163.58",
+      "eciCiHigh": "171.34",
+      "inputPricePerMillion": "2",
+      "outputPricePerMillion": "10",
+      "outputTokensPerSecond": "105.2",
+      "openRouterId": "anthropic/claude-sonnet-5.5",
+      "aaSlugs": [
+        "claude-sonnet-5-5-high",
+        "claude-sonnet-5-5-medium"
+      ],
+      "aaModelNames": [
+        "Claude Sonnet 5.5 (High, Default Fallback)",
+        "Claude Sonnet 5.5 (Medium, Default Fallback)"
+      ]
+    },
+    {
+      "key": "anthropic/claude-opus-5.5",
+      "epochModel": "Claude Opus 5.5",
+      "epochDate": "2026-09-22",
+      "eci": "168.4",
+      "eciCiLow": "165.37",
+      "eciCiHigh": "173.03",
+      "inputPricePerMillion": "4",
+      "outputPricePerMillion": "20",
+      "outputTokensPerSecond": "98.13",
+      "openRouterId": "anthropic/claude-opus-5.5",
+      "aaSlugs": [
+        "claude-opus-5-5"
+      ],
+      "aaModelNames": [
+        "Claude Opus 5.5 (Max, Default Fallback)"
+      ]
+    },
+    {
       "key": "openai/gpt-6-luna",
       "epochModel": "GPT-6 Luna",
       "epochDate": "2026-09-22",
       "eci": "156.75",
-      "eciCiLow": "154.32",
-      "eciCiHigh": "159.43",
+      "eciCiLow": "154.01",
+      "eciCiHigh": "159.45",
       "inputPricePerMillion": "0.1",
       "outputPricePerMillion": "0.5",
       "outputTokensPerSecond": "123.22",
@@ -85,6 +85,46 @@
       ],
       "aaModelNames": [
         "GPT-6 Luna (Xhigh)"
+      ]
+    },
+    {
+      "key": "openai/gpt-6.1-terra",
+      "epochModel": "GPT-6.1 Terra",
+      "epochDate": "2026-10-26",
+      "eci": "168.11",
+      "eciCiLow": "164.94",
+      "eciCiHigh": "172.94",
+      "inputPricePerMillion": "1",
+      "outputPricePerMillion": "5",
+      "outputTokensPerSecond": "99",
+      "openRouterId": "openai/gpt-6.1-terra",
+      "aaSlugs": [
+        "gpt-6-1-terra-high",
+        "gpt-6-1-terra-xhigh"
+      ],
+      "aaModelNames": [
+        "GPT-6.1 Terra (High)",
+        "GPT-6.1 Terra (Xhigh)"
+      ]
+    },
+    {
+      "key": "openai/gpt-6-astra",
+      "epochModel": "GPT-6 Astra",
+      "epochDate": "2026-09-03",
+      "eci": "169.06",
+      "eciCiLow": "165.88",
+      "eciCiHigh": "174.29",
+      "inputPricePerMillion": "10",
+      "outputPricePerMillion": "50",
+      "outputTokensPerSecond": "67.57",
+      "openRouterId": "openai/gpt-6-astra",
+      "aaSlugs": [
+        "gpt-6-astra",
+        "gpt-6-astra-xhigh"
+      ],
+      "aaModelNames": [
+        "GPT-6 Astra (Max)",
+        "GPT-6 Astra (Xhigh)"
       ]
     }
   ]
