@@ -194,6 +194,14 @@ contract AegisToken is ERC20, EIP712, Ownable, PaymentRules, MaxAmountRule {
 - 같은 구매자가 같은 요청 번호로 두 번 결제하면 토큰이 규칙 없이도 `AuthorizationAlreadyUsed` 로 막습니다.
 - 설정값을 바꿔 가며 시험할 때는 규칙 파일의 상수를 pytest 의 `monkeypatch.setattr(규칙모듈, "상수이름", 값)` 으로 바꿉니다. 규칙 파일을 다시 불러오면(`importlib.reload`) 규칙이 두 번 등록되니 쓰지 않습니다.
 
+### 등록된 규칙
+
+- **구매자 한 건 예산** (시나리오 3, 요청 바꿔치기) · `agent_m2m/rules/budget.py`, `contracts/src/rules/BudgetRule.sol`
+  - 서버: 송금 직전에 고른 모델 금액이 `AEGIS_BUYER_BUDGET_PER_PAYMENT`(기본 `0.1` AEGIS, `.env.example`)를 넘으면 `buyer-budget` 규칙으로 막고 `FAILED`·`before-send` 로 남깁니다. 이유에 예산과 실제 금액이 남습니다. 요청의 `budget` 은 기준으로 쓰지 않고, 설정값이 비어 있으면 규칙을 끕니다.
+  - 체인: 기본 상한 `defaultBudgetPerPayment` 는 서버 기본값과 같은 0.1 AEGIS(`100000` units)입니다. **운영자만** `enableBudget(지갑)` 으로 구매자 지갑(`from`)에 상한을 걸고(`setBudgetPerPayment(지갑, units)` 로 따로 정하기, `disableBudget(지갑)` 으로 풀기, `setDefaultBudgetPerPayment(units)` 로 기본 상한 바꾸기), 넘으면 `OverBuyerBudget` 으로 revert 합니다. 서버가 설정값이 비면 규칙을 끄듯, 운영자가 걸지 않은 지갑은 막지 않아서 다른 규칙과 공용 테스트에 걸리지 않습니다.
+  - 시연 때 로컬 체인에서 구매자 지갑에 상한 걸기: `cast send <AEGIS 토큰 주소> "enableBudget(address)" <구매자 주소> --rpc-url http://127.0.0.1:8545 --private-key <운영자(anvil 0번) 키>` (주소는 로컬 체인을 켤 때 출력됩니다).
+  - 체인 규칙이 `Ownable` 을 상속하면 `is Ownable, PaymentRules` 순서로 둡니다(`AegisToken` 상속 순서와 같아야 컴파일됨).
+
 ## 테스트가 확인하는 것
 
 | 명령 | 확인하는 것 | 가짜로 두는 것 | 확인하지 않는 것 |
