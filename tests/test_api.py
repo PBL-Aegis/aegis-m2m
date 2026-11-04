@@ -1,3 +1,5 @@
+import json
+
 from fastapi.testclient import TestClient
 
 from agent_m2m.api import app
@@ -54,3 +56,34 @@ def test_화면이_쓰는_조회_API_가_기록과_알림을_돌려준다():
     assert client.get("/api/alerts/summary").json() == {"blocked": 0, "warnings": 0}
     assert client.get("/api/mode").json() == {"mode": "local"}
     assert isinstance(client.get("/api/wallet").json()["units"], int)
+
+
+def _stream(body: dict) -> list[dict]:
+    response = client.post("/api/purchase/stream", json=body)
+    assert response.status_code == 200
+    return [json.loads(line) for line in response.text.splitlines()]
+
+
+def test_스트림은_비교_모델_흥정_대화_기록_순서로_보낸다():
+    events = _stream({"prompt": "스트림 확인", "budget": "0.5", "priority": "price"})
+    assert events[0]["type"] == "plan"
+    assert events[-1]["type"] == "done"
+
+    record = events[-1]["record"]
+    assert record["status"] == "SETTLED"
+    assert [model["key"] for model in events[0]["models"]] == [quote["key"] for quote in record["decision"]["quotes"]]
+    for quote in record["decision"]["quotes"]:
+        sent = [event["turn"] for event in events if event["type"] == "turn" and event["key"] == quote["key"]]
+        assert sent == quote["transcript"]
+
+
+def test_스트림은_판매자_최저가를_보내지_않는다():
+    response = client.post("/api/purchase/stream", json={"prompt": "최저가 확인", "budget": "0.5", "priority": "price"})
+    assert "floorRatio" not in response.text
+    assert "floorUnits" not in response.text
+
+
+def test_스트림도_틀린_요청은_시작_전에_400_으로_막는다():
+    response = client.post("/api/purchase/stream", json={"prompt": "", "budget": "0.5"})
+    assert response.status_code == 400
+    assert "prompt" in response.json()["error"]

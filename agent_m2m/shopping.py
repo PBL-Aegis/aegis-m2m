@@ -7,8 +7,11 @@
   4. 모두 결렬되면 판매자가 마지막에 부른 값이 가장 낮은 곳을 그 값에 산다. 값이 같으면 역시 성능이 높은 모델이다. 예산을 넘는 구매라 경고 알림을 남긴다(rules/over_budget.py).
 
 다른 판매자의 값은 상대에게 알리지 않는다.
+
+on_event 로 진행을 바로 알린다. 비교 모델이 정해지면 plan, 대화가 한 줄 늘면 turn 이다.
 """
 
+from collections.abc import Callable
 from typing import Any
 
 from agent_m2m.benchmark import load_priority_models
@@ -32,46 +35,77 @@ def _last_seller_price(quote: dict[str, Any]) -> int | None:
     return prices[-1] if prices else None
 
 
-def _buy_over_budget(quotes: list[dict[str, Any]]) -> dict[str, Any]:
+def _buy_over_budget(quotes: list[dict[str, Any]], add_turn: Callable[[dict[str, Any], dict[str, Any]], None]) -> dict[str, Any]:
     """모두 결렬됐을 때 판매자가 마지막에 부른 값이 가장 낮은 곳을 그 값에 산다. 예산을 넘는 구매로 표시한다."""
     priced = [quote for quote in quotes if quote["status"] == "no-deal" and _last_seller_price(quote) is not None]
     if not priced:
         raise NegotiationError("흥정할 수 있는 판매자가 없어 결제하지 않았습니다", {"status": "no-deal", "quotes": quotes})
     quote = min(priced, key=lambda item: (_last_seller_price(item), -item["eci"]))
     price = _last_seller_price(quote)
-    quote["transcript"].append(
-        {"from": "buyer", "action": "accept", "priceUnits": price, "text": f"예산을 넘지만 {aegis_text(price)}에 살게요."}
-    )
-    quote["transcript"].append(
-        {"from": "seller", "action": "accept", "priceUnits": price, "text": f"좋아요, {aegis_text(price)}에 거래할게요."}
-    )
+    add_turn(quote, {"from": "buyer", "action": "accept", "priceUnits": price, "text": f"예산을 넘지만 {aegis_text(price)}에 살게요."})
+    add_turn(quote, {"from": "seller", "action": "accept", "priceUnits": price, "text": f"좋아요, {aegis_text(price)}에 거래할게요."})
     quote.update({"status": "agreed", "agreedUnits": price, "overBudget": True})
     return quote
 
 
-def shop(candidates: list[dict[str, Any]], priority: str, budget_units: int) -> dict[str, Any]:
+def shop(
+    candidates: list[dict[str, Any]],
+    priority: str,
+    budget_units: int,
+    on_event: Callable[[dict[str, Any]], None] = lambda event: None,
+) -> dict[str, Any]:
     """비교 모델과 흥정해 산 곳을 고른다. {winner, negotiation, quotes}. 판매자 값을 하나도 못 받았을 때만 NegotiationError."""
     compared = compared_models(candidates, priority)
+    sellers = {candidate["key"]: find_seller(candidate["providerId"]) for candidate in compared}
+    on_event(
+        {
+            "type": "plan",
+            "priority": priority,
+            "models": [
+                {
+                    "key": candidate["key"],
+                    "displayName": candidate["displayName"],
+                    "sellerName": sellers[candidate["key"]]["name"],
+                    "askUnits": candidate["amountUnits"],
+                }
+                for candidate in compared
+            ],
+        }
+    )
+
+    def add_turn(quote: dict[str, Any], turn: dict[str, Any]) -> None:
+        quote["transcript"].append(turn)
+        on_event({"type": "turn", "key": quote["key"], "turn": turn})
+
     quotes: list[dict[str, Any]] = []
     for candidate in compared:
-        seller = find_seller(candidate["providerId"])
-        quote = {"key": candidate["key"], "displayName": candidate["displayName"], "sellerName": seller["name"], "eci": candidate["eci"]}
+        key = candidate["key"]
+        seller = sellers[key]
+        quote = {"key": key, "displayName": candidate["displayName"], "sellerName": seller["name"], "eci": candidate["eci"]}
         try:
-            quote.update(negotiate(candidate["amountUnits"], budget_units, seller["floorRatio"]))
+            quote.update(
+                negotiate(
+                    candidate["amountUnits"],
+                    budget_units,
+                    seller["floorRatio"],
+                    lambda turn, key=key: on_event({"type": "turn", "key": key, "turn": turn}),
+                )
+            )
         except NegotiationError as error:
             quote.update(error.negotiation)
         quotes.append(quote)
 
     agreed = [quote for quote in quotes if quote["status"] == "agreed"]
     if not agreed:
-        agreed = [_buy_over_budget(quotes)]
+        agreed = [_buy_over_budget(quotes, add_turn)]
 
     chosen = min(agreed, key=lambda quote: (quote["agreedUnits"], -quote["eci"]))
     for quote in agreed:
         if quote is not chosen:
             quote["status"] = "cancelled"
-            quote["transcript"].append(
-                {"from": "buyer", "action": "reject", "priceUnits": quote["agreedUnits"], "text": "죄송해요, 이번에는 다른 곳에서 사기로 했어요."}
+            add_turn(
+                quote,
+                {"from": "buyer", "action": "reject", "priceUnits": quote["agreedUnits"], "text": "죄송해요, 이번에는 다른 곳에서 사기로 했어요."},
             )
     source = next(candidate for candidate in compared if candidate["key"] == chosen["key"])
     return {

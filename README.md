@@ -98,6 +98,8 @@ curl -s -X POST localhost:8000/api/purchase -H 'content-type: application/json' 
 | `maxOutputTokens` | 아니오 | 최대 출력 토큰(금액 계산에 씀). 기본 8000 |
 | `requiredCapabilities` | 아니오 | 필요 기능 `reasoning`·`tools`·`vision` |
 
+채팅 화면은 같은 입력을 `POST /api/purchase/stream` 으로 보냅니다. 비교 모델(`plan`)과 흥정 대화(`turn`)를 진행되는 대로 한 줄에 JSON 하나씩 보내고, 마지막에 구매 기록(`done`)이나 오류(`error`)를 보냅니다.
+
 화면이 쓰는 조회 API: `GET /api/purchases`, `/api/purchases/{id}`, `/api/purchases/{id}/alerts`, `/api/alerts`, `/api/alerts/summary`, `/api/wallet`, `/api/mode`. 서버를 켠 뒤 `http://127.0.0.1:8000/docs` 에서 모두 볼 수 있습니다.
 
 ## 감사 규칙 추가하기

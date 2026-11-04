@@ -6,6 +6,7 @@
 합의하지 못하면 기록을 남기기 전에 NegotiationError 로 멈춘다. 돈은 나가지 않는다.
 """
 
+from collections.abc import Callable
 from typing import Any
 
 from agent_m2m.format import aegis_text
@@ -26,16 +27,23 @@ def _check_buyer_price(price: int, max_units: int) -> None:
         raise GuardrailError(f"구매 세이프가드: 최대가보다 높은 값입니다: {aegis_text(price)}")
 
 
-def negotiate(ask_units: int, budget_units: int, floor_ratio: float) -> dict[str, Any]:
+def negotiate(
+    ask_units: int,
+    budget_units: int,
+    floor_ratio: float,
+    on_turn: Callable[[dict[str, Any]], None] = lambda turn: None,
+) -> dict[str, Any]:
     """호가에서 시작해 합의가를 찾는다. floor_ratio 는 판매 에이전트만 쓴다.
-    합의하면 합의가와 대화 기록을 돌려주고, 못 하면 NegotiationError."""
+    합의하면 합의가와 대화 기록을 돌려주고, 못 하면 NegotiationError. 대화가 한 줄 늘 때마다 on_turn 을 부른다."""
     max_units = min(budget_units, ask_units)
     step = price_step(ask_units)
     seller = SellerAgent(ask_units, floor_ratio)
     transcript: list[dict[str, Any]] = []
 
     def say(speaker: str, action: str, price: int, text: str) -> None:
-        transcript.append({"from": speaker, "action": action, "priceUnits": price, "text": text})
+        turn = {"from": speaker, "action": action, "priceUnits": price, "text": text}
+        transcript.append(turn)
+        on_turn(turn)
 
     def result(status: str) -> dict[str, Any]:
         return {"status": status, "askUnits": ask_units, "maxUnits": max_units, "transcript": transcript}

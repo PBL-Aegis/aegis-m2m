@@ -2,6 +2,7 @@
 HTTP API. 화면(web/)과 다른 에이전트가 이 주소들만 부른다.
 
   POST /api/purchase                 요청 한 건을 받아 선택·결제·확인·결과·기록까지 돌린다
+  POST /api/purchase/stream          같은 일을 하며 흥정 진행을 한 줄에 JSON 하나씩(NDJSON) 바로 보낸다
   GET  /api/purchases                최근 구매 기록 목록
   GET  /api/purchases/{id}           구매 기록 한 건
   GET  /api/purchases/{id}/alerts    그 구매에 달린 알림
@@ -16,11 +17,15 @@ POST /api/purchase 의 입력은 여기서 모양만 검사한다(문자열인�
 requestId·userId 도 빼도 된다. requestId 를 빼면 서버가 새로 만든다.
 """
 
+import json
+import queue
+import threading
+from collections.abc import Iterator
 from typing import Any
 
 from fastapi import FastAPI, Request
 from fastapi.concurrency import run_in_threadpool
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 
 from agent_m2m import store
 from agent_m2m.audit import AuditBlockedError
@@ -85,6 +90,23 @@ def parse_body(body: Any) -> dict[str, Any] | str:
     return request
 
 
+def _purchase_failure(error: Exception) -> tuple[int, dict[str, Any]]:
+    """구매 예외를 상태 코드와 응답 본문으로 바꾼다."""
+    if isinstance(error, SelectionError):
+        # 선택 단계에서 막힌 경우(후보 없음 등)는 결제 전이므로 기록 없이 400 으로 알린다.
+        return 400, {"error": str(error)}
+    if isinstance(error, AuditBlockedError):
+        # 요청 직후 감사 규칙이 막은 경우. 모델을 고르기 전이라 기록 없이 409 로 알린다.
+        return 409, {"error": str(error), "rule": error.rule}
+    if isinstance(error, NegotiationError):
+        # 판매자 값을 하나도 받지 못한 경우. 결제 전이라 기록 없이 409 로 알리고 대화 기록을 함께 준다.
+        return 409, {"error": str(error), "negotiation": error.negotiation}
+    if isinstance(error, PriorityInferenceError):
+        # 우선순위 추론이 안 되면 결제 전이다. 기본값으로 메우지 않고 멈춘다.
+        return 503, {"error": str(error)}
+    return 500, {"error": str(error) or "알 수 없는 오류"}
+
+
 @app.post("/api/purchase")
 async def post_purchase(http_request: Request) -> JSONResponse:
     try:
@@ -99,21 +121,40 @@ async def post_purchase(http_request: Request) -> JSONResponse:
     try:
         # 결제는 체인·DB 를 기다리는 일이라 스레드에서 돌린다. 요청 여러 개가 동시에 처리된다.
         record = await run_in_threadpool(run_purchase, parsed)
-    except SelectionError as error:
-        # 선택 단계에서 막힌 경우(후보 없음 등)는 결제 전이므로 기록 없이 400 으로 알린다.
-        return _error(400, str(error))
-    except AuditBlockedError as error:
-        # 요청 직후 감사 규칙이 막은 경우. 모델을 고르기 전이라 기록 없이 409 로 알린다.
-        return _error(409, str(error), rule=error.rule)
-    except NegotiationError as error:
-        # 판매자 값을 하나도 받지 못한 경우. 결제 전이라 기록 없이 409 로 알리고 대화 기록을 함께 준다.
-        return _error(409, str(error), negotiation=error.negotiation)
-    except PriorityInferenceError as error:
-        # 우선순위 추론이 안 되면 결제 전이다. 기본값으로 메우지 않고 멈춘다.
-        return _error(503, str(error))
     except Exception as error:  # noqa: BLE001
-        return _error(500, str(error) or "알 수 없는 오류")
+        status, failure = _purchase_failure(error)
+        return JSONResponse(failure, status_code=status)
     return JSONResponse(record)
+
+
+def _purchase_events(parsed: dict[str, Any]) -> Iterator[str]:
+    """plan·turn 을 보내고 마지막에 done(기록) 이나 error 를 보낸다. 받는 쪽이 끊겨도 구매는 끝까지 돌아 기록이 남는다."""
+    events: queue.Queue[dict[str, Any] | None] = queue.Queue()
+
+    def work() -> None:
+        try:
+            events.put({"type": "done", "record": run_purchase(parsed, events.put)})
+        except Exception as error:  # noqa: BLE001
+            events.put({"type": "error", **_purchase_failure(error)[1]})
+        finally:
+            events.put(None)
+
+    threading.Thread(target=work, daemon=True).start()
+    while (event := events.get()) is not None:
+        yield json.dumps(event, ensure_ascii=False) + "\n"
+
+
+@app.post("/api/purchase/stream")
+async def post_purchase_stream(http_request: Request) -> Any:
+    try:
+        body = await http_request.json()
+    except ValueError:
+        return _error(400, "요청 본문을 JSON 으로 읽을 수 없습니다")
+
+    parsed = parse_body(body)
+    if isinstance(parsed, str):
+        return _error(400, parsed)
+    return StreamingResponse(_purchase_events(parsed), media_type="application/x-ndjson")
 
 
 @app.get("/api/purchases")

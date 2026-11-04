@@ -8,6 +8,7 @@
 """
 
 import uuid
+from collections.abc import Callable
 from typing import Any
 
 # 감사 규칙 파일들을 불러와 audit.py 의 규칙 목록에 등록한다.
@@ -24,10 +25,14 @@ from agent_m2m.selection import decide
 from agent_m2m.shopping import shop
 
 
-def run_purchase(purchase_input: dict[str, Any]) -> PurchaseRecord:
+def run_purchase(
+    purchase_input: dict[str, Any],
+    on_event: Callable[[dict[str, Any]], None] = lambda event: None,
+) -> PurchaseRecord:
     """
     purchase_input: prompt·budgetUnits, 선택으로 priority·requestId·userId·maxOutputTokens·requiredCapabilities.
     우선순위가 없으면 로컬 Qwen 이 요청 문장을 보고 정한다. 요청 번호가 없으면 새로 만들고, 사용자가 없으면 None.
+    흥정 진행은 on_event 로 바로 알린다(shopping.py).
     """
     purchase_id = str(uuid.uuid4())
     if store.purchase_exists(purchase_id):
@@ -55,7 +60,7 @@ def run_purchase(purchase_input: dict[str, Any]) -> PurchaseRecord:
         decision["priorityModel"] = inferred["model"]
 
     # 흥정 — 모두 결렬되면 기록 없이 멈춘다. 합의가를 winner 금액에 넣어 뒤의 감사·결제·확인이 모두 이 값을 본다.
-    decision.update(shop(decision["candidates"], request["priority"], request["budgetUnits"]))
+    decision.update(shop(decision["candidates"], request["priority"], request["budgetUnits"], on_event))
 
     # 결제 직전에 처리 중으로 먼저 남긴다. 중간에 멈춰도 기록이 남는다.
     record: PurchaseRecord = {
