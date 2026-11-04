@@ -15,7 +15,7 @@ from typing import Any
 import agent_m2m.rules  # noqa: F401
 import agent_m2m.rules.over_budget  # noqa: F401
 from agent_m2m import store
-from agent_m2m.audit import run_after_payment, run_before_payment, run_on_request
+from agent_m2m.audit import AuditBlockedError, run_after_payment, run_before_payment, run_on_request
 from agent_m2m.benchmark import load_snapshot
 from agent_m2m.domain import PaymentResult, PurchaseRecord, now_iso
 from agent_m2m.payment import PaymentError, pay
@@ -104,6 +104,9 @@ def run_purchase(
             "failureReason": str(error) or "알 수 없는 오류",
             "failureStage": "after-send" if sent else "before-send",
         }
+        # 감사 규칙이 막은 건과 결제가 실패한 건을 화면에서 구분한다.
+        if isinstance(error, AuditBlockedError):
+            outcome["blockedRule"] = error.rule
     updated_at = store.update_purchase(purchase_id, outcome)
     settled = {**record, **outcome, "updatedAt": updated_at}
 

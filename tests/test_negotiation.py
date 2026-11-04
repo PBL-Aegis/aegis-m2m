@@ -4,8 +4,9 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from agent_m2m import audit, benchmark, seller as seller_module, shopping, store
+from agent_m2m import audit, benchmark, purchase, seller as seller_module, shopping, store
 from agent_m2m.api import app
+from agent_m2m.audit import AuditBlockedError
 from agent_m2m.negotiation import NegotiationError, negotiate
 from agent_m2m.payment import buyer_balance, request_id_hash
 from agent_m2m.purchase import run_purchase
@@ -235,3 +236,26 @@ def test_API_는_예산이_낮아도_구매_기록을_돌려준다():
     response = TestClient(app).post("/api/purchase", json={"prompt": "예산 확인", "budget": "0.000001", "priority": "price"})
     assert response.status_code == 200
     assert response.json()["status"] == "SETTLED"
+
+
+def test_감사_규칙이_막으면_돈을_보내지_않고_규칙_이름을_기록에_남긴다(monkeypatch):
+    def block(ctx):
+        raise AuditBlockedError("test-rule", "시험용 차단")
+
+    monkeypatch.setattr(audit, "BEFORE_PAYMENT_CHECKS", [block])
+    record = run_purchase({**INPUT, "requestId": "req-blocked"})
+    assert record["status"] == "FAILED"
+    assert record["failureStage"] == "before-send"
+    assert record["blockedRule"] == "test-rule"
+    assert record["payment"] is None
+    assert [alert["blocked"] for alert in store.list_alerts_for_purchase(record["id"])] == [True]
+
+
+def test_결제가_실패하면_차단으로_표시하지_않는다(monkeypatch):
+    def fail(*args):
+        raise RuntimeError("체인 응답 없음")
+
+    monkeypatch.setattr(purchase, "pay", fail)
+    record = run_purchase({**INPUT, "requestId": "req-pay-failed"})
+    assert record["status"] == "FAILED"
+    assert "blockedRule" not in record
