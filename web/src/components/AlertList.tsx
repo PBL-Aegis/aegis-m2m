@@ -14,8 +14,13 @@ export const STAGE_LABEL: Record<AuditStage, string> = {
   "after-payment": "결제 후",
 };
 
+/** 결제 전 감사에 걸린 건은 경고여도 빨간색으로 눈에 띄게 한다. */
+export function alertTone(stage: AuditStage | undefined): "risk" | "warn" {
+  return stage === "on-request" || stage === "before-payment" ? "risk" : "warn";
+}
+
 function Badge({ alert }: { alert: AuditAlert }) {
-  return alert.blocked ? <span className="badge risk">차단</span> : <span className="badge warn">경고</span>;
+  return alert.blocked ? <span className="badge risk">차단</span> : <span className={`badge ${alertTone(alert.stage)}`}>경고</span>;
 }
 
 function Meta({ alert }: { alert: AuditAlert }) {

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { AlertList, STAGE_LABEL } from "@/components/AlertList";
+import { AlertList, alertTone, STAGE_LABEL } from "@/components/AlertList";
 import { CopyButton } from "@/components/CopyButton";
 import { CandidateTables } from "@/components/DecisionView";
 import { NegotiationBlock } from "@/components/Negotiation";
@@ -18,7 +18,7 @@ const STAGES: AuditStage[] = ["on-request", "before-payment", "after-payment"];
 function stageBadge(stage: AuditStage, alerts: AuditAlert[], processing: boolean) {
   const found = alerts.filter((alert) => alert.stage === stage);
   if (found.some((alert) => alert.blocked)) return <span className="badge risk">차단</span>;
-  if (found.length > 0) return <span className="badge warn">경고</span>;
+  if (found.length > 0) return <span className={`badge ${alertTone(stage)}`}>경고</span>;
   if (processing && stage !== "on-request") return <span className="badge">대기</span>;
   return <span className="badge ok">통과</span>;
 }
