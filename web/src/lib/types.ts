@@ -164,6 +164,8 @@ export interface Negotiation {
   key: string;
   displayName: string;
   sellerName: string;
+  /** 값이 같을 때 고르는 기준인 성능. 이 칸이 생기기 전 기록에는 없다. */
+  eci?: number;
   /** agreed 는 산 곳, cancelled 는 합의했지만 더 싼 곳이 있어 취소한 곳, no-deal 은 결렬된 곳이다. */
   status: "agreed" | "cancelled" | "no-deal" | "blocked";
   askUnits: number;
@@ -174,6 +176,21 @@ export interface Negotiation {
   overBudget?: boolean;
   transcript: NegotiationTurn[];
 }
+
+/** 흥정할 모델 한 곳. /api/purchase/stream 의 plan 에 담긴다. */
+export interface StreamModel {
+  key: string;
+  displayName: string;
+  sellerName: string;
+  askUnits: number;
+}
+
+/** /api/purchase/stream 이 한 줄씩 보내는 진행 소식. */
+export type PurchaseStreamEvent =
+  | { type: "plan"; priority: Priority; models: StreamModel[] }
+  | { type: "turn"; key: string; turn: NegotiationTurn }
+  | { type: "done"; record: PurchaseRecord }
+  | { type: "error"; error: string };
 
 /** 선택이 끝난 뒤 남는 기록 전체. */
 export interface Decision {

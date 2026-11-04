@@ -4,52 +4,65 @@
 
 import Link from "next/link";
 
-import { aegisText } from "@/lib/format";
+import { toAegis } from "@/lib/format";
 import { PRIORITY_LABEL } from "@/lib/priority-label";
+import { purchaseStatus, shortTime } from "@/lib/purchase-view";
 import type { PurchaseRecord } from "@/lib/types";
 
-function when(iso: string): string {
-  return new Date(iso).toLocaleString("ko-KR", { hour12: false });
-}
-
-export function PurchaseTable({ records }: { records: PurchaseRecord[] }) {
-  if (records.length === 0) return <p className="empty">아직 기록이 없습니다.</p>;
+export function PurchaseTable({ records, detailed = false }: { records: PurchaseRecord[]; detailed?: boolean }) {
+  if (records.length === 0) return <p className="empty">아직 기록이 없어요</p>;
   return (
     <div className="tableWrap">
       <table>
         <thead>
           <tr>
-            <th>요청·Purchase ID</th>
-            <th>처리 상태</th>
-            <th>결제 금액</th>
-            <th>선택된 모델</th>
-            <th>결제 모드</th>
+            <th>요청</th>
+            <th>구매 모델</th>
+            {detailed ? (
+              <>
+                <th className="num">호가 (AEGIS)</th>
+                <th className="num">합의 (AEGIS)</th>
+                <th className="num">예산 (AEGIS)</th>
+              </>
+            ) : (
+              <th className="num">호가 → 합의 (AEGIS)</th>
+            )}
+            <th>상태</th>
           </tr>
         </thead>
         <tbody>
-          {records.map((record) => (
-            <tr key={record.id}>
-              <td className="requestCell">
-                <Link href={`/dashboard/${record.id}`} title={record.prompt}>
-                  {record.prompt}
-                </Link>
-                <small>
-                  {record.id.slice(0, 8)} · {when(record.createdAt)}
-                </small>
-              </td>
-              <td>
-                <span className={`badge ${record.status === "SETTLED" ? "ok" : "risk"}`}>{record.status}</span>
-              </td>
-              <td>
-                <strong className="amount">{aegisText(record.decision.winner.amountUnits)}</strong>
-              </td>
-              <td>
-                {record.decision.winner.displayName}
-                <small>{PRIORITY_LABEL[record.decision.priority]}</small>
-              </td>
-              <td>{record.payment?.mode ?? "-"}</td>
-            </tr>
-          ))}
+          {records.map((record) => {
+            const { winner, priority, budgetUnits } = record.decision;
+            const list = winner.listAmountUnits === undefined ? "-" : toAegis(winner.listAmountUnits);
+            const status = purchaseStatus(record);
+            return (
+              <tr key={record.id}>
+                <td className="requestCell">
+                  <Link href={`/dashboard/${record.id}`} title={record.prompt}>
+                    {record.prompt}
+                  </Link>
+                  <small>
+                    {shortTime(record.createdAt)} · {PRIORITY_LABEL[priority]}
+                  </small>
+                </td>
+                <td className="nowrap">{winner.displayName}</td>
+                {detailed ? (
+                  <>
+                    <td className="num">{list}</td>
+                    <td className="num strong">{toAegis(winner.amountUnits)}</td>
+                    <td className="num">{toAegis(budgetUnits)}</td>
+                  </>
+                ) : (
+                  <td className="num nowrap">
+                    {list} → {toAegis(winner.amountUnits)}
+                  </td>
+                )}
+                <td>
+                  <span className={`badge ${status.tone}`}>{status.label}</span>
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>

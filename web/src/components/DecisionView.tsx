@@ -1,10 +1,8 @@
 /**
- * 결정 결과를 보여주는 표들. 새 요청 화면과 기록 상세 화면이 같은 모양으로 보여주기 위해 공유한다.
- * 훅을 쓰지 않으므로 서버·클라이언트 어느 쪽에서도 그릴 수 있다.
+ * 비교 모델을 표로 정하기 전의 옛 기록에 남은 후보 점수표. 기록 상세 화면이 쓴다.
  */
 
-import { aegisText, toAegis } from "@/lib/format";
-import { PRIORITY_LABEL } from "@/lib/priority-label";
+import { toAegis } from "@/lib/format";
 import type { PurchaseRecord } from "@/lib/types";
 
 function fmt(value: number): string {
@@ -22,126 +20,6 @@ function score(value: number): string {
   return value.toFixed(2);
 }
 
-/** 상단 요약 + 결제 + 결과. */
-export function PurchaseSummary({ record }: { record: PurchaseRecord }) {
-  const { decision, payment } = record;
-  return (
-    <>
-      <table className="kv">
-        <tbody>
-          <tr>
-            <th>결제 금액</th>
-            <td>
-              {aegisText(decision.winner.amountUnits)}
-              <span className="muted">
-                {decision.winner.listAmountUnits === undefined ? "" : ` (호가 ${aegisText(decision.winner.listAmountUnits)})`} (예산{" "}
-                {aegisText(decision.budgetUnits)})
-                {decision.negotiation?.overBudget ? " · 예산 초과" : ""}
-              </span>
-            </td>
-          </tr>
-          <tr>
-            <th>우선순위</th>
-            <td>
-              {PRIORITY_LABEL[decision.priority]}
-              {decision.prioritySource === "local-llm" ? (
-                <span className="muted"> (요청 문장을 보고 {decision.priorityModel}이(가) 정함)</span>
-              ) : null}
-            </td>
-          </tr>
-          <tr>
-            <th>가중치</th>
-            <td>
-              가격 {decision.weights.price} · 속도 {decision.weights.time} · 성능 {decision.weights.intelligence}
-            </td>
-          </tr>
-          <tr>
-            <th>거래번호 (tx)</th>
-            <td>
-              <code className="hash">{payment?.txHash ?? "-"}</code>
-            </td>
-          </tr>
-          <tr>
-            <th>받은 주소</th>
-            <td>
-              <code className="hash">{payment?.to ?? "-"}</code>
-            </td>
-          </tr>
-          <tr>
-            <th>벤치마크 스냅샷</th>
-            <td>
-              <code className="hash">{decision.snapshotHash}</code>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-
-      {decision.quotes === undefined ? null : (
-        <>
-          <h2>비교한 판매자</h2>
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>판매자</th>
-                  <th>모델</th>
-                  <th className="num">호가 (AEGIS)</th>
-                  <th className="num">합의 (AEGIS)</th>
-                  <th>결과</th>
-                </tr>
-              </thead>
-              <tbody>
-                {decision.quotes.map((quote) => (
-                  <tr key={quote.key} className={quote.status === "agreed" ? "winner" : undefined}>
-                    <td>{quote.sellerName}</td>
-                    <td>{quote.displayName}</td>
-                    <td className="num">{toAegis(quote.askUnits)}</td>
-                    <td className="num">{quote.agreedUnits === undefined ? "-" : toAegis(quote.agreedUnits)}</td>
-                    <td>{quote.status === "agreed" ? "구매" : quote.status === "cancelled" ? "취소" : "결렬"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </>
-      )}
-
-      {decision.negotiation === undefined ? null : (
-        <>
-          <h2>흥정</h2>
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>누가</th>
-                  <th>내용</th>
-                  <th className="num">값 (AEGIS)</th>
-                </tr>
-              </thead>
-              <tbody>
-                {decision.negotiation.transcript.map((turn, index) => (
-                  <tr key={index}>
-                    <td>{turn.from === "buyer" ? "구매 에이전트" : decision.negotiation?.sellerName}</td>
-                    <td>{turn.text}</td>
-                    <td className="num">{toAegis(turn.priceUnits)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </>
-      )}
-
-      <h2>결과</h2>
-      {record.resultText === null ? (
-        <p className="muted">결제가 확인되지 않아 결과가 없습니다.</p>
-      ) : (
-        <pre className="result">{record.resultText}</pre>
-      )}
-    </>
-  );
-}
-
 /** 옛 기록(AA·Arena 시절)에만 있는 점수도 깨지지 않게 보여준다. */
 function maybe(value: number | undefined): string {
   return value === undefined ? "-" : score(value);
@@ -154,10 +32,10 @@ export function CandidateTables({ record }: { record: PurchaseRecord }) {
   if (decision.quotes !== undefined) return null;
   const sources = decision.performanceSources;
   return (
-    <>
+    <section className="panel">
       <h2>후보 점수</h2>
       <p className="muted">총점 = 가격·속도·성능 점수(각 100점 만점)를 가중치로 합친 값입니다.</p>
-      <div className="table-wrap">
+      <div className="tableWrap">
         <table>
           <thead>
             <tr>
@@ -197,7 +75,7 @@ export function CandidateTables({ record }: { record: PurchaseRecord }) {
             후보 중 가장 나쁜 값을 0점, 가장 좋은 값을 100점으로 폈고, 가격과 속도는 몇 배 차이인지가 반영되도록 로그로
             폈습니다.
           </p>
-          <div className="table-wrap">
+          <div className="tableWrap">
             <table>
               <thead>
                 <tr>
@@ -235,7 +113,7 @@ export function CandidateTables({ record }: { record: PurchaseRecord }) {
                 성능 점수 = (AA 점수 + Arena 점수) ÷ 2. 원래 값을 후보 중 최고 대비 100점 만점으로 바꿨습니다
                 {sources.arenaPublishDate != null && <> · Arena 발행일 {sources.arenaPublishDate}</>}.
               </p>
-              <div className="table-wrap">
+              <div className="tableWrap">
                 <table>
                   <thead>
                     <tr>
@@ -270,7 +148,7 @@ export function CandidateTables({ record }: { record: PurchaseRecord }) {
       {decision.rejected.length === 0 ? (
         <p className="muted">필터에서 떨어진 후보가 없습니다.</p>
       ) : (
-        <div className="table-wrap">
+        <div className="tableWrap">
           <table>
             <thead>
               <tr>
@@ -291,6 +169,6 @@ export function CandidateTables({ record }: { record: PurchaseRecord }) {
           </table>
         </div>
       )}
-    </>
+    </section>
   );
 }

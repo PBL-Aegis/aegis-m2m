@@ -5,17 +5,14 @@
 
 import Link from "next/link";
 
+import { shortTime } from "@/lib/purchase-view";
 import type { AuditAlert, AuditStage } from "@/lib/types";
 
-const STAGE_LABEL: Record<AuditStage, string> = {
+export const STAGE_LABEL: Record<AuditStage, string> = {
   "on-request": "요청 직후",
   "before-payment": "송금 직전",
   "after-payment": "결제 후",
 };
-
-function when(iso: string): string {
-  return new Date(iso).toLocaleString("ko-KR", { hour12: false });
-}
 
 function Badge({ alert }: { alert: AuditAlert }) {
   return alert.blocked ? <span className="badge risk">차단</span> : <span className="badge warn">경고</span>;
@@ -26,7 +23,7 @@ function Meta({ alert }: { alert: AuditAlert }) {
     <small>
       {alert.rule}
       {alert.stage !== undefined && <> · {STAGE_LABEL[alert.stage]}</>}
-      {alert.userId !== null && <> · {alert.userId}</>} · {when(alert.createdAt)}
+      {alert.userId !== null && <> · {alert.userId}</>} · {shortTime(alert.createdAt)}
     </small>
   );
 }
@@ -36,36 +33,34 @@ export function AlertList({
   alerts,
   linked,
   compact = false,
+  emptyText = "감지된 이상 거래가 없어요",
 }: {
   alerts: AuditAlert[];
-  linked: Set<string>;
+  linked: Set<string> | string[];
   compact?: boolean;
+  emptyText?: string;
 }) {
-  if (alerts.length === 0) {
-    return (
-      <div className="clearState">
-        <span aria-hidden="true">✓</span>
-        <strong>감지된 이상 거래 없음</strong>
-      </div>
-    );
-  }
+  if (alerts.length === 0) return <p className="empty">{emptyText}</p>;
+  const hasRecord = (id: string) => (Array.isArray(linked) ? linked.includes(id) : linked.has(id));
 
   if (compact) {
     return (
       <div className="compactAlerts">
-        {alerts.map((alert) => (
-          <div key={alert.id}>
-            <Badge alert={alert} />
-            <span>
-              {linked.has(alert.purchaseId) ? (
-                <Link href={`/dashboard/${alert.purchaseId}`}>{alert.message}</Link>
-              ) : (
-                <b>{alert.message}</b>
-              )}
+        {alerts.map((alert) =>
+          hasRecord(alert.purchaseId) ? (
+            <Link className="compactAlert" key={alert.id} href={`/dashboard/${alert.purchaseId}`}>
+              <Badge alert={alert} />
+              <b>{alert.message}</b>
               <Meta alert={alert} />
-            </span>
-          </div>
-        ))}
+            </Link>
+          ) : (
+            <div className="compactAlert" key={alert.id}>
+              <Badge alert={alert} />
+              <b>{alert.message}</b>
+              <Meta alert={alert} />
+            </div>
+          ),
+        )}
       </div>
     );
   }
@@ -73,9 +68,9 @@ export function AlertList({
   return (
     <section className="alertList">
       {alerts.map((alert) => (
-        <article className="panel alert" key={alert.id}>
-          <Badge alert={alert} />
+        <article className="alertRow" key={alert.id}>
           <div>
+            <Badge alert={alert} />
             <h2>{alert.message}</h2>
             <Meta alert={alert} />
             {alert.requestId !== undefined && (
@@ -84,8 +79,8 @@ export function AlertList({
               </small>
             )}
           </div>
-          {linked.has(alert.purchaseId) ? (
-            <Link href={`/dashboard/${alert.purchaseId}`}>거래 보기 →</Link>
+          {hasRecord(alert.purchaseId) ? (
+            <Link className="textLink" href={`/dashboard/${alert.purchaseId}`}>거래 보기 →</Link>
           ) : (
             <small>기록 없음</small>
           )}
