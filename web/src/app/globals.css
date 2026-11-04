@@ -288,7 +288,40 @@ tr.winner td { background: var(--violet-soft); }
 .facts > div { display: flex; justify-content: space-between; gap: 12px; }
 .facts > div.stacked { flex-direction: column; gap: 4px; }
 .facts dt { color: var(--faint); }
-.facts dd { margin: 0; font-variant-numeric: tabular-nums; }
+.facts dd { margin: 0; font-variant-numeric: tabular-nums; text-align: right; }
+.facts > div.stacked dd { text-align: left; }
+.facts > div.centered { align-items: center; }
+.facts dd.copyable { display: flex; align-items: center; gap: 2px; }
+.facts dd.copyable code { font-size: 13px; }
+.copyButton {
+  width: 36px;
+  height: 36px;
+  margin-right: -8px;
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--faint);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.moreFacts { padding-top: 4px; border-top: 1px solid var(--line); font-size: 14px; }
+.moreFacts summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--muted);
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+}
+.moreFacts summary::-webkit-details-marker { display: none; }
+.moreFacts summary svg { transition: transform 0.15s; }
+.moreFacts[open] summary svg { transform: rotate(180deg); }
+.moreFacts .facts { padding-bottom: 8px; }
 .stages { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; }
 .stages li {
   min-height: 28px;
@@ -386,6 +419,8 @@ tr.winner td { background: var(--violet-soft); }
   cursor: pointer;
   display: flex;
   flex-direction: column;
+  /* 브라우저마다 버튼 안 정렬 기본값이 달라 직접 정한다. 없으면 막대가 사라지고 토글이 왼쪽으로 몰린다. */
+  align-items: stretch;
   gap: 10px;
 }
 .dealHead.live { position: sticky; top: 8px; z-index: 1; }
@@ -394,6 +429,13 @@ tr.winner td { background: var(--violet-soft); }
 .dealName strong { font-size: 15px; font-weight: 600; }
 .dealName span { font-size: 12px; color: var(--faint); }
 .dealTitle svg { flex: none; transition: transform 0.15s; }
+/* 흥정 결과만 칩으로 보여 준다. 다른 상태는 글자만 쓴다. */
+.dealTitle .badge { padding: 4px 10px; border-radius: 12px; background: var(--paper); }
+.dealTitle .badge.live { background: var(--violet-soft); }
+.dealTitle .badge.win { background: var(--violet); color: #ffffff; }
+.dealTitle .badge.warn { background: var(--amber-soft); }
+.dealTitle .badge.risk { background: var(--red-soft); }
+.panel .dealTitle .badge.mute { background: var(--line); }
 .dealHead[aria-expanded="true"] .dealTitle svg { transform: rotate(180deg); }
 .dealBar {
   position: relative;

@@ -2,12 +2,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { AlertList, STAGE_LABEL } from "@/components/AlertList";
+import { CopyButton } from "@/components/CopyButton";
 import { CandidateTables } from "@/components/DecisionView";
 import { NegotiationBlock } from "@/components/Negotiation";
 import { getPurchase, listAlertsForPurchase } from "@/lib/api";
 import { aegisText } from "@/lib/format";
 import { PRIORITY_LABEL } from "@/lib/priority-label";
-import { failureText, purchaseReason, purchaseStatus, purchaseTitle, quotesOf, quoteStatus, shortTime } from "@/lib/purchase-view";
+import { chainLabel, failureText, priceDate, purchaseReason, purchaseStatus, purchaseTitle, quotesOf, quoteStatus, shortHash, shortTime } from "@/lib/purchase-view";
 import type { AuditAlert, AuditStage } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -99,32 +100,63 @@ export default async function PurchaseDetailPage({ params }: { params: Promise<{
                 <dd>{aegisText(decision.budgetUnits)}</dd>
               </div>
               <div>
-                <dt>결제 모드</dt>
-                <dd>{payment?.mode ?? "-"}</dd>
+                <dt>받은 곳</dt>
+                <dd>{payment === null ? "-" : decision.negotiation?.sellerName ?? shortHash(payment.to)}</dd>
               </div>
-              <div className="stacked">
-                <dt>구매 번호</dt>
-                <dd className="hash">{record.id}</dd>
+              <div>
+                <dt>체인</dt>
+                <dd>{payment === null ? "-" : chainLabel(payment.mode)}</dd>
               </div>
-              {record.requestId !== undefined && (
-                <div className="stacked">
-                  <dt>요청 번호</dt>
-                  <dd className="hash">{record.requestId}</dd>
+              {decision.snapshotCapturedAt !== undefined && (
+                <div>
+                  <dt>가격 기준일</dt>
+                  <dd>{priceDate(decision.snapshotCapturedAt)}</dd>
                 </div>
               )}
-              <div className="stacked">
-                <dt>거래번호 (tx)</dt>
-                <dd className="hash">{payment?.txHash ?? "-"}</dd>
-              </div>
-              <div className="stacked">
-                <dt>받은 주소</dt>
-                <dd className="hash">{payment?.to ?? "-"}</dd>
-              </div>
-              <div className="stacked">
-                <dt>벤치마크 스냅샷</dt>
-                <dd className="hash">{decision.snapshotHash}</dd>
+              <div className="centered">
+                <dt>거래번호</dt>
+                {payment === null ? (
+                  <dd>-</dd>
+                ) : (
+                  <dd className="copyable">
+                    <code>{shortHash(payment.txHash)}</code>
+                    <CopyButton value={payment.txHash} label="거래번호 복사" />
+                  </dd>
+                )}
               </div>
             </dl>
+            <details className="moreFacts">
+              <summary>
+                자세히
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5f6878" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="m6 9 6 6 6-6" />
+                </svg>
+              </summary>
+              <dl className="facts">
+                <div className="stacked">
+                  <dt>구매 번호</dt>
+                  <dd className="hash">{record.id}</dd>
+                </div>
+                {record.requestId !== undefined && (
+                  <div className="stacked">
+                    <dt>요청 번호</dt>
+                    <dd className="hash">{record.requestId}</dd>
+                  </div>
+                )}
+                {payment !== null && (
+                  <>
+                    <div className="stacked">
+                      <dt>거래번호 전체</dt>
+                      <dd className="hash">{payment.txHash}</dd>
+                    </div>
+                    <div className="stacked">
+                      <dt>받은 주소</dt>
+                      <dd className="hash">{payment.to}</dd>
+                    </div>
+                  </>
+                )}
+              </dl>
+            </details>
           </section>
 
           <section className="panel">

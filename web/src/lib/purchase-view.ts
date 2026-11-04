@@ -3,7 +3,7 @@
  */
 
 import { aegisText } from "@/lib/format";
-import type { Negotiation, NegotiationTurn, PurchaseRecord } from "@/lib/types";
+import type { Negotiation, NegotiationTurn, PaymentMode, PurchaseRecord } from "@/lib/types";
 
 export type Tone = "live" | "win" | "ok" | "warn" | "risk" | "mute";
 
@@ -110,6 +110,21 @@ export function purchaseReason(record: PurchaseRecord): string | null {
   }
   if (cancelled !== undefined) sentences.push(`${cancelled.sellerName}와의 합의는 취소했어요.`);
   return sentences.join(" ");
+}
+
+/** 돈이 오간 체인. local 은 이 컴퓨터의 anvil, live 는 Base Sepolia 다. */
+export function chainLabel(mode: PaymentMode): string {
+  return mode === "live" ? "Base Sepolia" : "로컬 체인";
+}
+
+/** 긴 해시를 앞뒤만 남겨 줄인다. */
+export function shortHash(hash: string): string {
+  return `${hash.slice(0, 6)}…${hash.slice(-4)}`;
+}
+
+/** 가격·성능표를 받은 날. 시간대는 아래 shortTime 과 같이 고정한다. */
+export function priceDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("ko-KR", { timeZone: "Asia/Seoul", year: "numeric", month: "long", day: "numeric" });
 }
 
 /** 서버와 브라우저가 같은 글자를 그리도록 시간대를 고정한다. */
