@@ -108,23 +108,23 @@
       ]
     },
     {
-      "key": "openai/gpt-6-astra",
-      "epochModel": "GPT-6 Astra",
-      "epochDate": "2026-09-03",
-      "eci": "169.06",
-      "eciCiLow": "165.88",
-      "eciCiHigh": "174.29",
-      "inputPricePerMillion": "10",
-      "outputPricePerMillion": "50",
-      "outputTokensPerSecond": "67.57",
-      "openRouterId": "openai/gpt-6-astra",
+      "key": "openai/gpt-6.1-sol",
+      "epochModel": "GPT-6.1 Sol",
+      "epochDate": "2026-09-29",
+      "eci": "167.82",
+      "eciCiLow": "164.29",
+      "eciCiHigh": "172.51",
+      "inputPricePerMillion": "2",
+      "outputPricePerMillion": "10",
+      "outputTokensPerSecond": "60.11",
+      "openRouterId": "openai/gpt-6.1-sol",
       "aaSlugs": [
-        "gpt-6-astra",
-        "gpt-6-astra-xhigh"
+        "gpt-6-1-sol-high",
+        "gpt-6-1-sol-xhigh"
       ],
       "aaModelNames": [
-        "GPT-6 Astra (Max)",
-        "GPT-6 Astra (Xhigh)"
+        "GPT-6.1 Sol (High)",
+        "GPT-6.1 Sol (Xhigh)"
       ]
     }
   ]

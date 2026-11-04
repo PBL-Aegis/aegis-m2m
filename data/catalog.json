@@ -92,15 +92,15 @@
       ]
     },
     {
-      "key": "openai/gpt-6-astra",
+      "key": "openai/gpt-6.1-sol",
       "providerId": "openai",
-      "providerModelId": "gpt-6-astra",
-      "displayName": "GPT-6 Astra",
-      "epochModel": "GPT-6 Astra",
-      "openRouterId": "openai/gpt-6-astra",
+      "providerModelId": "gpt-6.1-sol",
+      "displayName": "GPT-6.1 Sol",
+      "epochModel": "GPT-6.1 Sol",
+      "openRouterId": "openai/gpt-6.1-sol",
       "aaSlugs": [
-        "gpt-6-astra",
-        "gpt-6-astra-xhigh"
+        "gpt-6-1-sol-high",
+        "gpt-6-1-sol-xhigh"
       ],
       "recipient": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
       "capabilities": [
@@ -1168,7 +1168,7 @@
       "reason": "판매 에이전트가 팔지 않는 모델: openai"
     },
     {
-      "name": "GPT-6.1 Sol",
+      "name": "GPT-6 Astra",
       "reason": "판매 에이전트가 팔지 않는 모델: openai"
     },
     {
