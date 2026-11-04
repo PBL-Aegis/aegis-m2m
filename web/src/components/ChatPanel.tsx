@@ -12,7 +12,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 
 import { BuyerAvatar, NegotiationBlock } from "@/components/Negotiation";
 import { aegisText, parseAegis } from "@/lib/format";
-import { dealStatus, endsDeal, isOverBudget, purchaseReason, purchaseTitle, quotesOf, quoteStatus } from "@/lib/purchase-view";
+import { dealStatus, endsDeal, failureText, isOverBudget, purchaseReason, purchaseTitle, quotesOf, quoteStatus } from "@/lib/purchase-view";
 import type { NegotiationTurn, Priority, PurchaseRecord, PurchaseStreamEvent, StreamModel } from "@/lib/types";
 
 /** 흥정 말풍선 하나를 보여주는 간격. 서버는 흥정을 순식간에 끝내므로 읽을 시간을 여기서 준다. */
@@ -20,6 +20,12 @@ const TURN_DELAY_MS = 650;
 
 /** "기본"은 고르는 값이 아니다. 비워 두면 요청 문장을 읽어 우선순위를 정한다. */
 const AUTO = "";
+
+const PRIORITY_CHOICES = [
+  { value: AUTO, label: "요청 문장으로 판단" },
+  { value: "price", label: "싸게" },
+  { value: "intelligence", label: "똑똑하게" },
+];
 
 const PLAN_OPENING: Partial<Record<Priority, string>> = {
   default: "기본으로 살게요.",
@@ -54,6 +60,8 @@ function sleep(ms: number): Promise<void> {
 function PurchaseResult({ record, anchor }: { record: PurchaseRecord; anchor: (element: HTMLElement | null) => void }) {
   const { winner, budgetUnits } = record.decision;
   const reason = purchaseReason(record);
+  const failure = failureText(record);
+  const blocked = record.blockedRule !== undefined;
   return (
     <div className="msg top">
       <BuyerAvatar />
@@ -61,11 +69,12 @@ function PurchaseResult({ record, anchor }: { record: PurchaseRecord; anchor: (e
         <div className="finalHead">
           <h2>{purchaseTitle(record)}</h2>
           {reason !== null && <p>{reason}</p>}
-          {record.status === "FAILED" && <p>{record.failureReason}</p>}
+          {failure !== null && <p>{failure}</p>}
         </div>
-        {isOverBudget(record) && (
-          <Link className="warnLink" href="/dashboard/alerts">
-            이상 거래에 경고를 남겼어요<span aria-hidden="true">→</span>
+        {(blocked || isOverBudget(record)) && (
+          <Link className={`warnLink${blocked ? " risk" : ""}`} href="/dashboard/alerts">
+            {blocked ? "이상 거래에 차단 기록을 남겼어요" : "이상 거래에 경고를 남겼어요"}
+            <span aria-hidden="true">→</span>
           </Link>
         )}
         <dl className="prices">
@@ -100,6 +109,7 @@ export function ChatPanel() {
   const [prompt, setPrompt] = useState("");
   const [budget, setBudget] = useState("0.3");
   const [priority, setPriority] = useState<string>(AUTO);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [turns, setTurns] = useState<Turn[]>([]);
 
@@ -241,31 +251,25 @@ export function ChatPanel() {
       </div>
 
       <form className="composer" onSubmit={onSubmit}>
-        <div className="composerInner">
-          <div className="composerRow">
-            <textarea
-              aria-label="요청 내용"
-              value={prompt}
-              onChange={(event) => setPrompt(event.target.value)}
-              onKeyDown={(event) => {
-                // 엔터로 보내고, 줄바꿈은 Shift+엔터. 폼에 제출을 맡겨야 입력값이 최신 상태로 읽힌다.
-                if (event.key === "Enter" && !event.shiftKey) {
-                  event.preventDefault();
-                  event.currentTarget.form?.requestSubmit();
-                }
-              }}
-              placeholder="무엇을 시킬지 적어주세요"
-              rows={2}
-              disabled={busy}
-            />
-            <button type="submit" aria-label="보내기" disabled={busy || prompt.trim() === "" || parseAegis(budget) === null}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M12 19V5M6 11l6-6 6 6" />
-              </svg>
-            </button>
-          </div>
-          <div className="composerOptions">
-            <label>
+        {menuOpen && <button type="button" className="menuBackdrop" aria-label="우선순위 메뉴 닫기" onClick={() => setMenuOpen(false)} />}
+        <div className="composerCard">
+          <textarea
+            aria-label="요청 내용"
+            value={prompt}
+            onChange={(event) => setPrompt(event.target.value)}
+            onKeyDown={(event) => {
+              // 엔터로 보내고, 줄바꿈은 Shift+엔터. 폼에 제출을 맡겨야 입력값이 최신 상태로 읽힌다.
+              if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault();
+                event.currentTarget.form?.requestSubmit();
+              }
+            }}
+            placeholder="무엇을 시킬지 적어주세요"
+            rows={2}
+            disabled={busy}
+          />
+          <div className="composerBar">
+            <label className="budgetPill">
               예산
               <input
                 type="number"
@@ -277,14 +281,59 @@ export function ChatPanel() {
               />
               AEGIS
             </label>
-            <label>
-              우선순위
-              <select value={priority} onChange={(event) => setPriority(event.target.value)} disabled={busy}>
-                <option value={AUTO}>요청 문장으로 판단</option>
-                <option value="price">싸게</option>
-                <option value="intelligence">똑똑하게</option>
-              </select>
-            </label>
+            <div className="composerActions">
+              <div className="priorityPicker">
+                <button
+                  type="button"
+                  className="priorityButton"
+                  aria-haspopup="menu"
+                  aria-expanded={menuOpen}
+                  disabled={busy}
+                  onClick={() => setMenuOpen(!menuOpen)}
+                >
+                  {PRIORITY_CHOICES.find((choice) => choice.value === priority)?.label}
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5f6878" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="m6 9 6 6 6-6" />
+                  </svg>
+                </button>
+                {menuOpen && (
+                  <div
+                    className="priorityMenu"
+                    role="menu"
+                    aria-label="우선순위 선택"
+                    onKeyDown={(event) => {
+                      if (event.key === "Escape") setMenuOpen(false);
+                    }}
+                  >
+                    <span>우선순위 선택</span>
+                    {PRIORITY_CHOICES.map((choice) => (
+                      <button
+                        key={choice.value}
+                        type="button"
+                        role="menuitemradio"
+                        aria-checked={choice.value === priority}
+                        onClick={() => {
+                          setPriority(choice.value);
+                          setMenuOpen(false);
+                        }}
+                      >
+                        {choice.label}
+                        {choice.value === priority && (
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6b3fd4" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <path d="m5 12 5 5L20 7" />
+                          </svg>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <button type="submit" className="sendButton" aria-label="보내기" disabled={busy || prompt.trim() === "" || parseAegis(budget) === null}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M12 19V5M6 11l6-6 6 6" />
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
       </form>
@@ -298,7 +347,7 @@ function TurnView({ turn, anchor }: { turn: Turn; anchor: (element: HTMLElement 
   // 어디서 살지 정해지면 기록의 결과로 그린다. 같은 기록을 다시 돌려받아 대화를 못 받은 경우에도 그릴 수 있다.
   const quotes = record === null ? [] : quotesOf(record);
   const blocks = record === null ? turn.blocks.filter((block) => block.turns.length > 0) : quotes.map((quote) => ({ ...quote, turns: quote.transcript }));
-  const statusOf = (index: number, turns: NegotiationTurn[]) => (record === null ? dealStatus(turns) : quoteStatus(quotes[index]));
+  const statusOf = (index: number, turns: NegotiationTurn[]) => (record === null ? dealStatus(turns) : quoteStatus(quotes[index], record));
 
   const lastBlock = record === null ? blocks[blocks.length - 1] : undefined;
   const lastTurn = lastBlock?.turns[lastBlock.turns.length - 1];

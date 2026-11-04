@@ -285,6 +285,8 @@ export interface PurchaseRecord {
   failureReason: string | null;
   /** FAILED 일 때만 채워진다. 이 칸이 생기기 전 기록에는 없다. */
   failureStage?: FailureStage;
+  /** 감사 규칙이 결제를 막았을 때 그 규칙 이름. */
+  blockedRule?: string;
 }
 
 /** 감사 규칙이 어느 자리에서 돌았는지. */

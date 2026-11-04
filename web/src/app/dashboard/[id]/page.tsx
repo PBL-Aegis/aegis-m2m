@@ -7,7 +7,7 @@ import { NegotiationBlock } from "@/components/Negotiation";
 import { getPurchase, listAlertsForPurchase } from "@/lib/api";
 import { aegisText } from "@/lib/format";
 import { PRIORITY_LABEL } from "@/lib/priority-label";
-import { purchaseReason, purchaseStatus, purchaseTitle, quotesOf, quoteStatus, shortTime } from "@/lib/purchase-view";
+import { failureText, purchaseReason, purchaseStatus, purchaseTitle, quotesOf, quoteStatus, shortTime } from "@/lib/purchase-view";
 import type { AuditAlert, AuditStage } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -30,6 +30,7 @@ export default async function PurchaseDetailPage({ params }: { params: Promise<{
   const { decision, payment } = record;
   const status = purchaseStatus(record);
   const reason = purchaseReason(record);
+  const failure = failureText(record);
   const quotes = quotesOf(record);
 
   return (
@@ -38,7 +39,7 @@ export default async function PurchaseDetailPage({ params }: { params: Promise<{
 
       <div className="detailHead">
         <span className={`badge ${status.tone}`}>{status.label}</span>
-        <h1>{record.prompt}</h1>
+        <h1>“{record.prompt}”</h1>
         <span className="muted">
           {shortTime(record.createdAt)} · 우선순위 {PRIORITY_LABEL[decision.priority]}
           {decision.prioritySource === "local-llm" && ` (${decision.priorityModel}이(가) 판단)`}
@@ -50,12 +51,7 @@ export default async function PurchaseDetailPage({ params }: { params: Promise<{
           <section className="panel">
             <h2>{purchaseTitle(record)}</h2>
             {reason !== null && <p>{reason}</p>}
-            {record.failureReason !== null && (
-              <p>
-                {record.failureStage === "after-send" ? "송금 뒤에 실패했어요. 돈이 나갔을 수 있어요. " : "송금 전에 실패했어요. "}
-                {record.failureReason}
-              </p>
-            )}
+            {failure !== null && <p>{failure}</p>}
           </section>
 
           {quotes.length > 0 && (
@@ -69,7 +65,7 @@ export default async function PurchaseDetailPage({ params }: { params: Promise<{
                   askUnits={quote.askUnits}
                   turns={quote.transcript}
                   live={false}
-                  status={quoteStatus(quote)}
+                  status={quoteStatus(quote, record)}
                 />
               ))}
             </section>
@@ -102,6 +98,20 @@ export default async function PurchaseDetailPage({ params }: { params: Promise<{
                 <dt>예산</dt>
                 <dd>{aegisText(decision.budgetUnits)}</dd>
               </div>
+              <div>
+                <dt>결제 모드</dt>
+                <dd>{payment?.mode ?? "-"}</dd>
+              </div>
+              <div className="stacked">
+                <dt>구매 번호</dt>
+                <dd className="hash">{record.id}</dd>
+              </div>
+              {record.requestId !== undefined && (
+                <div className="stacked">
+                  <dt>요청 번호</dt>
+                  <dd className="hash">{record.requestId}</dd>
+                </div>
+              )}
               <div className="stacked">
                 <dt>거래번호 (tx)</dt>
                 <dd className="hash">{payment?.txHash ?? "-"}</dd>

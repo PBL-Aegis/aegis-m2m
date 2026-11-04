@@ -85,14 +85,11 @@ header.site nav a {
 header.site nav a[aria-current="page"] { font-weight: 600; color: var(--violet); }
 
 .mode {
-  padding: 4px 10px;
-  border-radius: 12px;
-  background: var(--paper);
   color: var(--muted);
   font-size: 12px;
   font-weight: 600;
 }
-.mode.live { background: var(--red-soft); color: var(--red); }
+.mode.live { color: var(--red); }
 
 main { flex: 1; min-height: 0; }
 
@@ -143,20 +140,17 @@ p { margin: 0; line-height: 1.6; }
 .badge {
   flex: none;
   display: inline-block;
-  padding: 4px 10px;
-  border-radius: 12px;
-  background: var(--paper);
   color: var(--muted);
   font-size: 12px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
-.badge.live { background: var(--violet-soft); color: var(--violet-ink); }
-.badge.win { background: var(--violet); color: #ffffff; }
-.badge.ok { background: var(--green-soft); color: var(--green); }
-.badge.warn { background: var(--amber-soft); color: var(--amber); }
-.badge.risk { background: var(--red-soft); color: var(--red); }
+.badge.live { color: var(--violet-ink); }
+.badge.win { color: var(--violet); }
+.badge.ok { color: var(--green); }
+.badge.warn { color: var(--amber); }
+.badge.risk { color: var(--red); }
 
 .empty { padding: 48px 0; text-align: center; font-size: 14px; color: var(--muted); }
 
@@ -485,6 +479,7 @@ tr.winner td { background: var(--violet-soft); }
   gap: 12px;
 }
 .warnLink:hover { color: var(--amber); }
+.warnLink.risk, .warnLink.risk:hover { background: var(--red-soft); color: var(--red); }
 .prices {
   margin: 0;
   display: grid;
@@ -505,29 +500,109 @@ tr.winner td { background: var(--violet-soft); }
 }
 
 /* --- 입력창 --- */
-.composer { flex: none; background: var(--card); border-top: 1px solid var(--line); }
-.composerInner {
+.composer { position: relative; z-index: 2; flex: none; padding: 8px 16px 16px; }
+.menuBackdrop { position: fixed; inset: 0; padding: 0; border: 0; background: transparent; cursor: default; }
+.composerCard {
+  position: relative;
   max-width: 760px;
   margin: 0 auto;
-  padding: 12px 16px;
+  padding: 14px 12px 12px;
+  border: 1px solid var(--line);
+  border-radius: 28px;
+  background: var(--card);
+  box-shadow: 0 4px 20px rgb(26 32 48 / 7%);
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
-.composerRow { display: flex; gap: 8px; align-items: flex-end; }
-.composerRow textarea {
-  flex: 1;
-  min-width: 0;
-  padding: 10px 16px;
-  border: 1px solid var(--paper);
-  border-radius: 16px;
-  background: var(--paper);
-  font-size: 15px;
+.composerCard:focus-within { border-color: var(--violet); }
+.composerCard textarea {
+  width: 100%;
+  padding: 2px 8px;
+  border: 0;
+  background: transparent;
+  font-size: 16px;
   line-height: 1.5;
   resize: none;
 }
-.composerRow textarea::placeholder { color: var(--faint); opacity: 1; }
-.composerRow button {
+.composerCard textarea:focus { outline: none; }
+.composerCard textarea::placeholder { color: var(--faint); opacity: 1; }
+.composerBar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.budgetPill {
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 20px;
+  background: var(--paper);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--muted);
+}
+.budgetPill:focus-within { outline: 2px solid var(--violet); }
+.budgetPill input {
+  field-sizing: content;
+  min-width: 24px;
+  max-width: 88px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  appearance: textfield;
+}
+.budgetPill input:focus { outline: none; }
+.budgetPill input::-webkit-outer-spin-button,
+.budgetPill input::-webkit-inner-spin-button { appearance: none; margin: 0; }
+.composerActions { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+.priorityPicker { position: relative; }
+.priorityButton {
+  height: 40px;
+  padding: 0 10px 0 14px;
+  border: 0;
+  border-radius: 20px;
+  background: transparent;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+.priorityButton[aria-expanded="true"] { background: var(--paper); }
+.priorityButton:disabled { cursor: default; color: var(--faint); }
+.priorityMenu {
+  position: absolute;
+  right: 0;
+  bottom: 48px;
+  width: 240px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: var(--card);
+  box-shadow: 0 8px 28px rgb(26 32 48 / 12%);
+  display: flex;
+  flex-direction: column;
+}
+.priorityMenu > span { padding: 8px 12px; font-size: 13px; color: var(--faint); }
+.priorityMenu button {
+  min-height: 44px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  font-size: 15px;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.priorityMenu button:hover { background: var(--paper); }
+.sendButton {
   flex: none;
   width: 44px;
   height: 44px;
@@ -540,25 +615,4 @@ tr.winner td { background: var(--violet-soft); }
   align-items: center;
   justify-content: center;
 }
-.composerRow button:disabled { background: var(--violet-off); cursor: default; }
-.composerOptions { display: flex; flex-wrap: wrap; gap: 8px 16px; }
-.composerOptions label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  color: var(--muted);
-}
-.composerOptions input, .composerOptions select {
-  height: 36px;
-  padding: 0 10px;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  background: var(--card);
-  font-size: 14px;
-  color: var(--ink);
-}
-.composerOptions input { width: 96px; font-variant-numeric: tabular-nums; }
-.composerRow textarea:focus,
-.composerOptions input:focus,
-.composerOptions select:focus { outline: none; border-color: var(--violet); }
+.sendButton:disabled { background: var(--violet-off); cursor: default; }

@@ -24,6 +24,7 @@ export function isOverBudget(record: PurchaseRecord): boolean {
 
 export function purchaseStatus(record: PurchaseRecord): StatusView {
   if (record.status === "PROCESSING") return { label: "처리 중", tone: "live" };
+  if (record.blockedRule !== undefined) return { label: "차단", tone: "risk" };
   if (record.status === "FAILED") return { label: "결제 실패", tone: "risk" };
   if (isOverBudget(record)) return { label: "예산 초과", tone: "warn" };
   return { label: "정산 완료", tone: "ok" };
@@ -41,9 +42,13 @@ export function dealStatus(turns: NegotiationTurn[]): StatusView {
   return last.action === "accept" ? { label: `합의 ${aegisText(last.priceUnits)}`, tone: "live" } : { label: "결렬", tone: "mute" };
 }
 
-export function quoteStatus(quote: Negotiation): StatusView {
-  if (quote.overBudget) return { label: "예산 초과 구매", tone: "warn" };
-  if (quote.status === "agreed") return { label: `구매 ${aegisText(quote.agreedUnits ?? 0)}`, tone: "win" };
+export function quoteStatus(quote: Negotiation, record: PurchaseRecord): StatusView {
+  if (quote.status === "agreed") {
+    const price = aegisText(quote.agreedUnits ?? 0);
+    if (record.blockedRule !== undefined) return { label: `차단 ${price}`, tone: "risk" };
+    if (record.status === "FAILED") return { label: `합의 ${price}`, tone: "risk" };
+    return quote.overBudget ? { label: "예산 초과 구매", tone: "warn" } : { label: `구매 ${price}`, tone: "win" };
+  }
   if (quote.status === "cancelled") return { label: "취소", tone: "mute" };
   if (quote.status === "blocked") return { label: "중단", tone: "risk" };
   return { label: "결렬", tone: "mute" };
@@ -56,8 +61,17 @@ function lastSellerPrice(quote: Negotiation): number {
 
 export function purchaseTitle(record: PurchaseRecord): string {
   const name = record.decision.winner.displayName;
+  if (record.blockedRule !== undefined) return "결제를 막았어요";
   if (record.status === "FAILED") return `${name} 결제에 실패했어요`;
   return isOverBudget(record) ? `예산을 넘겨 ${name}로 샀어요` : `${name}로 샀어요`;
+}
+
+/** 결제가 안 된 까닭. 돈이 나갔을 수 있는지를 먼저 말한다. 성공한 기록에는 없다. */
+export function failureText(record: PurchaseRecord): string | null {
+  if (record.failureReason === null) return null;
+  if (record.blockedRule !== undefined) return `감사 규칙이 송금 직전에 막아서 돈은 나가지 않았어요. ${record.failureReason}`;
+  const stage = record.failureStage === "after-send" ? "송금 뒤에 실패했어요. 돈이 나갔을 수 있어요." : "송금 전에 실패했어요.";
+  return `${stage} ${record.failureReason}`;
 }
 
 /** 왜 이곳에서 샀는지. 흥정이 생기기 전 기록에는 없다. */
