@@ -6,7 +6,7 @@
 "그때 본 숫자"가 무엇이었는지 확인할 수 있다.
 
 구매 때는 data/benchmark.json 에 고정한 값을 쓴다. 모델을 바꿀 때만 scripts/capture_benchmark.py 로 다시 뜬다.
-load_fresh_snapshot 은 세 출처(Epoch·OpenRouter·AA)에서 새로 받아 MongoDB 에 쌓는 함수로, 지금 구매 흐름에서는 부르지 않는다.
+load_fresh_snapshot 은 두 출처(Epoch·OpenRouter)에서 새로 받아 MongoDB 에 쌓는 함수로, 지금 구매 흐름에서는 부르지 않는다.
 """
 
 import hashlib
@@ -18,7 +18,7 @@ from pathlib import Path
 from typing import Any
 
 from agent_m2m import store
-from agent_m2m.benchmark_sources import build_snapshot, fetch_aa, fetch_epoch, fetch_openrouter
+from agent_m2m.benchmark_sources import build_snapshot, fetch_epoch, fetch_openrouter
 from agent_m2m.config import ROOT
 from agent_m2m.domain import parse_iso_ms
 
@@ -77,13 +77,9 @@ _refreshing = threading.Lock()
 
 
 def _refresh() -> dict[str, Any]:
-    key = (os.environ.get("AA_API_KEY") or "").strip()
-    if key == "":
-        raise RuntimeError("AA_API_KEY 가 없습니다")
     epoch_rows = fetch_epoch()
     openrouter_models = fetch_openrouter()
-    aa_models = fetch_aa(key)
-    snapshot = build_snapshot(load_catalog(), epoch_rows, openrouter_models, aa_models)
+    snapshot = build_snapshot(load_catalog(), epoch_rows, openrouter_models)
     digest = snapshot_hash(snapshot)
     store.save_snapshot(digest, snapshot)
     return {"snapshot": snapshot, "hash": digest}

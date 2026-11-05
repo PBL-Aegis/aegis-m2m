@@ -9,19 +9,19 @@ export const PRIORITIES: readonly Priority[] = [
   "intelligence",
 ];
 
-/** 가격·시간·지능에 몇 점씩 줄지. 세 값의 합은 항상 100. */
+/** 가격·성능에 몇 점씩 줄지. 합은 항상 100. time 은 속도를 보던 옛 기록에만 있다. */
 export interface Weights {
   price: number;
-  time: number;
+  time?: number;
   intelligence: number;
 }
 
 /** 우선순위마다 고정된 배점표. 코드 밖에서 바꿀 수 없다. */
 export const PRIORITY_WEIGHTS: Record<Priority, Weights> = {
-  default: { price: 34, time: 33, intelligence: 33 },
-  price: { price: 80, time: 10, intelligence: 10 },
+  default: { price: 50, intelligence: 50 },
+  price: { price: 90, intelligence: 10 },
   speed: { price: 10, time: 80, intelligence: 10 },
-  intelligence: { price: 10, time: 10, intelligence: 80 },
+  intelligence: { price: 10, intelligence: 90 },
 };
 
 /**
@@ -66,18 +66,14 @@ export interface BenchmarkModel {
   /** OpenRouter 판매 단가(1M 토큰당 달러). */
   inputPricePerMillion: string;
   outputPricePerMillion: string;
-  /** AA 가 잰 출력 속도(토큰/초) 최근 72시간 중앙값을 생각 단계별로 평균낸 값. */
-  outputTokensPerSecond: string;
   openRouterId: string;
-  aaSlugs: string[];
-  aaModelNames: string[];
 }
 
 export interface BenchmarkSnapshot {
   snapshotId: string;
   capturedAt: string;
   source: string;
-  sources?: { epoch: string; openRouter: string; aa: string };
+  sources?: { epoch: string; openRouter: string };
   note: string;
   models: BenchmarkModel[];
 }
@@ -124,7 +120,7 @@ export interface ScoredCandidate {
   providerModelId: string;
   recipient: string;
   amountUnits: number;
-  /** 출력 속도(토큰/초). 이 칸이 생기기 전 기록에는 없다. */
+  /** 옛 기록(속도를 보던 때)에만 있다. 출력 속도(토큰/초). */
   outputTokensPerSecond?: number;
   /** 옛 기록(끝까지 걸린 시간으로 속도를 매기던 때)에만 있다. */
   completionMs?: number;
@@ -132,7 +128,7 @@ export interface ScoredCandidate {
   eci?: number;
   eciCiLow?: number;
   eciCiHigh?: number;
-  /** 속도를 가져온 AA 항목 이름들(생각 단계 포함). */
+  /** 옛 기록에만 있다. 속도를 가져온 AA 항목 이름들. */
   aaModelNames?: string[];
   /** 옛 기록에만 있다. 속도를 가져온 AA 항목 하나. */
   aaModelName?: string;
@@ -144,7 +140,8 @@ export interface ScoredCandidate {
   aaScore?: number;
   arenaScore?: number;
   priceScore: number;
-  timeScore: number;
+  /** 옛 기록에만 있다. */
+  timeScore?: number;
   /** 성능 점수. 새 기록은 ECI 를 후보 중 최저 0점·최고 100점으로 편 값이다. 가중치의 "성능" 칸에 들어간다. */
   intelligenceScore: number;
   totalScore: number;

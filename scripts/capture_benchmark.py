@@ -1,5 +1,5 @@
 """
-세 출처(Epoch·OpenRouter·AA)를 떠서 판매 목록과 시작값을 새로 만든다. 수집·짝짓기 로직은
+두 출처(Epoch·OpenRouter)를 떠서 판매 목록과 시작값을 새로 만든다. 수집·짝짓기 로직은
 agent_m2m/benchmark_sources.py 에 있고, 앱도 구매 때 같은 로직으로 숫자를 갱신한다.
 
   uv run python scripts/capture_benchmark.py          data/catalog.json · data/benchmark.json · data/sellers.json 갱신
@@ -7,17 +7,15 @@ agent_m2m/benchmark_sources.py 에 있고, 앱도 구매 때 같은 로직으로
 
 판매 목록이 바뀌는 곳은 여기뿐이다. 결과를 확인하고 커밋한다.
 판매 에이전트와 파는 모델은 data/sellers.json 에 사람이 등록한다. 등록된 모델만 판매 목록에 넣고, 이 파일은 고치지 않는다.
-AA 키는 .env.local 의 AA_API_KEY 에서만 읽고, 저장 파일에는 넣지 않는다.
 """
 
 import json
-import os
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from agent_m2m.benchmark_sources import build_catalog, build_snapshot, fetch_aa, fetch_epoch, fetch_openrouter  # noqa: E402
+from agent_m2m.benchmark_sources import build_catalog, build_snapshot, fetch_epoch, fetch_openrouter  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "data"
@@ -29,18 +27,14 @@ def write_json(path: Path, value: object) -> None:
 
 
 def main() -> None:
-    key = (os.environ.get("AA_API_KEY") or "").strip()
-    if key == "":
-        sys.exit(".env.local 에 AA_API_KEY 가 없습니다")
-
-    epoch_rows, openrouter_models, aa_models = fetch_epoch(), fetch_openrouter(), fetch_aa(key)
+    epoch_rows, openrouter_models = fetch_epoch(), fetch_openrouter()
 
     sellers = json.loads(SELLERS_FILE.read_text())["sellers"]
 
     def recipient_of(provider_id: str) -> str:
         return sellers[provider_id]["address"] if provider_id in sellers else ""
 
-    catalog = build_catalog(epoch_rows, openrouter_models, aa_models, recipient_of)
+    catalog = build_catalog(epoch_rows, openrouter_models, recipient_of)
 
     def is_sold(entry: dict[str, object]) -> bool:
         return entry["displayName"] in sellers.get(entry["providerId"], {}).get("models", [])
@@ -51,14 +45,13 @@ def main() -> None:
         if not is_sold(entry)
     ]
     catalog["entries"] = [entry for entry in catalog["entries"] if is_sold(entry)]
-    snapshot = build_snapshot(catalog, epoch_rows, openrouter_models, aa_models)
+    snapshot = build_snapshot(catalog, epoch_rows, openrouter_models)
 
     print(f"짝지어진 모델 {len(catalog['entries'])}개 · 뺀 모델 {len(catalog['excluded'])}개 (Epoch {len(epoch_rows)}개 중)")
     for model in snapshot["models"]:
         print(
             f"  {model['key']}: ECI {model['eci']} ({model['eciCiLow']}~{model['eciCiHigh']}) · "
-            f"${model['inputPricePerMillion']}/{model['outputPricePerMillion']} · "
-            f"{model['outputTokensPerSecond']} 토큰/초 [{', '.join(model['aaModelNames'])}]"
+            f"${model['inputPricePerMillion']}/{model['outputPricePerMillion']}"
         )
 
     if "--list" in sys.argv:

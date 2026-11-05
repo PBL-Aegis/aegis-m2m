@@ -1,6 +1,6 @@
 {
   "catalogVersion": "agent-m2m-2026-11-03",
-  "matching": "ECI 140 이상이고, Epoch·OpenRouter·AA 이름(기호 제거, 소문자)이 정확히 같은 모델만. 속도는 AA 가 잰 생각 단계들의 출력 속도 평균",
+  "matching": "ECI 140 이상이고, Epoch·OpenRouter 이름(기호 제거, 소문자)이 정확히 같은 모델만",
   "entries": [
     {
       "key": "anthropic/claude-haiku-5.5",
@@ -9,11 +9,6 @@
       "displayName": "Claude Haiku 5.5",
       "epochModel": "Claude Haiku 5.5",
       "openRouterId": "anthropic/claude-haiku-5.5",
-      "aaSlugs": [
-        "claude-haiku-5-5-high",
-        "claude-haiku-5-5-low",
-        "claude-haiku-5-5-xhigh"
-      ],
       "recipient": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
       "capabilities": [
         "reasoning",
@@ -28,10 +23,6 @@
       "displayName": "Claude Sonnet 5.5",
       "epochModel": "Claude Sonnet 5.5",
       "openRouterId": "anthropic/claude-sonnet-5.5",
-      "aaSlugs": [
-        "claude-sonnet-5-5-high",
-        "claude-sonnet-5-5-medium"
-      ],
       "recipient": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
       "capabilities": [
         "reasoning",
@@ -46,9 +37,6 @@
       "displayName": "Claude Opus 5.5",
       "epochModel": "Claude Opus 5.5",
       "openRouterId": "anthropic/claude-opus-5.5",
-      "aaSlugs": [
-        "claude-opus-5-5"
-      ],
       "recipient": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
       "capabilities": [
         "reasoning",
@@ -63,9 +51,6 @@
       "displayName": "GPT-6 Luna",
       "epochModel": "GPT-6 Luna",
       "openRouterId": "openai/gpt-6-luna",
-      "aaSlugs": [
-        "gpt-6-luna-xhigh"
-      ],
       "recipient": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
       "capabilities": [
         "reasoning",
@@ -80,10 +65,6 @@
       "displayName": "GPT-6.1 Terra",
       "epochModel": "GPT-6.1 Terra",
       "openRouterId": "openai/gpt-6.1-terra",
-      "aaSlugs": [
-        "gpt-6-1-terra-high",
-        "gpt-6-1-terra-xhigh"
-      ],
       "recipient": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
       "capabilities": [
         "reasoning",
@@ -98,10 +79,6 @@
       "displayName": "GPT-6.1 Sol",
       "epochModel": "GPT-6.1 Sol",
       "openRouterId": "openai/gpt-6.1-sol",
-      "aaSlugs": [
-        "gpt-6-1-sol-high",
-        "gpt-6-1-sol-xhigh"
-      ],
       "recipient": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
       "capabilities": [
         "reasoning",
@@ -112,152 +89,24 @@
   ],
   "excluded": [
     {
-      "name": "Gemini 4 Argon",
-      "reason": "Artificial Analysis 에 같은 이름 없음"
-    },
-    {
-      "name": "Claude Fable 5",
-      "reason": "Artificial Analysis 에 같은 이름 없음"
-    },
-    {
-      "name": "GPT-5.5 Pro",
-      "reason": "Artificial Analysis 에 같은 이름 없음"
-    },
-    {
-      "name": "Muse Wonder",
-      "reason": "Artificial Analysis 에 같은 이름 없음"
-    },
-    {
-      "name": "GPT-5.4 Pro",
-      "reason": "Artificial Analysis 에 같은 이름 없음"
-    },
-    {
-      "name": "Claude Opus 4.8",
-      "reason": "Artificial Analysis 에 같은 이름 없음"
-    },
-    {
-      "name": "Gemini 3.7 Flash",
-      "reason": "Artificial Analysis 에 같은 이름 없음"
-    },
-    {
-      "name": "Kimi K3",
-      "reason": "Artificial Analysis 에 같은 이름 없음"
-    },
-    {
-      "name": "Gemini 3.8 Flash",
-      "reason": "Artificial Analysis 에 같은 이름 없음"
-    },
-    {
       "name": "Qwen 3.8 Max",
       "reason": "OpenRouter 에 같은 이름 없음"
-    },
-    {
-      "name": "GPT-5.4",
-      "reason": "Artificial Analysis 에 같은 이름 없음"
-    },
-    {
-      "name": "Muse Spark 1.3",
-      "reason": "Artificial Analysis 에 같은 이름 없음"
-    },
-    {
-      "name": "GPT-5.3 Codex",
-      "reason": "Artificial Analysis 에 같은 이름 없음"
-    },
-    {
-      "name": "GPT-5.2 Pro",
-      "reason": "Artificial Analysis 에 같은 이름 없음"
-    },
-    {
-      "name": "GLM-5.3",
-      "reason": "Artificial Analysis 에 같은 이름 없음"
-    },
-    {
-      "name": "DeepSeek V4.1 Flash",
-      "reason": "Artificial Analysis 에 같은 이름 없음"
-    },
-    {
-      "name": "DeepSeek V4 Pro 0813",
-      "reason": "Artificial Analysis 에 같은 이름 없음"
     },
     {
       "name": "Gemini 3.1 Pro",
       "reason": "OpenRouter 에 같은 이름 없음"
     },
     {
-      "name": "Qwen3.8 Max (0902)",
-      "reason": "Artificial Analysis 에 같은 이름 없음"
-    },
-    {
-      "name": "DeepSeek V4 Flash 0731",
-      "reason": "Artificial Analysis 에 같은 이름 없음"
-    },
-    {
-      "name": "Gemini 3.6 Flash",
-      "reason": "Artificial Analysis 에 같은 이름 없음"
-    },
-    {
-      "name": "Grok 4.5",
-      "reason": "Artificial Analysis 에 같은 이름 없음"
-    },
-    {
-      "name": "Muse Spark 1.1",
-      "reason": "Artificial Analysis 에 같은 이름 없음"
-    },
-    {
-      "name": "Qwen3.7-Max",
-      "reason": "Artificial Analysis 에 같은 이름 없음"
-    },
-    {
-      "name": "GPT-5.2",
-      "reason": "Artificial Analysis 에 같은 이름 없음"
-    },
-    {
       "name": "Gemini 3 Pro",
       "reason": "OpenRouter 에 같은 이름 없음"
-    },
-    {
-      "name": "Grok 4.20",
-      "reason": "Artificial Analysis 에 같은 이름 없음"
     },
     {
       "name": "Muse Spark",
       "reason": "OpenRouter 에 같은 이름 없음"
     },
     {
-      "name": "GLM-5.2",
-      "reason": "Artificial Analysis 에 같은 이름 없음"
-    },
-    {
       "name": "Gemini 3 Flash",
       "reason": "OpenRouter 에 같은 이름 없음"
-    },
-    {
-      "name": "GPT-5 Pro",
-      "reason": "Artificial Analysis 에 같은 이름 없음"
-    },
-    {
-      "name": "Inkling-Small",
-      "reason": "Artificial Analysis 에 같은 이름 없음"
-    },
-    {
-      "name": "Kimi K2.7 Code",
-      "reason": "Artificial Analysis 에 같은 이름 없음"
-    },
-    {
-      "name": "Mistral Large 4",
-      "reason": "Artificial Analysis 에 같은 이름 없음"
-    },
-    {
-      "name": "GPT-5",
-      "reason": "Artificial Analysis 에 같은 이름 없음"
-    },
-    {
-      "name": "GLM-5.1",
-      "reason": "Artificial Analysis 에 같은 이름 없음"
-    },
-    {
-      "name": "GPT-5.1",
-      "reason": "Artificial Analysis 에 같은 이름 없음"
     },
     {
       "name": "Qwen 3.6 Max (Preview)",
@@ -272,26 +121,6 @@
       "reason": "OpenRouter 에 같은 이름 없음"
     },
     {
-      "name": "Kimi K2.5",
-      "reason": "Artificial Analysis 에 같은 이름 없음"
-    },
-    {
-      "name": "o3-pro",
-      "reason": "Artificial Analysis 에 같은 이름 없음"
-    },
-    {
-      "name": "Qwen 3.6 Plus",
-      "reason": "Artificial Analysis 에 같은 이름 없음"
-    },
-    {
-      "name": "Qwen3.7-Plus",
-      "reason": "Artificial Analysis 에 같은 이름 없음"
-    },
-    {
-      "name": "Claude Sonnet 4.5",
-      "reason": "Artificial Analysis 에 같은 이름 없음"
-    },
-    {
       "name": "Grok 4",
       "reason": "OpenRouter 에 같은 이름 없음"
     },
@@ -304,52 +133,12 @@
       "reason": "OpenRouter 에 같은 이름 없음"
     },
     {
-      "name": "DeepSeek-V3.2",
-      "reason": "Artificial Analysis 에 같은 이름 없음"
-    },
-    {
-      "name": "GPT-5.4 Nano",
-      "reason": "Artificial Analysis 에 같은 이름 없음"
-    },
-    {
-      "name": "Nemotron 3 Ultra",
-      "reason": "Artificial Analysis 에 같은 이름 없음"
-    },
-    {
-      "name": "Kimi K2 Thinking",
-      "reason": "Artificial Analysis 에 같은 이름 없음"
-    },
-    {
-      "name": "MiniMax-M2.7",
-      "reason": "Artificial Analysis 에 같은 이름 없음"
-    },
-    {
-      "name": "o4-mini",
-      "reason": "Artificial Analysis 에 같은 이름 없음"
-    },
-    {
       "name": "Gemini 2.5 Pro (Jun 2025)",
       "reason": "OpenRouter 에 같은 이름 없음"
     },
     {
-      "name": "DeepSeek-V3.2-Exp",
-      "reason": "AA 출력 속도 없음 또는 0"
-    },
-    {
-      "name": "Gemini 3.1 Flash-Lite",
-      "reason": "Artificial Analysis 에 같은 이름 없음"
-    },
-    {
       "name": "Grok 4 Fast",
       "reason": "OpenRouter 에 같은 이름 없음"
-    },
-    {
-      "name": "Claude Opus 4.1",
-      "reason": "Artificial Analysis 에 같은 이름 없음"
-    },
-    {
-      "name": "Qwen3.7 Flash",
-      "reason": "Artificial Analysis 에 같은 이름 없음"
     },
     {
       "name": "Gemini 2.5 Pro (Mar 2025)",
@@ -358,14 +147,6 @@
     {
       "name": "Qwen3-235B-A22B-Thinking (Jul 2025)",
       "reason": "OpenRouter 에 같은 이름 없음"
-    },
-    {
-      "name": "Qwen 3.6 35B-A3B",
-      "reason": "Artificial Analysis 에 같은 이름 없음"
-    },
-    {
-      "name": "GLM-4.7",
-      "reason": "Artificial Analysis 에 같은 이름 없음"
     },
     {
       "name": "Qwen 3.5 Flash (hosted 35B-A3B)",
@@ -380,16 +161,8 @@
       "reason": "OpenRouter 에 같은 이름 없음"
     },
     {
-      "name": "Qwen 3.6 Flash",
-      "reason": "Artificial Analysis 에 같은 이름 없음"
-    },
-    {
       "name": "Claude Opus 4",
       "reason": "OpenRouter 에 같은 이름 없음"
-    },
-    {
-      "name": "Qwen3.5-35B-A3B",
-      "reason": "Artificial Analysis 에 같은 이름 없음"
     },
     {
       "name": "GPT-5.5 Instant",
@@ -400,20 +173,8 @@
       "reason": "OpenRouter 에 같은 이름 없음"
     },
     {
-      "name": "Claude Haiku 4.5",
-      "reason": "Artificial Analysis 에 같은 이름 없음"
-    },
-    {
       "name": "Gemini 2.5 Pro (May 2025)",
       "reason": "OpenRouter 에 같은 이름 없음"
-    },
-    {
-      "name": "Gemma 4 26B A4B",
-      "reason": "Artificial Analysis 에 같은 이름 없음"
-    },
-    {
-      "name": "o1",
-      "reason": "Artificial Analysis 에 같은 이름 없음"
     },
     {
       "name": "Claude Sonnet 4",
@@ -422,10 +183,6 @@
     {
       "name": "Gemini 2.5 Flash (May 2025)",
       "reason": "OpenRouter 에 같은 이름 없음"
-    },
-    {
-      "name": "Mistral Medium 3.5",
-      "reason": "Artificial Analysis 에 같은 이름 없음"
     },
     {
       "name": "DeepSeek-R1 (May 2025)",
@@ -438,10 +195,6 @@
     {
       "name": "Gemini 2.5 Flash (Jun 2025)",
       "reason": "OpenRouter 에 같은 이름 없음"
-    },
-    {
-      "name": "o3-mini",
-      "reason": "AA 출력 속도 없음 또는 0"
     },
     {
       "name": "Grok-3 mini",

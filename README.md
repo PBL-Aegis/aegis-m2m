@@ -219,7 +219,6 @@ contract AegisToken is ERC20, EIP712, Ownable, PaymentRules, MaxAmountRule {
 | `AEGIS_RPC_URL` | `https://sepolia.base.org` | RPC |
 | `AEGIS_BUYER_PRIVATE_KEY` | (비움) | 구매자 지갑 개인키. 서명에만 쓰므로 이 지갑에 ETH 는 필요 없음. live에서만 필요 |
 | `AEGIS_RELAYER_PRIVATE_KEY` | (비움) | 결제 거래를 대신 보내는 중개자 지갑 개인키. 가스비용 ETH 만 넣는 새 지갑을 씀. 운영자(토큰 배포·발급) 지갑을 쓰지 않음. live에서만 필요 |
-| `AA_API_KEY` | (비움) | Artificial Analysis API 키. 속도 값의 자동 갱신·판매 목록 생성에 필요. 없으면 저장된 숫자로 계속 돔 |
 | `MONGODB_URI` | `mongodb://127.0.0.1:27017` | MongoDB 접속 주소 |
 | `MONGODB_DB` | `agent_m2m` | 기록을 담을 데이터베이스 이름 |
 | `AEGIS_OLLAMA_URL` | `http://127.0.0.1:11434` | 우선순위 추론용 Ollama. 루프백 주소만 받음 |
@@ -240,13 +239,13 @@ contract AegisToken is ERC20, EIP712, Ownable, PaymentRules, MaxAmountRule {
 
 ## 벤치마크와 판매 모델
 
-판매 모델(`data/catalog.json`)과 점수의 시작값(`data/benchmark.json`)은 세 출처에서 떠온 실제 값입니다. 성능은 [Epoch AI](https://epoch.ai/benchmarks) ECI, 가격은 [OpenRouter](https://openrouter.ai/api/v1/models) 판매 단가, 속도는 [Artificial Analysis](https://artificialanalysis.ai/methodology/performance-benchmarking) 출력 속도입니다. 세 점수 모두 후보 중 가장 나쁜 값 0점·가장 좋은 값 100점이고, 가격과 속도는 로그로 폅니다. 계산식과 짝짓기 규칙은 `agent_m2m/selection.py`, `agent_m2m/benchmark_sources.py` 맨 위에 있습니다.
+판매 모델(`data/catalog.json`)과 점수의 시작값(`data/benchmark.json`)은 두 출처에서 떠온 실제 값입니다. 성능은 [Epoch AI](https://epoch.ai/benchmarks) ECI, 가격은 [OpenRouter](https://openrouter.ai/api/v1/models) 판매 단가입니다. 두 점수 모두 후보 중 가장 나쁜 값 0점·가장 좋은 값 100점이고, 가격은 로그로 폅니다. 계산식과 짝짓기 규칙은 `agent_m2m/selection.py`, `agent_m2m/benchmark_sources.py` 맨 위에 있습니다.
 
-| 우선순위 | 가격 | 속도 | 성능 |
-|---|---|---|---|
-| 싸게 (`price`) | 80 | 10 | 10 |
-| 똑똑하게 (`intelligence`) | 10 | 10 | 80 |
-| 기본 (`default`) | 34 | 33 | 33 |
+| 우선순위 | 가격 | 성능 |
+|---|---|---|
+| 싸게 (`price`) | 90 | 10 |
+| 똑똑하게 (`intelligence`) | 10 | 90 |
+| 기본 (`default`) | 50 | 50 |
 
 위 점수와 비중은 비교 모델 표를 정할 때 참고한 값이고, 구매 결정에는 쓰지 않습니다. 구매 때는 외부 사이트에 접속하지 않고 `data/benchmark.json` 에 고정한 단가만 씁니다(떠 온 날짜: 2026-11-03). 모델을 바꿀 때만 아래 명령으로 다시 뜨고 `data/sellers.json` 의 표를 함께 고칩니다.
 

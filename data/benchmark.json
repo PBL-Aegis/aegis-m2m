@@ -1,13 +1,12 @@
 {
   "snapshotId": "epoch-openrouter-2026-11-03",
   "capturedAt": "2026-11-03T11:20:00.000Z",
-  "source": "epoch.ai + openrouter.ai + artificialanalysis.ai",
+  "source": "epoch.ai + openrouter.ai",
   "sources": {
     "epoch": "https://epoch.ai/data/eci_scores.csv",
-    "openRouter": "https://openrouter.ai/api/v1/models",
-    "aa": "https://artificialanalysis.ai/api/v2/language/models/free"
+    "openRouter": "https://openrouter.ai/api/v1/models"
   },
-  "note": "성능은 Epoch Capabilities Index(95% 신뢰구간 포함), 가격은 OpenRouter 판매 단가로 2026-11-03에 받았다. 속도는 구매 결정에 쓰지 않아 다시 받지 않았고, GPT-6.1 Terra 속도는 Artificial Analysis 페이지의 High·Xhigh 평균이다.",
+  "note": "성능은 Epoch Capabilities Index(95% 신뢰구간 포함), 가격은 OpenRouter 판매 단가로 2026-11-03에 받았다.",
   "models": [
     {
       "key": "anthropic/claude-haiku-5.5",
@@ -18,18 +17,7 @@
       "eciCiHigh": "163.84",
       "inputPricePerMillion": "0.1",
       "outputPricePerMillion": "0.5",
-      "outputTokensPerSecond": "185.73",
-      "openRouterId": "anthropic/claude-haiku-5.5",
-      "aaSlugs": [
-        "claude-haiku-5-5-high",
-        "claude-haiku-5-5-low",
-        "claude-haiku-5-5-xhigh"
-      ],
-      "aaModelNames": [
-        "Claude Haiku 5.5 (High)",
-        "Claude Haiku 5.5 (Low)",
-        "Claude Haiku 5.5 (Xhigh)"
-      ]
+      "openRouterId": "anthropic/claude-haiku-5.5"
     },
     {
       "key": "anthropic/claude-sonnet-5.5",
@@ -40,16 +28,7 @@
       "eciCiHigh": "171.34",
       "inputPricePerMillion": "2",
       "outputPricePerMillion": "10",
-      "outputTokensPerSecond": "105.2",
-      "openRouterId": "anthropic/claude-sonnet-5.5",
-      "aaSlugs": [
-        "claude-sonnet-5-5-high",
-        "claude-sonnet-5-5-medium"
-      ],
-      "aaModelNames": [
-        "Claude Sonnet 5.5 (High, Default Fallback)",
-        "Claude Sonnet 5.5 (Medium, Default Fallback)"
-      ]
+      "openRouterId": "anthropic/claude-sonnet-5.5"
     },
     {
       "key": "anthropic/claude-opus-5.5",
@@ -60,14 +39,7 @@
       "eciCiHigh": "173.03",
       "inputPricePerMillion": "4",
       "outputPricePerMillion": "20",
-      "outputTokensPerSecond": "98.13",
-      "openRouterId": "anthropic/claude-opus-5.5",
-      "aaSlugs": [
-        "claude-opus-5-5"
-      ],
-      "aaModelNames": [
-        "Claude Opus 5.5 (Max, Default Fallback)"
-      ]
+      "openRouterId": "anthropic/claude-opus-5.5"
     },
     {
       "key": "openai/gpt-6-luna",
@@ -78,14 +50,7 @@
       "eciCiHigh": "159.45",
       "inputPricePerMillion": "0.1",
       "outputPricePerMillion": "0.5",
-      "outputTokensPerSecond": "123.22",
-      "openRouterId": "openai/gpt-6-luna",
-      "aaSlugs": [
-        "gpt-6-luna-xhigh"
-      ],
-      "aaModelNames": [
-        "GPT-6 Luna (Xhigh)"
-      ]
+      "openRouterId": "openai/gpt-6-luna"
     },
     {
       "key": "openai/gpt-6.1-terra",
@@ -96,16 +61,7 @@
       "eciCiHigh": "172.94",
       "inputPricePerMillion": "1",
       "outputPricePerMillion": "5",
-      "outputTokensPerSecond": "99",
-      "openRouterId": "openai/gpt-6.1-terra",
-      "aaSlugs": [
-        "gpt-6-1-terra-high",
-        "gpt-6-1-terra-xhigh"
-      ],
-      "aaModelNames": [
-        "GPT-6.1 Terra (High)",
-        "GPT-6.1 Terra (Xhigh)"
-      ]
+      "openRouterId": "openai/gpt-6.1-terra"
     },
     {
       "key": "openai/gpt-6.1-sol",
@@ -116,16 +72,7 @@
       "eciCiHigh": "172.51",
       "inputPricePerMillion": "2",
       "outputPricePerMillion": "10",
-      "outputTokensPerSecond": "60.11",
-      "openRouterId": "openai/gpt-6.1-sol",
-      "aaSlugs": [
-        "gpt-6-1-sol-high",
-        "gpt-6-1-sol-xhigh"
-      ],
-      "aaModelNames": [
-        "GPT-6.1 Sol (High)",
-        "GPT-6.1 Sol (Xhigh)"
-      ]
+      "openRouterId": "openai/gpt-6.1-sol"
     }
   ]
 }

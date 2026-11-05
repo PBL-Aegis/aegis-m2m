@@ -12,9 +12,9 @@ from tests.conftest import ROOT
 HOUR_MS = 60 * 60 * 1000
 
 MODELS = [
-    {"epoch": "Test Mini", "openRouter": "openai/test-mini", "aa": "test-mini"},
-    {"epoch": "Test Haiku", "openRouter": "anthropic/test-haiku", "aa": "test-haiku"},
-    {"epoch": "Test Flash", "openRouter": "google/test-flash", "aa": "test-flash"},
+    {"epoch": "Test Mini", "openRouter": "openai/test-mini"},
+    {"epoch": "Test Haiku", "openRouter": "anthropic/test-haiku"},
+    {"epoch": "Test Flash", "openRouter": "google/test-flash"},
 ]
 
 
@@ -23,11 +23,10 @@ def fixture_copy(tmp_path, monkeypatch):
     """픽스처를 임시 폴더에 복사해 쓴다. 시작값(benchmark.json)은 픽스처 그대로다."""
     shutil.copytree(ROOT / "tests" / "fixtures", tmp_path, dirs_exist_ok=True)
     monkeypatch.setenv("AGENT_M2M_DATA_DIR", str(tmp_path))
-    monkeypatch.setenv("AA_API_KEY", "test-key")
 
 
 def fake_sources(calls: list[str]):
-    """세 출처를 흉내 낸다. Epoch 는 CSV, 나머지는 JSON 이다."""
+    """두 출처를 흉내 낸다. Epoch 는 CSV, OpenRouter 는 JSON 이다."""
 
     def get(url: str, headers=None) -> httpx.Response:
         calls.append(url)
@@ -35,13 +34,10 @@ def fake_sources(calls: list[str]):
             header = "Model,Display name,eci,eci_ci_low,eci_ci_high,date,Organization,Country (of organization),Model accessibility,Accessibility group,model_versions"
             rows = [f"{model['epoch']},{model['epoch']},150,148,152,2026-10-01,Org,Country,API access,Closed weights," for model in MODELS]
             return httpx.Response(200, text="\n".join([header, *rows]))
-        if url.startswith("https://openrouter.ai/"):
-            data = [
-                {"id": model["openRouter"], "name": model["epoch"], "pricing": {"prompt": "0.000001", "completion": "0.000002"}}
-                for model in MODELS
-            ]
-            return httpx.Response(200, text=json.dumps({"data": data}))
-        data = [{"slug": model["aa"], "name": model["epoch"], "performance": {"median_output_tokens_per_second": 100}} for model in MODELS]
+        data = [
+            {"id": model["openRouter"], "name": model["epoch"], "pricing": {"prompt": "0.000001", "completion": "0.000002"}}
+            for model in MODELS
+        ]
         return httpx.Response(200, text=json.dumps({"data": data}))
 
     return get
@@ -54,7 +50,7 @@ def test_값이_1시간보다_오래되면_실패해도_마지막_값으로_계�
     assert "503" in result["refreshError"]
 
 
-def test_값이_오래되면_세_출처에서_새로_받아_저장한다(monkeypatch):
+def test_값이_오래되면_두_출처에서_새로_받아_저장한다(monkeypatch):
     calls: list[str] = []
     monkeypatch.setattr(benchmark_sources, "http_get", fake_sources(calls))
     result = load_fresh_snapshot()
@@ -64,7 +60,7 @@ def test_값이_오래되면_세_출처에서_새로_받아_저장한다(monkeyp
         ["anthropic/test-haiku", "150", "1"],
         ["google/test-flash", "150", "1"],
     ]
-    assert len(calls) == 3
+    assert len(calls) == 2
     assert store.latest_snapshot() == {"snapshot": result["snapshot"], "hash": result["hash"]}
 
 

@@ -57,7 +57,7 @@ export function CandidateTables({ record }: { record: PurchaseRecord }) {
                 <td className="num">{toAegis(candidate.amountUnits)}</td>
                 <td className="num">{speed(candidate)}</td>
                 <td className="num">{score(candidate.priceScore)}</td>
-                <td className="num">{score(candidate.timeScore)}</td>
+                <td className="num">{maybe(candidate.timeScore)}</td>
                 <td className="num">{score(candidate.intelligenceScore)}</td>
                 <td className="num">{score(candidate.totalScore)}</td>
               </tr>
