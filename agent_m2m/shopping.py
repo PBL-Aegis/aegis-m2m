@@ -6,7 +6,7 @@
   3. 합의가가 가장 낮은 곳에서 산다. 값이 같으면 성능(ECI)이 높은 모델이다. 나머지 합의는 취소한다.
   4. 모두 결렬되면 판매자가 마지막에 부른 값이 가장 낮은 곳을 그 값에 산다. 값이 같으면 역시 성능이 높은 모델이다. 예산을 넘는 구매라 경고 알림을 남긴다(rules/over_budget.py).
 
-다른 판매자의 값은 상대에게 알리지 않는다.
+흥정 중인 다른 판매자의 값은 상대에게 알리지 않는다. 근거 카드는 공개된 호가와 ECI 만 비교한다(cards.py).
 
 on_event 로 진행을 바로 알린다. 비교 모델이 정해지면 plan, 대화가 한 줄 늘면 turn 이다.
 """
@@ -15,6 +15,8 @@ from collections.abc import Callable
 from typing import Any
 
 from agent_m2m.benchmark import load_priority_models
+from agent_m2m.cards import buyer_cards, seller_cards
+from agent_m2m.dialogue import LineWriter
 from agent_m2m.format import aegis_text
 from agent_m2m.negotiation import NegotiationError, negotiate
 from agent_m2m.selection import SelectionError
@@ -77,8 +79,10 @@ def shop(
         quote["transcript"].append(turn)
         on_event({"type": "turn", "key": quote["key"], "turn": turn})
 
+    writer = LineWriter()
     quotes: list[dict[str, Any]] = []
     for candidate in compared:
+        rival = next((other for other in compared if other is not candidate), None)
         key = candidate["key"]
         seller = sellers[key]
         quote = {"key": key, "displayName": candidate["displayName"], "sellerName": seller["name"], "eci": candidate["eci"]}
@@ -89,6 +93,9 @@ def shop(
                     budget_units,
                     seller["floorRatio"],
                     lambda turn, key=key: on_event({"type": "turn", "key": key, "turn": turn}),
+                    buyer_cards(candidate, rival),
+                    seller_cards(candidate, rival),
+                    lambda role, card, price, candidate=candidate, rival=rival: writer.write(role, card, price, candidate, rival),
                 )
             )
         except NegotiationError as error:

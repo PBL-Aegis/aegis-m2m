@@ -1,5 +1,5 @@
 """
-우선순위 추론. 요청에 우선순위가 없을 때만 로컬 Qwen(Ollama)이 요청 문장을 읽고 네 값 중 하나를 고른다.
+우선순위 추론. 요청에 우선순위가 없을 때만 로컬 Gemma(Ollama)가 요청 문장을 읽고 네 값 중 하나를 고른다.
 
 LLM이 정하는 것은 우선순위 한 칸뿐이다. 모델 선택·금액·결제는 지금처럼 고정 규칙이 한다.
 답은 Ollama 의 JSON 스키마(enum)로 네 값 중 하나만 나오게 묶는다.
@@ -66,7 +66,7 @@ def ollama_config() -> dict[str, Any]:
     ):
         raise PriorityInferenceError("AEGIS_OLLAMA_URL 은 루프백 http 주소여야 합니다")
 
-    model = (os.environ.get("AEGIS_OLLAMA_MODEL") or "qwen3.5:4b").strip()
+    model = (os.environ.get("AEGIS_OLLAMA_MODEL") or "gemma4:12b").strip()
     if model == "":
         raise PriorityInferenceError("AEGIS_OLLAMA_MODEL 이 비어 있습니다")
 
@@ -89,7 +89,7 @@ def infer_priority(prompt: str) -> dict[str, str]:
             {
                 "model": config["model"],
                 "stream": False,
-                # Qwen 3.5 는 생각을 켜 두면 짧은 출력 한도를 생각에 다 써서 답이 비어 버린다.
+                # 모델이 생각을 켜 두면 짧은 출력 한도를 생각에 다 써서 답이 비어 버린다.
                 "think": False,
                 "format": SCHEMA,
                 "options": {"temperature": 0, "num_predict": 48},
@@ -110,5 +110,5 @@ def infer_priority(prompt: str) -> dict[str, str]:
     except Exception as error:  # noqa: BLE001
         # 서버 응답·모델 출력에는 요청 문장이 섞일 수 있어 그대로 내보내지 않는다.
         raise PriorityInferenceError(
-            f"로컬 Qwen 우선순위 추론에 실패했습니다. Ollama({config['model']}) 실행 상태를 확인한 뒤 다시 시도해 주세요."
+            f"로컬 Gemma 우선순위 추론에 실패했습니다. Ollama({config['model']}) 실행 상태를 확인한 뒤 다시 시도해 주세요."
         ) from error

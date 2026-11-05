@@ -1,11 +1,14 @@
 import json
 from pathlib import Path
 
+import httpx
 import pytest
 from fastapi.testclient import TestClient
 
-from agent_m2m import audit, benchmark, purchase, seller as seller_module, shopping, store
+from agent_m2m import audit, benchmark, dialogue, purchase, seller as seller_module, shopping, store
 from agent_m2m.api import app
+from agent_m2m.cards import BETTER, CHEAPER, NO_CARD, RIVAL_BETTER, RIVAL_CHEAPER, buyer_cards, seller_cards
+from agent_m2m.dialogue import LineWriter
 from agent_m2m.audit import AuditBlockedError
 from agent_m2m.negotiation import NegotiationError, negotiate
 from agent_m2m.payment import buyer_balance, request_id_hash
@@ -72,9 +75,62 @@ def test_기록에_판매자_최저가가_담기지_않는다():
     assert not hasattr(SellerAgent(100_000, RATIO), "floor_units")
 
 
-def test_첫_제안은_호가의_75퍼센트고_양쪽은_차이의_절반씩_움직인다():
+def test_카드가_없으면_양쪽은_첫_제안_뒤_차이의_25퍼센트씩_움직인다():
     turns = negotiate(4_000, LARGE_BUDGET, 0.5)["transcript"]
-    assert [turn["priceUnits"] for turn in turns[:4]] == [3_000, 3_500, 3_250, 3_380]
+    assert [turn["priceUnits"] for turn in turns[:4]] == [3_000, 3_750, 3_180, 3_610]
+
+
+def test_상대는_새_카드에_75퍼센트_이미_쓴_카드에_50퍼센트_양보한다():
+    turns = negotiate(4_000, LARGE_BUDGET, 0.5, buyer_cards=(RIVAL_CHEAPER,))["transcript"]
+    assert [turn["priceUnits"] for turn in turns[:4]] == [3_000, 3_250, 3_060, 3_160]
+    assert turns[0]["card"] == RIVAL_CHEAPER
+    assert turns[1]["card"] == NO_CARD
+
+
+def test_카드는_사실인_것만_고른다():
+    expensive = {"amountUnits": 200, "eci": 170}
+    cheap = {"amountUnits": 100, "eci": 160}
+    assert seller_cards(expensive, cheap) == (BETTER,)
+    assert seller_cards(cheap, expensive) == (CHEAPER,)
+    assert buyer_cards(expensive, cheap) == (RIVAL_CHEAPER,)
+    assert buyer_cards(cheap, expensive) == (RIVAL_BETTER,)
+    assert seller_cards(cheap, None) == ()
+
+
+def test_대사가_바뀌어도_값은_그대로다():
+    plain = negotiate(100_000, LARGE_BUDGET, RATIO)
+    spoken = negotiate(100_000, LARGE_BUDGET, RATIO, write_line=lambda role, card, price: f"{role} {price}")
+    assert spoken["agreedUnits"] == plain["agreedUnits"]
+    assert spoken["transcript"][0]["text"] == "buyer 75000"
+
+
+def line_reply(line):
+    return httpx.Response(200, json={"message": {"content": json.dumps({"line": line})}}, request=httpx.Request("POST", "http://127.0.0.1"))
+
+
+@pytest.mark.parametrize(
+    "line,expected",
+    [("값은 {price}입니다.", "값은 0.05 AEGIS입니다."), ("값은 0.01입니다.", None), ("ECI 999라서 {price}입니다.", None)],
+)
+def test_금액_칸이_없거나_자료에_없는_숫자면_대사를_버린다(monkeypatch, line, expected):
+    monkeypatch.setattr(dialogue, "http_post", lambda url, body, timeout: line_reply(line))
+    model = {"displayName": "Sol", "eci": 167.82, "amountUnits": 80_012}
+    assert LineWriter().write("seller", NO_CARD, 50_000, model, None) == expected
+
+
+def test_대사_호출에_실패하면_그_구매에서는_다시_부르지_않는다(monkeypatch):
+    calls = []
+
+    def fail(url, body, timeout):
+        calls.append(1)
+        raise httpx.ConnectError("down")
+
+    monkeypatch.setattr(dialogue, "http_post", fail)
+    writer = LineWriter()
+    model = {"displayName": "Sol", "eci": 167.82, "amountUnits": 80_012}
+    assert writer.write("seller", NO_CARD, 1, model, None) is None
+    assert writer.write("seller", NO_CARD, 1, model, None) is None
+    assert len(calls) == 1
 
 
 def test_값을_내리지_않는_판매자는_마지막에_최대가_안이면_호가로_산다():
@@ -127,7 +183,7 @@ def test_우선순위별_비교_모델은_표에서_읽고_없는_모델은_건�
 
 def test_여러_모델과_흥정해_합의가가_가장_낮은_곳에서_사고_나머지는_취소한다(monkeypatch):
     use_table(monkeypatch, {"price": ["a", "b"]})
-    result = shop([candidate("anthropic", "a", 4_001), candidate("openai", "b", 4_001)], "price", LARGE_BUDGET)
+    result = shop([candidate("anthropic", "a", 4_001, eci=160), candidate("openai", "b", 4_001, eci=150)], "price", LARGE_BUDGET)
     assert result["winner"]["key"] == "b"
     assert result["winner"]["listAmountUnits"] == 4_001
     assert result["winner"]["amountUnits"] == result["negotiation"]["agreedUnits"] < 4_001
@@ -139,8 +195,15 @@ def test_여러_모델과_흥정해_합의가가_가장_낮은_곳에서_사고_
 def test_합의가가_같으면_표_순서와_상관없이_성능이_높은_모델을_산다(monkeypatch):
     use_table(monkeypatch, {"price": ["low", "high"]})
     candidates = [candidate("openai", "low", 4_001, eci=150), candidate("openai", "high", 4_001, eci=160)]
-    result = shop(candidates, "price", LARGE_BUDGET)
-    assert result["winner"]["key"] == "high"
+    turn = {"from": "seller", "action": "counter", "priceUnits": 3_500, "text": ""}
+
+    monkeypatch.setattr(shopping, "negotiate", lambda *args: {"status": "agreed", "agreedUnits": 3_500, "transcript": [dict(turn)]})
+    assert shop(candidates, "price", LARGE_BUDGET)["winner"]["key"] == "high"
+
+    def no_deal(*args):
+        raise NegotiationError("결렬", {"status": "no-deal", "transcript": [dict(turn)]})
+
+    monkeypatch.setattr(shopping, "negotiate", no_deal)
     over = shop(candidates, "price", 3_300)
     assert over["winner"]["key"] == "high"
     assert over["negotiation"]["overBudget"] is True
@@ -148,16 +211,16 @@ def test_합의가가_같으면_표_순서와_상관없이_성능이_높은_모�
 
 def test_일부가_결렬돼도_합의한_곳에서_산다(monkeypatch):
     use_table(monkeypatch, {"price": ["a", "b"]})
-    result = shop([candidate("anthropic", "a", 4_001), candidate("openai", "b", 4_001)], "price", 3_350)
+    result = shop([candidate("anthropic", "a", 4_001, eci=160), candidate("openai", "b", 4_001, eci=150)], "price", 3_350)
     assert result["winner"]["key"] == "b"
     assert {quote["key"]: quote["status"] for quote in result["quotes"]} == {"a": "no-deal", "b": "agreed"}
 
 
 def test_비교_모델이_모두_결렬되면_판매자_마지막_값이_가장_낮은_곳에서_예산을_넘겨_산다(monkeypatch):
     use_table(monkeypatch, {"price": ["a", "b"]})
-    result = shop([candidate("anthropic", "a", 4_001), candidate("openai", "b", 4_001)], "price", 3_300)
+    result = shop([candidate("anthropic", "a", 4_001, eci=160), candidate("openai", "b", 4_001, eci=150)], "price", 3_100)
     assert result["winner"]["key"] == "b"
-    assert result["winner"]["amountUnits"] > 3_300
+    assert result["winner"]["amountUnits"] > 3_100
     assert result["negotiation"]["overBudget"] is True
     assert {quote["key"]: quote["status"] for quote in result["quotes"]} == {"a": "no-deal", "b": "agreed"}
 

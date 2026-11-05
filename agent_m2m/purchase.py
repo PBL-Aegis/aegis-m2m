@@ -31,7 +31,7 @@ def run_purchase(
 ) -> PurchaseRecord:
     """
     purchase_input: prompt·budgetUnits, 선택으로 priority·requestId·userId·maxOutputTokens·requiredCapabilities.
-    우선순위가 없으면 로컬 Qwen 이 요청 문장을 보고 정한다. 요청 번호가 없으면 새로 만들고, 사용자가 없으면 None.
+    우선순위가 없으면 로컬 Gemma 가 요청 문장을 보고 정한다. 요청 번호가 없으면 새로 만들고, 사용자가 없으면 None.
     흥정 진행은 on_event 로 바로 알린다(shopping.py).
     """
     purchase_id = str(uuid.uuid4())
@@ -49,7 +49,7 @@ def run_purchase(
     if previous is not None:
         return previous
 
-    # 우선순위가 없으면 로컬 Qwen 이 요청 문장을 보고 정한다. 실패하면 결제 전에 멈춘다.
+    # 우선순위가 없으면 로컬 Gemma 가 요청 문장을 보고 정한다. 실패하면 결제 전에 멈춘다.
     inferred = infer_priority(incoming["prompt"]) if incoming.get("priority") is None else None
     request = {**incoming, "priority": inferred["priority"] if inferred else incoming["priority"]}
 

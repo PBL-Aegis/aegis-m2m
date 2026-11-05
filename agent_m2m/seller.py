@@ -37,9 +37,9 @@ class SellerAgent:
         self._last_counter = ask_units
         self._step = price_step(ask_units)
 
-    def reply_to_offer(self, offer: int) -> tuple[str, int, str]:
-        """구매자의 제안에 (행동, 값, 문장) 으로 답한다. 행동은 accept·counter 중 하나다."""
-        action, price = seller_reply(self._floor_units, self._last_counter, offer, self._step)
+    def reply_to_offer(self, offer: int, ratio: float) -> tuple[str, int, str]:
+        """구매자의 제안에 (행동, 값, 문장) 으로 답한다. 행동은 accept·counter 중 하나다. ratio 는 값 차이 중 양보하는 비율이다."""
+        action, price = seller_reply(self._floor_units, self._last_counter, offer, self._step, ratio)
         if price < self._floor_units:
             raise GuardrailError(f"판매 세이프가드: 최저가보다 낮은 값입니다: {aegis_text(price)}")
         if action == "accept":
