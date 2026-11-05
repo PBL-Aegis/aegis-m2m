@@ -3,138 +3,261 @@
 /**
  * 채팅 화면. 보낸 문장 하나가 곧 구매 한 건이다.
  *
- * 보내면 서버가 모델을 고르고 결제까지 끝낸 뒤 결과를 돌려준다. 그래서 버튼 이름이
- * "전송 후 결제"다. 고른 근거(후보 점수·탈락 사유)는 답변 아래 접어두고, 눌러야 펼친다.
+ * 서버가 흥정 진행을 한 줄씩 바로 보내고(/api/purchase/stream), 여기서 그 대화를 읽을 수 있는 속도로 풀어 보여준다.
+ * 끝나면 어디서 왜 샀는지와 받아온 결과를 보여주고, 끝난 흥정은 접어 둔다.
  */
 
 import Link from "next/link";
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 
-import { CandidateTables, PurchaseSummary } from "@/components/DecisionView";
-import { parseAegis, toAegis } from "@/lib/format";
-import { PRIORITY_LABEL } from "@/lib/priority-label";
-import { PRIORITIES, type PurchaseRecord } from "@/lib/types";
+import { BuyerAvatar, NegotiationBlock } from "@/components/Negotiation";
+import { aegisText, parseAegis } from "@/lib/format";
+import { dealStatus, endsDeal, failureText, isOverBudget, purchaseReason, purchaseTitle, quotesOf, quoteStatus } from "@/lib/purchase-view";
+import type { NegotiationTurn, Priority, PurchaseRecord, PurchaseStreamEvent, StreamModel } from "@/lib/types";
 
-/**
- * "기본"은 고르는 값이 아니다. 비워 두면 요청 문장을 읽어 우선순위를 정하고,
- * 문장에 선호가 없거나 서로 부딪힐 때만 기본 비중을 쓴다.
- */
+/** 흥정 말풍선 하나를 보여주는 간격. 서버는 흥정을 순식간에 끝내므로 읽을 시간을 여기서 준다. */
+const TURN_DELAY_MS = 650;
+
+/** "기본"은 고르는 값이 아니다. 비워 두면 요청 문장을 읽어 우선순위를 정한다. */
 const AUTO = "";
-const PRIORITY_OPTIONS = [
+
+const PRIORITY_CHOICES = [
   { value: AUTO, label: "요청 문장으로 판단" },
-  ...PRIORITIES.filter((value) => value !== "default").map((value) => ({ value, label: PRIORITY_LABEL[value] })),
+  { value: "price", label: "싸게" },
+  { value: "intelligence", label: "똑똑하게" },
 ];
+
+const PLAN_OPENING: Partial<Record<Priority, string>> = {
+  default: "기본으로 살게요.",
+  price: "싸게 살게요.",
+  intelligence: "똑똑하게 살게요.",
+};
+
+interface Block extends StreamModel {
+  turns: NegotiationTurn[];
+}
 
 interface Turn {
   id: number;
   prompt: string;
+  priority: Priority | null;
+  blocks: Block[];
   record: PurchaseRecord | null;
   error: string | null;
+}
+
+function planText(priority: Priority, models: StreamModel[]): string {
+  const opening = PLAN_OPENING[priority] ?? "";
+  const names = models.map((model) => model.displayName);
+  if (names.length === 1) return `${opening} ${names[0]} 판매 에이전트와 흥정할게요.`;
+  return `${opening} ${names.join("와 ")} 판매 에이전트와 차례로 흥정해서 더 싸게 합의한 쪽을 고를게요.`;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function PurchaseResult({ record, anchor }: { record: PurchaseRecord; anchor: (element: HTMLElement | null) => void }) {
+  const { winner, budgetUnits } = record.decision;
+  const reason = purchaseReason(record);
+  const failure = failureText(record);
+  const blocked = record.blockedRule !== undefined;
+  return (
+    <div className="msg top">
+      <BuyerAvatar />
+      <article className="final" ref={anchor}>
+        <div className="finalHead">
+          <h2>{purchaseTitle(record)}</h2>
+          {reason !== null && <p>{reason}</p>}
+          {failure !== null && <p>{failure}</p>}
+        </div>
+        {(blocked || isOverBudget(record)) && (
+          <Link className={`warnLink${blocked ? " risk" : ""}`} href="/dashboard/alerts">
+            {blocked ? "이상 거래에 차단 기록을 남겼어요" : "이상 거래에 경고를 남겼어요"}
+            <span aria-hidden="true">→</span>
+          </Link>
+        )}
+        <dl className="prices">
+          <div>
+            <dt>{record.status === "FAILED" ? "합의" : "결제"}</dt>
+            <dd className="paid">{aegisText(winner.amountUnits)}</dd>
+          </div>
+          {winner.listAmountUnits !== undefined && (
+            <div>
+              <dt>호가</dt>
+              <dd>{aegisText(winner.listAmountUnits)}</dd>
+            </div>
+          )}
+          <div>
+            <dt>예산</dt>
+            <dd>{aegisText(budgetUnits)}</dd>
+          </div>
+        </dl>
+        {record.resultText !== null && (
+          <div className="finalResult">
+            <h3>받아온 결과</h3>
+            <pre className="resultBox">{record.resultText}</pre>
+          </div>
+        )}
+        <Link className="textLink" href={`/dashboard/${record.id}`}>거래 기록 보기 →</Link>
+      </article>
+    </div>
+  );
 }
 
 export function ChatPanel() {
   const [prompt, setPrompt] = useState("");
   const [budget, setBudget] = useState("0.3");
   const [priority, setPriority] = useState<string>(AUTO);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [turns, setTurns] = useState<Turn[]>([]);
-  const [open, setOpen] = useState<number | null>(null);
+
+  const log = useRef<HTMLDivElement>(null);
+  const finalCard = useRef<HTMLElement | null>(null);
+  const shownFinal = useRef<number | null>(null);
+
+  // 말풍선이 늘면 아래로 따라가고, 결과가 나오면 구매 이유의 첫 줄이 먼저 보이게 한다.
+  useEffect(() => {
+    const element = log.current;
+    if (element === null) return;
+    const last = turns[turns.length - 1];
+    if (last === undefined) return;
+    if (last.record === null) {
+      // 대화는 칸마다 길이가 달라서, 맨 아래가 아니라 지금 말하는 칸의 마지막 말풍선을 따라간다.
+      const speaking = element.querySelector(".deal.live .dealTurns > :last-child");
+      if (speaking !== null) speaking.scrollIntoView({ block: "nearest" });
+      else if (last.blocks.length === 0 || last.blocks.every((block) => block.turns.some(endsDeal))) element.scrollTop = element.scrollHeight;
+    } else if (shownFinal.current !== last.id && finalCard.current !== null) {
+      shownFinal.current = last.id;
+      element.scrollTop += finalCard.current.getBoundingClientRect().top - element.getBoundingClientRect().top - 16;
+    }
+  }, [turns]);
+
+  function update(id: number, change: (turn: Turn) => Turn) {
+    setTurns((prev) => prev.map((turn) => (turn.id === id ? change(turn) : turn)));
+  }
+
+  function apply(id: number, event: PurchaseStreamEvent) {
+    if (event.type === "plan") {
+      update(id, (turn) => ({
+        ...turn,
+        priority: event.priority,
+        blocks: event.models.map((model) => ({ ...model, turns: [] })),
+      }));
+    } else if (event.type === "turn") {
+      update(id, (turn) => ({
+        ...turn,
+        blocks: turn.blocks.map((block) => (block.key === event.key ? { ...block, turns: [...block.turns, event.turn] } : block)),
+      }));
+    } else if (event.type === "done") {
+      update(id, (turn) => ({ ...turn, record: event.record }));
+    } else {
+      update(id, (turn) => ({ ...turn, error: event.error }));
+    }
+  }
+
+  async function readEvents(response: Response, onEvent: (event: PurchaseStreamEvent) => void) {
+    if (response.body === null) throw new Error("응답을 읽을 수 없습니다");
+    const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
+    let pending = "";
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) return;
+      pending += value;
+      const lines = pending.split("\n");
+      pending = lines.pop() ?? "";
+      for (const line of lines) {
+        if (line.trim() !== "") onEvent(JSON.parse(line) as PurchaseStreamEvent);
+      }
+    }
+  }
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
     const text = prompt.trim();
-    if (text === "" || busy) return;
-    if (parseAegis(budget) === null) return;
+    if (text === "" || busy || parseAegis(budget) === null) return;
 
     const id = Date.now();
-    setTurns((prev) => [...prev, { id, prompt: text, record: null, error: null }]);
+    setTurns((prev) => [...prev, { id, prompt: text, priority: null, blocks: [], record: null, error: null }]);
     setPrompt("");
     setBusy(true);
+
+    // 받은 순서대로 쌓아 두고 하나씩 푼다. 이미 끝난 흥정에 붙는 말(취소 등)은 기다리지 않는다.
+    const queue: PurchaseStreamEvent[] = [];
+    const ended = new Set<string>();
+    let reading = true;
+    let wake: () => void = () => {};
+    const shown = (async () => {
+      while (reading || queue.length > 0) {
+        const next = queue.shift();
+        if (next === undefined) {
+          await new Promise<void>((resolve) => { wake = resolve; });
+          continue;
+        }
+        apply(id, next);
+        if (next.type === "turn") {
+          const alreadyEnded = ended.has(next.key);
+          if (endsDeal(next.turn)) ended.add(next.key);
+          if (!alreadyEnded) await sleep(TURN_DELAY_MS);
+        }
+      }
+    })();
+
+    const push = (next: PurchaseStreamEvent) => {
+      queue.push(next);
+      wake();
+    };
+
     try {
-      const response = await fetch("/api/purchase", {
+      const response = await fetch("/api/purchase/stream", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ prompt: text, budget: budget.trim(), ...(priority === AUTO ? {} : { priority }) }),
       });
-      const body = (await response.json()) as PurchaseRecord | { error: string };
-      setTurns((prev) =>
-        prev.map((turn) =>
-          turn.id !== id
-            ? turn
-            : !response.ok || "error" in body
-              ? { ...turn, error: "error" in body ? body.error : `요청 실패 (${response.status})` }
-              : { ...turn, record: body },
-        ),
-      );
+      if (response.ok) {
+        await readEvents(response, push);
+      } else {
+        const body = (await response.json()) as { error?: string };
+        push({ type: "error", error: body.error ?? `요청 실패 (${response.status})` });
+      }
     } catch (caught) {
-      const message = caught instanceof Error ? caught.message : "요청을 보내지 못했습니다";
-      setTurns((prev) => prev.map((turn) => (turn.id === id ? { ...turn, error: message } : turn)));
+      push({ type: "error", error: caught instanceof Error ? caught.message : "요청을 보내지 못했습니다" });
     } finally {
+      reading = false;
+      wake();
+      await shown;
       setBusy(false);
     }
   }
 
   return (
     <div className="chat">
-      {turns.length === 0 ? (
-        <div className="chat-empty">
-          <h1>무엇을 물어볼까요?</h1>
-          <p className="muted">
-            보내면 벤치마크 표로 모델을 고르고, 그 모델에 결제한 뒤 결과를 가져옵니다.
-          </p>
-        </div>
-      ) : (
-        <div className="chat-log">
-          {turns.map((turn) => (
-            <div key={turn.id} className="turn">
-              <div className="bubble user">{turn.prompt}</div>
-
-              {turn.record === null && turn.error === null && (
-                <div className="bubble agent muted">모델을 고르고 결제하는 중…</div>
-              )}
-
-              {turn.error !== null && <div className="bubble agent error">{turn.error}</div>}
-
-              {turn.record !== null && turn.record.status === "FAILED" && (
-                <div className="bubble agent error">
-                  결제하지 못했습니다: {turn.record.failureReason}
-                </div>
-              )}
-
-              {turn.record !== null && turn.record.status === "SETTLED" && (
-                <div className="bubble agent">
-                  <div className="picked">
-                    <b>{turn.record.decision.winner.displayName}</b> 선택 ·{" "}
-                    {toAegis(turn.record.decision.winner.amountUnits)} AEGIS 결제
-                    {turn.record.payment !== null && turn.record.payment.mode !== "live" && ` (${turn.record.payment.mode})`}
-                  </div>
-                  <pre className="result">{turn.record.resultText}</pre>
-                  <button
-                    type="button"
-                    className="link"
-                    onClick={() => setOpen(open === turn.id ? null : turn.id)}
-                  >
-                    {open === turn.id ? "고른 근거 접기" : "고른 근거 보기"}
-                  </button>
-                  {open === turn.id && (
-                    <div className="evidence">
-                      <PurchaseSummary record={turn.record} />
-                      <CandidateTables record={turn.record} />
-                      <p className="muted">
-                        <Link href={`/dashboard/${turn.record.id}`}>기록 상세 보기</Link>
-                      </p>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
+      <div className="chatLog" ref={log}>
+        {turns.length === 0 ? (
+          <div className="chatEmpty">
+            <h1>무엇을 시킬까요?</h1>
+          </div>
+        ) : (
+          <div className="chatColumn">
+            {turns.map((turn) => (
+              <TurnView
+                key={turn.id}
+                turn={turn}
+                anchor={(element) => {
+                  if (turn === turns[turns.length - 1]) finalCard.current = element;
+                }}
+              />
+            ))}
+          </div>
+        )}
+      </div>
 
       <form className="composer" onSubmit={onSubmit}>
-        <div className="composer-row">
+        {menuOpen && <button type="button" className="menuBackdrop" aria-label="우선순위 메뉴 닫기" onClick={() => setMenuOpen(false)} />}
+        <div className="composerCard">
           <textarea
+            aria-label="요청 내용"
             value={prompt}
             onChange={(event) => setPrompt(event.target.value)}
             onKeyDown={(event) => {
@@ -146,35 +269,149 @@ export function ChatPanel() {
             }}
             placeholder="무엇을 시킬지 적어주세요"
             rows={2}
+            disabled={busy}
           />
-          <button type="submit" disabled={busy || prompt.trim() === ""}>
-            {busy ? "처리 중…" : "전송 후 결제"}
-          </button>
-        </div>
-        <div className="composer-options">
-          <label>
-            예산
-            <input
-              type="number"
-              min={0}
-              step={0.000001}
-              value={budget}
-              onChange={(event) => setBudget(event.target.value)}
-            />
-            <span className="muted">AEGIS</span>
-          </label>
-          <label>
-            우선순위
-            <select value={priority} onChange={(event) => setPriority(event.target.value)}>
-              {PRIORITY_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
+          <div className="composerBar">
+            <label className="budgetPill">
+              예산
+              <input
+                type="number"
+                min={0}
+                step={0.000001}
+                value={budget}
+                onChange={(event) => setBudget(event.target.value)}
+                disabled={busy}
+              />
+              AEGIS
+            </label>
+            <div className="composerActions">
+              <div className="priorityPicker">
+                <button
+                  type="button"
+                  className="priorityButton"
+                  aria-haspopup="menu"
+                  aria-expanded={menuOpen}
+                  disabled={busy}
+                  onClick={() => setMenuOpen(!menuOpen)}
+                >
+                  {PRIORITY_CHOICES.find((choice) => choice.value === priority)?.label}
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5f6878" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="m6 9 6 6 6-6" />
+                  </svg>
+                </button>
+                {menuOpen && (
+                  <div
+                    className="priorityMenu"
+                    role="menu"
+                    aria-label="우선순위 선택"
+                    onKeyDown={(event) => {
+                      if (event.key === "Escape") setMenuOpen(false);
+                    }}
+                  >
+                    <span>우선순위 선택</span>
+                    {PRIORITY_CHOICES.map((choice) => (
+                      <button
+                        key={choice.value}
+                        type="button"
+                        role="menuitemradio"
+                        aria-checked={choice.value === priority}
+                        onClick={() => {
+                          setPriority(choice.value);
+                          setMenuOpen(false);
+                        }}
+                      >
+                        {choice.label}
+                        {choice.value === priority && (
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6b3fd4" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <path d="m5 12 5 5L20 7" />
+                          </svg>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <button type="submit" className="sendButton" aria-label="보내기" disabled={busy || prompt.trim() === "" || parseAegis(budget) === null}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M12 19V5M6 11l6-6 6 6" />
+                </svg>
+              </button>
+            </div>
+          </div>
         </div>
       </form>
     </div>
+  );
+}
+
+function TurnView({ turn, anchor }: { turn: Turn; anchor: (element: HTMLElement | null) => void }) {
+  const { record, error } = turn;
+  const finished = record !== null || error !== null;
+  // 어디서 살지 정해지면 기록의 결과로 그린다. 같은 기록을 다시 돌려받아 대화를 못 받은 경우에도 그릴 수 있다.
+  const quotes = record === null ? [] : quotesOf(record);
+  const blocks = record === null ? turn.blocks : quotes.map((quote) => ({ ...quote, turns: quote.transcript }));
+  const statusOf = (index: number, turns: NegotiationTurn[]) => (record === null ? dealStatus(turns) : quoteStatus(quotes[index], record));
+
+  const allShown = turn.blocks.length > 0 && turn.blocks.every((block) => block.turns.some(endsDeal));
+  const isLive = (turns: NegotiationTurn[]) => !finished && turns.length > 0 && !turns.some(endsDeal);
+
+  return (
+    <>
+      <div className="bubble user">{turn.prompt}</div>
+
+      <div className="msg">
+        <BuyerAvatar />
+        <div className="msgBody">
+          <span className="msgName">구매 에이전트</span>
+          <div className="bubble agent">네, 알겠어요. 어떤 모델끼리 비교할지 정할게요.</div>
+        </div>
+      </div>
+
+      {turn.priority !== null && turn.blocks.length > 0 && (
+        <div className="msg">
+          <BuyerAvatar />
+          <div className="msgBody">
+            <div className="bubble agent">{planText(turn.priority, turn.blocks)}</div>
+          </div>
+        </div>
+      )}
+
+      {blocks.length > 0 && (
+        <div className="deals">
+          {blocks.map((block, index) => (
+            <NegotiationBlock
+              key={block.key}
+              displayName={block.displayName}
+              sellerName={block.sellerName}
+              askUnits={"askUnits" in block ? block.askUnits : 0}
+              turns={block.turns}
+              live={isLive(block.turns)}
+              defaultOpen={!finished && block.turns.length > 0}
+              status={statusOf(index, block.turns)}
+            />
+          ))}
+        </div>
+      )}
+
+      {!finished && (allShown || turn.blocks.length === 0) && (
+        <div className="typing" role="status" aria-label={allShown ? "결제하는 중" : "입력하는 중"}>
+          <i />
+          <i />
+          <i />
+          {allShown && <span>합의한 값으로 결제하는 중이에요</span>}
+        </div>
+      )}
+
+      {error !== null && (
+        <div className="msg">
+          <BuyerAvatar />
+          <div className="msgBody">
+            <div className="bubble error">{error}</div>
+          </div>
+        </div>
+      )}
+
+      {record !== null && <PurchaseResult record={record} anchor={anchor} />}
+    </>
   );
 }

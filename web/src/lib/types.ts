@@ -1,28 +1,27 @@
 /** 이 프로젝트에서 쓰는 값의 모양만 모아둔 곳. */
 
-/** 요청이 무엇을 중요하게 보는지. 이 네 값이 가중치 한 줄을 고른다. */
+/** 요청이 무엇을 중요하게 보는지. speed 는 옛 기록에만 있고 새 요청에서는 받지 않는다. */
 export type Priority = "default" | "price" | "speed" | "intelligence";
 
 export const PRIORITIES: readonly Priority[] = [
   "default",
   "price",
-  "speed",
   "intelligence",
 ];
 
-/** 가격·시간·지능에 몇 점씩 줄지. 세 값의 합은 항상 100. */
+/** 가격·성능에 몇 점씩 줄지. 합은 항상 100. time 은 속도를 보던 옛 기록에만 있다. */
 export interface Weights {
   price: number;
-  time: number;
+  time?: number;
   intelligence: number;
 }
 
 /** 우선순위마다 고정된 배점표. 코드 밖에서 바꿀 수 없다. */
 export const PRIORITY_WEIGHTS: Record<Priority, Weights> = {
-  default: { price: 34, time: 33, intelligence: 33 },
-  price: { price: 80, time: 10, intelligence: 10 },
+  default: { price: 50, intelligence: 50 },
+  price: { price: 90, intelligence: 10 },
   speed: { price: 10, time: 80, intelligence: 10 },
-  intelligence: { price: 10, time: 10, intelligence: 80 },
+  intelligence: { price: 10, intelligence: 90 },
 };
 
 /**
@@ -67,18 +66,14 @@ export interface BenchmarkModel {
   /** OpenRouter 판매 단가(1M 토큰당 달러). */
   inputPricePerMillion: string;
   outputPricePerMillion: string;
-  /** AA 가 잰 출력 속도(토큰/초) 최근 72시간 중앙값을 생각 단계별로 평균낸 값. */
-  outputTokensPerSecond: string;
   openRouterId: string;
-  aaSlugs: string[];
-  aaModelNames: string[];
 }
 
 export interface BenchmarkSnapshot {
   snapshotId: string;
   capturedAt: string;
   source: string;
-  sources?: { epoch: string; openRouter: string; aa: string };
+  sources?: { epoch: string; openRouter: string };
   note: string;
   models: BenchmarkModel[];
 }
@@ -125,7 +120,7 @@ export interface ScoredCandidate {
   providerModelId: string;
   recipient: string;
   amountUnits: number;
-  /** 출력 속도(토큰/초). 이 칸이 생기기 전 기록에는 없다. */
+  /** 옛 기록(속도를 보던 때)에만 있다. 출력 속도(토큰/초). */
   outputTokensPerSecond?: number;
   /** 옛 기록(끝까지 걸린 시간으로 속도를 매기던 때)에만 있다. */
   completionMs?: number;
@@ -133,7 +128,7 @@ export interface ScoredCandidate {
   eci?: number;
   eciCiLow?: number;
   eciCiHigh?: number;
-  /** 속도를 가져온 AA 항목 이름들(생각 단계 포함). */
+  /** 옛 기록에만 있다. 속도를 가져온 AA 항목 이름들. */
   aaModelNames?: string[];
   /** 옛 기록에만 있다. 속도를 가져온 AA 항목 하나. */
   aaModelName?: string;
@@ -145,12 +140,54 @@ export interface ScoredCandidate {
   aaScore?: number;
   arenaScore?: number;
   priceScore: number;
-  timeScore: number;
+  /** 옛 기록에만 있다. */
+  timeScore?: number;
   /** 성능 점수. 새 기록은 ECI 를 후보 중 최저 0점·최고 100점으로 편 값이다. 가중치의 "성능" 칸에 들어간다. */
   intelligenceScore: number;
   totalScore: number;
   rank: number;
 }
+
+/** 흥정 대화 한 줄. */
+export interface NegotiationTurn {
+  from: "buyer" | "seller";
+  action: "offer" | "counter" | "accept" | "reject";
+  priceUnits: number;
+  text: string;
+}
+
+/** 구매 에이전트와 판매 에이전트의 흥정 결과. 판매자의 최저가는 담기지 않는다. */
+export interface Negotiation {
+  key: string;
+  displayName: string;
+  sellerName: string;
+  /** 값이 같을 때 고르는 기준인 성능. 이 칸이 생기기 전 기록에는 없다. */
+  eci?: number;
+  /** agreed 는 산 곳, cancelled 는 합의했지만 더 싼 곳이 있어 취소한 곳, no-deal 은 결렬된 곳이다. */
+  status: "agreed" | "cancelled" | "no-deal" | "blocked";
+  askUnits: number;
+  maxUnits: number;
+  /** 결렬된 곳에는 없다. */
+  agreedUnits?: number;
+  /** 비교 모델이 모두 결렬돼 예산을 넘겨 산 경우에만 있다. */
+  overBudget?: boolean;
+  transcript: NegotiationTurn[];
+}
+
+/** 흥정할 모델 한 곳. /api/purchase/stream 의 plan 에 담긴다. */
+export interface StreamModel {
+  key: string;
+  displayName: string;
+  sellerName: string;
+  askUnits: number;
+}
+
+/** /api/purchase/stream 이 한 줄씩 보내는 진행 소식. */
+export type PurchaseStreamEvent =
+  | { type: "plan"; priority: Priority; models: StreamModel[] }
+  | { type: "turn"; key: string; turn: NegotiationTurn }
+  | { type: "done"; record: PurchaseRecord }
+  | { type: "error"; error: string };
 
 /** 선택이 끝난 뒤 남는 기록 전체. */
 export interface Decision {
@@ -198,7 +235,12 @@ export interface Decision {
   };
   candidates: ScoredCandidate[];
   rejected: RejectedCandidate[];
-  winner: ScoredCandidate;
+  /** amountUnits 는 합의가, listAmountUnits 는 호가다. 흥정이 생기기 전 기록에는 listAmountUnits 가 없다. */
+  winner: ScoredCandidate & { listAmountUnits?: number };
+  /** 산 곳과의 흥정. 이 칸이 생기기 전 기록에는 없다. */
+  negotiation?: Negotiation;
+  /** 후보로 남아 흥정한 곳 전부. 이 칸이 생기기 전 기록에는 없다. */
+  quotes?: Negotiation[];
 }
 
 /** local 은 이 컴퓨터의 anvil(자동 테스트 포함), live 는 Base Sepolia. 예전 기록에는 체인 없이 흐름만 잇던 "mock" 이 남아 있을 수 있다. */
@@ -240,6 +282,8 @@ export interface PurchaseRecord {
   failureReason: string | null;
   /** FAILED 일 때만 채워진다. 이 칸이 생기기 전 기록에는 없다. */
   failureStage?: FailureStage;
+  /** 감사 규칙이 결제를 막았을 때 그 규칙 이름. */
+  blockedRule?: string;
 }
 
 /** 감사 규칙이 어느 자리에서 돌았는지. */
