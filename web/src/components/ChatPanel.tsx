@@ -374,17 +374,21 @@ function TurnView({ turn, anchor }: { turn: Turn; anchor: (element: HTMLElement 
         </div>
       )}
 
-      {blocks.map((block, index) => (
-        <NegotiationBlock
-          key={block.key}
-          displayName={block.displayName}
-          sellerName={block.sellerName}
-          askUnits={"askUnits" in block ? block.askUnits : 0}
-          turns={block.turns}
-          live={!finished && !block.turns.some(endsDeal)}
-          status={statusOf(index, block.turns)}
-        />
-      ))}
+      {blocks.length > 0 && (
+        <div className="deals">
+          {blocks.map((block, index) => (
+            <NegotiationBlock
+              key={block.key}
+              displayName={block.displayName}
+              sellerName={block.sellerName}
+              askUnits={"askUnits" in block ? block.askUnits : 0}
+              turns={block.turns}
+              live={!finished && !block.turns.some(endsDeal)}
+              status={statusOf(index, block.turns)}
+            />
+          ))}
+        </div>
+      )}
 
       {!finished && (
         <div

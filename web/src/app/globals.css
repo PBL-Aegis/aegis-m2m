@@ -407,8 +407,16 @@ tr.winner td { background: var(--violet-soft); }
   .dealBar i { transition: none; }
 }
 
-/* 흥정 한 건: 접을 수 있는 머리와 말풍선 */
-.deal { display: flex; flex-direction: column; gap: 12px; }
+/* 흥정 한 건: 접을 수 있는 머리와 말풍선. 접힌 흥정은 나란히 두고, 펼친 흥정은 말풍선을 읽기 좋게 전체 폭을 쓴다. */
+.deals {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
+  gap: 12px;
+}
+.deal { min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+.deal.open { grid-column: 1 / -1; }
+.deal > .dealHead { flex: 1; }
+.deal > .dealHead .dealBar { margin-top: auto; }
 .dealHead {
   width: 100%;
   padding: 12px 16px;

@@ -59,7 +59,7 @@ export function NegotiationBlock({
   const { buyer, seller, left, width } = gap(turns, askUnits);
 
   return (
-    <section className="deal" aria-label={`${sellerName}와 흥정`}>
+    <section className={`deal${expanded ? " open" : ""}`} aria-label={`${sellerName}와 흥정`}>
       <button
         type="button"
         className={`dealHead${live ? " live" : ""}`}
@@ -70,7 +70,8 @@ export function NegotiationBlock({
           <span className="avatar" aria-hidden="true">{mark}</span>
           <span className="dealName">
             <strong>{displayName}</strong>
-            <span>{sellerName} · 호가 {aegisText(askUnits)}</span>
+            <span>{sellerName}</span>
+            <span>호가 {aegisText(askUnits)}</span>
           </span>
           <span className={`badge ${status.tone}`}>{status.label}</span>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5f6878" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

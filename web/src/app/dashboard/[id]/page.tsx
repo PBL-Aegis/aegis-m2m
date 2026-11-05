@@ -58,17 +58,19 @@ export default async function PurchaseDetailPage({ params }: { params: Promise<{
           {quotes.length > 0 && (
             <section className="panel">
               <h2>흥정 대화</h2>
-              {quotes.map((quote) => (
-                <NegotiationBlock
-                  key={quote.key}
-                  displayName={quote.displayName}
-                  sellerName={quote.sellerName}
-                  askUnits={quote.askUnits}
-                  turns={quote.transcript}
-                  live={false}
-                  status={quoteStatus(quote, record)}
-                />
-              ))}
+              <div className="deals">
+                {quotes.map((quote) => (
+                  <NegotiationBlock
+                    key={quote.key}
+                    displayName={quote.displayName}
+                    sellerName={quote.sellerName}
+                    askUnits={quote.askUnits}
+                    turns={quote.transcript}
+                    live={false}
+                    status={quoteStatus(quote, record)}
+                  />
+                ))}
+              </div>
             </section>
           )}
 
