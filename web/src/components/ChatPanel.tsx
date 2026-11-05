@@ -124,7 +124,10 @@ export function ChatPanel() {
     const last = turns[turns.length - 1];
     if (last === undefined) return;
     if (last.record === null) {
-      element.scrollTop = element.scrollHeight;
+      // 대화는 칸마다 길이가 달라서, 맨 아래가 아니라 지금 말하는 칸의 마지막 말풍선을 따라간다.
+      const speaking = element.querySelector(".deal.live .dealTurns > :last-child");
+      if (speaking !== null) speaking.scrollIntoView({ block: "nearest" });
+      else if (last.blocks.length === 0 || last.blocks.every((block) => block.turns.some(endsDeal))) element.scrollTop = element.scrollHeight;
     } else if (shownFinal.current !== last.id && finalCard.current !== null) {
       shownFinal.current = last.id;
       element.scrollTop += finalCard.current.getBoundingClientRect().top - element.getBoundingClientRect().top - 16;
@@ -346,12 +349,11 @@ function TurnView({ turn, anchor }: { turn: Turn; anchor: (element: HTMLElement 
   const finished = record !== null || error !== null;
   // 어디서 살지 정해지면 기록의 결과로 그린다. 같은 기록을 다시 돌려받아 대화를 못 받은 경우에도 그릴 수 있다.
   const quotes = record === null ? [] : quotesOf(record);
-  const blocks = record === null ? turn.blocks.filter((block) => block.turns.length > 0) : quotes.map((quote) => ({ ...quote, turns: quote.transcript }));
+  const blocks = record === null ? turn.blocks : quotes.map((quote) => ({ ...quote, turns: quote.transcript }));
   const statusOf = (index: number, turns: NegotiationTurn[]) => (record === null ? dealStatus(turns) : quoteStatus(quotes[index], record));
 
-  const lastBlock = record === null ? blocks[blocks.length - 1] : undefined;
-  const lastTurn = lastBlock?.turns[lastBlock.turns.length - 1];
   const allShown = turn.blocks.length > 0 && turn.blocks.every((block) => block.turns.some(endsDeal));
+  const isLive = (turns: NegotiationTurn[]) => !finished && turns.length > 0 && !turns.some(endsDeal);
 
   return (
     <>
@@ -383,19 +385,16 @@ function TurnView({ turn, anchor }: { turn: Turn; anchor: (element: HTMLElement 
               sellerName={block.sellerName}
               askUnits={"askUnits" in block ? block.askUnits : 0}
               turns={block.turns}
-              live={!finished && !block.turns.some(endsDeal)}
+              live={isLive(block.turns)}
+              defaultOpen={!finished && block.turns.length > 0}
               status={statusOf(index, block.turns)}
             />
           ))}
         </div>
       )}
 
-      {!finished && (
-        <div
-          className={`typing${!allShown && lastTurn !== undefined && !endsDeal(lastTurn) && lastTurn.from === "buyer" ? " right" : ""}`}
-          role="status"
-          aria-label={allShown ? "결제하는 중" : "입력하는 중"}
-        >
+      {!finished && (allShown || turn.blocks.length === 0) && (
+        <div className="typing" role="status" aria-label={allShown ? "결제하는 중" : "입력하는 중"}>
           <i />
           <i />
           <i />

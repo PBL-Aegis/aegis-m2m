@@ -27,6 +27,7 @@ export function BuyerAvatar() {
 }
 
 function gap(turns: NegotiationTurn[], askUnits: number) {
+  if (turns.length === 0) return { buyer: null, seller: askUnits, left: 0, width: 0 };
   const buyerTurns = turns.filter((turn) => turn.from === "buyer" && turn.action !== "reject");
   const sellerTurns = turns.filter((turn) => turn.from === "seller");
   const opening = buyerTurns[0]?.priceUnits ?? askUnits;
@@ -44,6 +45,7 @@ export function NegotiationBlock({
   askUnits,
   turns,
   live,
+  defaultOpen = false,
   status,
 }: {
   displayName: string;
@@ -51,15 +53,17 @@ export function NegotiationBlock({
   askUnits: number;
   turns: NegotiationTurn[];
   live: boolean;
+  defaultOpen?: boolean;
   status: StatusView;
 }) {
   const [picked, setPicked] = useState<boolean | null>(null);
-  const expanded = picked ?? live;
+  const expanded = picked ?? (live || defaultOpen);
   const mark = sellerName.charAt(0);
   const { buyer, seller, left, width } = gap(turns, askUnits);
+  const lastTurn = turns[turns.length - 1];
 
   return (
-    <section className={`deal${expanded ? " open" : ""}`} aria-label={`${sellerName}와 흥정`}>
+    <section className={`deal${live ? " live" : ""}`} aria-label={`${sellerName}와 흥정`}>
       <button
         type="button"
         className={`dealHead${live ? " live" : ""}`}
@@ -82,7 +86,7 @@ export function NegotiationBlock({
           <i style={{ left: `${left}%`, width: `${width}%` }} />
         </span>
         <span className="dealPrices">
-          <span>구매 {aegisText(buyer)}</span>
+          <span>구매 {buyer === null ? "-" : aegisText(buyer)}</span>
           <span>판매 {aegisText(seller)}</span>
         </span>
       </button>
@@ -107,6 +111,13 @@ export function NegotiationBlock({
                 <span className="avatar" aria-hidden="true">{mark}</span>
               </div>
             ),
+          )}
+          {live && (
+            <div className={`typing${lastTurn?.from === "buyer" ? " right" : ""}`} role="status" aria-label="입력하는 중">
+              <i />
+              <i />
+              <i />
+            </div>
           )}
         </div>
       )}

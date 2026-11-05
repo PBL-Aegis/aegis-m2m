@@ -38,7 +38,8 @@ export function endsDeal(turn: NegotiationTurn): boolean {
 /** 대화만 보고 정하는 흥정 결과. 어디서 살지 정해지기 전에 쓴다. */
 export function dealStatus(turns: NegotiationTurn[]): StatusView {
   const last = turns[turns.length - 1];
-  if (last === undefined || !endsDeal(last)) return { label: "흥정 중", tone: "live" };
+  if (last === undefined) return { label: "대기 중", tone: "mute" };
+  if (!endsDeal(last)) return { label: "흥정 중", tone: "live" };
   return last.action === "accept" ? { label: `합의 ${aegisText(last.priceUnits)}`, tone: "live" } : { label: "결렬", tone: "mute" };
 }
 

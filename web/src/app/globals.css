@@ -6,6 +6,7 @@
   --muted: #4a5366;
   --faint: #5f6878;
   --line: #e3e6ec;
+  --divider: #cfd3dd;
   --paper: #f3f4f7;
   --card: #ffffff;
   --violet: #6b3fd4;
@@ -343,8 +344,9 @@ tr.winner td { background: var(--violet-soft); }
   justify-content: center;
 }
 .chatEmpty h1 { font-size: 28px; }
+/* 말풍선, 흥정 칸, 결과 카드, 입력창이 같은 끝선을 쓰도록 폭을 하나로 맞춘다. */
 .chatColumn {
-  max-width: 760px;
+  max-width: 880px;
   margin: 0 auto;
   padding: 24px 16px;
   display: flex;
@@ -407,15 +409,30 @@ tr.winner td { background: var(--violet-soft); }
   .dealBar i { transition: none; }
 }
 
-/* 흥정 한 건: 접을 수 있는 머리와 말풍선. 접힌 흥정은 나란히 두고, 펼친 흥정은 말풍선을 읽기 좋게 전체 폭을 쓴다. */
+/* 흥정 한 건: 판매자마다 칸을 나눠 대화가 나란히 쌓인다. */
 .deals {
+  position: relative;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
   gap: 12px;
 }
+/* 넓은 화면에서는 판매자별로 칸을 나누고 가운데에 구분선을 둔다. 좁으면 위아래로 쌓는다. */
+@media (min-width: 720px) {
+  .deals:not(:has(> :only-child)) { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 49px; }
+  .deals:not(:has(> :only-child))::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 1px;
+    background: var(--divider);
+  }
+}
 .deal { min-width: 0; display: flex; flex-direction: column; gap: 12px; }
-.deal.open { grid-column: 1 / -1; }
-.deal > .dealHead { flex: 1; }
+.dealTurns > * { scroll-margin: 140px 0 16px; }
+.dealHead { flex: 1; }
 .deal > .dealHead .dealBar { margin-top: auto; }
 .dealHead {
   width: 100%;
@@ -479,6 +496,7 @@ tr.winner td { background: var(--violet-soft); }
 
 .typing {
   align-self: flex-start;
+  width: fit-content;
   margin: 0 40px;
   padding: 12px 16px;
   border-radius: 16px;
@@ -490,6 +508,7 @@ tr.winner td { background: var(--violet-soft); }
   color: var(--muted);
 }
 .typing.right { align-self: flex-end; }
+.deal .typing.right { margin-left: auto; }
 .typing i {
   width: 6px;
   height: 6px;
@@ -514,7 +533,7 @@ tr.winner td { background: var(--violet-soft); }
 }
 .finalHead { display: flex; flex-direction: column; gap: 8px; }
 .finalHead h2 { font-size: 20px; line-height: 1.35; letter-spacing: -0.03em; }
-.finalHead p { font-size: 15px; color: var(--ink-soft); }
+.finalHead p { max-width: 72ch; font-size: 15px; color: var(--ink-soft); }
 .warnLink {
   min-height: 44px;
   padding: 8px 12px;
@@ -554,7 +573,7 @@ tr.winner td { background: var(--violet-soft); }
 .menuBackdrop { position: fixed; inset: 0; padding: 0; border: 0; background: transparent; cursor: default; }
 .composerCard {
   position: relative;
-  max-width: 760px;
+  max-width: 848px;
   margin: 0 auto;
   padding: 14px 12px 12px;
   border: 1px solid var(--line);
