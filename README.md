@@ -194,6 +194,11 @@ contract AegisToken is ERC20, EIP712, Ownable, PaymentRules, MaxAmountRule {
 - 같은 구매자가 같은 요청 번호로 두 번 결제하면 토큰이 규칙 없이도 `AuthorizationAlreadyUsed` 로 막습니다.
 - 설정값을 바꿔 가며 시험할 때는 규칙 파일의 상수를 pytest 의 `monkeypatch.setattr(규칙모듈, "상수이름", 값)` 으로 바꿉니다. 규칙 파일을 다시 불러오면(`importlib.reload`) 규칙이 두 번 등록되니 쓰지 않습니다.
 
+### 구현된 규칙
+
+- **한도 규칙** (`agent_m2m/rules/limit.py`): 1건 0.5 AEGIS, 하루 3 AEGIS를 넘으면 결제를 막고, 하루 한도의 80%부터 임박 알림을, 10분 안에 상한 근처 결제가 3건 이상이면 쪼개기 의심 알림을 남깁니다.
+- 설정은 `AUDIT_LIMIT_PER_PAYMENT`, `AUDIT_LIMIT_PER_DAY`, `AUDIT_LIMIT_WARN_RATIO`, `AUDIT_SPLIT_MIN_RATIO`, `AUDIT_SPLIT_WINDOW_SECONDS`, `AUDIT_SPLIT_COUNT`로 바꿀 수 있고(`.env.example` 참고), 체인은 `LimitRule.sol`이 같은 한도를 강제합니다.
+
 ## 테스트가 확인하는 것
 
 | 명령 | 확인하는 것 | 가짜로 두는 것 | 확인하지 않는 것 |
