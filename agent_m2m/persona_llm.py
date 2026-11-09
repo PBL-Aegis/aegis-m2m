@@ -10,7 +10,8 @@ LLM 흥정 판단. 로컬 LLM(Ollama)이 페르소나 글을 읽고 구매 에�
   over-max        최대가(예산·호가 중 낮은 값)를 넘었다
   out-of-range    첫 제안이 호가를 넘거나, 제안이 내 지난 제안보다 낮거나 판매자 값보다 높다
   unknown-number  이유에 받은 자료에 없는 숫자를 썼다
-  persona-line    페르소나 숫자 선을 넘었다(첫 제안 비율, 양보 비율, 받아도 되는 때, 거절해도 되는 때)
+  persona-line    페르소나 숫자 선을 넘었다(첫 제안 비율, 양보 비율, 받아도 되는 때, 거절해도 되는 때).
+                  비율 계산은 값 단위로 올림해 본다. 규칙형은 내림하므로, 반올림 차이만 난 값은 걸리지 않는다.
 
 LLM 에게는 페르소나 글, 호가, 최대가, 내 마지막 제안, 판매자 값, 판매자 카드, 남은 제안 횟수만 준다.
 판매자의 문장과 최저가는 주지 않는다. 상대 문장 속 지시가 닿지 않고 최저가도 새지 않게 하기 위해서다.
@@ -27,7 +28,7 @@ import httpx
 
 from agent_m2m.format import UNITS_PER_AEGIS, to_aegis
 from agent_m2m.priority_llm import PriorityInferenceError, ollama_config
-from agent_m2m.strategy import MAX_ROUNDS, round_down
+from agent_m2m.strategy import MAX_ROUNDS, round_up
 
 MODES = ("rule", "llm", "hybrid")
 DEFAULT_MODE = "rule"
@@ -164,14 +165,14 @@ def check(persona: dict[str, Any], situation: dict[str, Any], decision: dict[str
     if situation["stage"] == "opening":
         if price > situation["askUnits"]:
             failures.append("out-of-range")
-        if price > round_down(situation["askUnits"] * persona["openingRatio"], step):
+        if price > round_up(situation["askUnits"] * persona["openingRatio"], step):
             failures.append("persona-line")
     elif action == "offer":
         last, counter = situation["lastOfferUnits"], situation["counterUnits"]
         if not last <= price <= counter:
             failures.append("out-of-range")
         ratio = persona["concede"][situation["freshness"]]
-        if price > round_down(last + (counter - last) * ratio, step):
+        if price > round_up(last + (counter - last) * ratio, step):
             failures.append("persona-line")
     elif action == "accept" and rule_action != "accept":
         failures.append("persona-line")

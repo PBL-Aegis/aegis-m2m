@@ -115,3 +115,10 @@ def test_API_는_없는_흥정_방식을_받지_않는다():
     response = TestClient(app).post("/api/purchase", json={"prompt": "요약", "budget": "1", "priority": "price", "negotiationMode": "magic"})
     assert response.status_code == 400
     assert "negotiationMode" in response.json()["error"]
+
+
+def test_비율을_정확히_계산해_반올림만_다른_값은_걸리지_않는다(monkeypatch):
+    # 4,001 의 70% 는 2,800.7 이다. 규칙형은 2,800 으로 내리고, LLM 이 2,801 을 불러도 페르소나 선 안이다.
+    answers(monkeypatch, [{"action": "offer", "price": "0.002801", "reason": "호가의 70%로 시작합니다."}])
+    first = buyer_turns(negotiate(4_001, LARGE_BUDGET, 0.5, persona=THRIFTY, mode="hybrid"))[0]
+    assert (first["priceUnits"], first["reason"]["check"]["passed"]) == (2_801, True)
