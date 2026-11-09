@@ -10,7 +10,7 @@ TOKEN = "0x2222222222222222222222222222222222222222"
 BUYER = "0x1111111111111111111111111111111111111111"
 RECIPIENT = "0xF00E8e0ecEF3B405250242F932849edB409497a0"
 
-PAYMENT = {"mode": "live", "txHash": "0xabc", "from": BUYER, "to": RECIPIENT, "amountUnits": 9_600, "tokenAddress": TOKEN, "chainId": 84532}
+PAYMENT = {"mode": "local", "txHash": "0xabc", "from": BUYER, "to": RECIPIENT, "amountUnits": 9_600, "tokenAddress": TOKEN, "chainId": 31337}
 WINNER = {"recipient": RECIPIENT, "amountUnits": 9_600}
 
 
