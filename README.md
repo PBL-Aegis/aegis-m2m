@@ -10,7 +10,7 @@ AI 구매 에이전트가 판매 에이전트들과 흥정해 가장 싼 곳에�
 
 1. **요청**: 요청 내용, 예산(AEGIS), 우선순위(싸게·똑똑하게·기본), 필요 기능, 요청 번호(`requestId`), 사용자(`userId`). 요청 번호를 비우면 서버가 만듭니다. 우선순위를 비우면 로컬 Qwen이 요청 문장을 읽고 정하고, Qwen이 응답하지 않으면 결제 전에 멈춥니다(503).
 2. **호가 계산**: 고정된 단가(`data/benchmark.json`)로 모델마다 금액을 계산하고 필요 기능으로 거릅니다(`agent_m2m/selection.py`). 함께 계산되는 점수는 구매 결정에 쓰지 않습니다.
-3. **흥정**: 판매 에이전트는 `data/sellers.json` 의 두 회사(Anthropic·OpenAI)이고 파는 모델 6개를 여기서 고정합니다. 우선순위별 비교 모델도 이 파일의 `priorityModels` 표로 정합니다. 싸게는 Haiku 5.5·GPT-6 Luna, 기본은 Sonnet 5.5·GPT-6.1 Terra, 똑똑하게는 Opus 5.5·GPT-6.1 Sol입니다. 표의 모델과 고정 규칙으로 각각 흥정해 합의가가 가장 낮은 곳에서 사고(값이 같으면 성능 ECI가 높은 모델) 나머지 합의는 취소합니다(`agent_m2m/shopping.py`, `negotiation.py`, `seller.py`, `strategy.py`). 구매자는 예산과 호가 중 낮은 값을 넘겨 부르지 않고, 판매자는 최저가(호가 × 회사별 `floorRatio`) 아래로 내리지 않습니다. `floorRatio` 는 판매자의 비공개 설정으로 보는 데모용 값입니다. 구매자는 호가의 75%에서 시작하고, 양쪽이 번갈아 근거 카드(`agent_m2m/cards.py`)에 따라 다가갑니다. 코드가 호가와 ECI를 비교해 사실인 카드만 내며, 상대는 아직 안 쓴 카드에 값 차이의 75%, 이미 쓴 카드에 50%, 카드가 없으면 25%를 양보합니다(시연용 값). 로컬 Gemma는 카드 내용을 대화 문장으로 쓰기만 하며(`agent_m2m/dialogue.py`) 상대 메시지와 최저가를 받지 않습니다. 실패하면 기본 문장을 쓰고 값은 그대로입니다. 구매자는 최대 5번 제안하고, 그때까지 맞지 않으면 판매자의 마지막 값이 최대가 이하일 때 받고 넘으면 결렬입니다. 합의가가 `decision.winner.amountUnits` 가 되어 뒤의 감사·결제·확인이 모두 이 값을 봅니다. 호가는 `listAmountUnits` 에 남습니다. 비교 모델이 모두 결렬되면 판매자가 마지막에 부른 값이 가장 낮은 곳을 그 값에 삽니다. 예산을 넘는 구매이므로 기록에 `overBudget` 을 남기고 대시보드에 `over-budget` 경고를 띄웁니다. 예산 자체는 결제를 막지 않으므로, 막는 일은 감사 규칙이 맡습니다.
+3. **흥정**: 판매 에이전트는 `data/sellers.json` 의 두 회사(Anthropic·OpenAI)이고 파는 모델 6개를 여기서 고정합니다. 우선순위별 비교 모델도 이 파일의 `priorityModels` 표로 정합니다. 싸게는 Haiku 5.5·GPT-6 Luna, 기본은 Sonnet 5.5·GPT-6.1 Terra, 똑똑하게는 Opus 5.5·GPT-6.1 Sol입니다. 표의 모델과 각각 흥정한 뒤 구매 에이전트의 페르소나 기준으로 한 곳에서 사고, 나머지 합의는 이유를 남기고 취소합니다(`agent_m2m/shopping.py`, `negotiation.py`, `seller.py`, `strategy.py`). 구매자는 예산과 호가 중 낮은 값을 넘겨 부르지 않고, 판매자는 최저가(호가 × 회사별 `floorRatio`) 아래로 내리지 않습니다. `floorRatio` 는 판매자의 비공개 설정으로 보는 데모용 값입니다. 양쪽은 번갈아 근거 카드(`agent_m2m/cards.py`)를 내며 다가갑니다. 코드가 호가와 ECI를 비교해 사실인 카드만 냅니다. 판매자는 구매자가 아직 안 쓴 카드에 값 차이의 75%, 이미 쓴 카드에 50%, 카드가 없으면 25%를 양보합니다(시연용 값). 구매자의 첫 제안과 양보 비율, 어디서 살지는 **페르소나**가 정합니다. 페르소나는 `personas/*.md` 파일 하나이고(`agent_m2m/persona.py`), 요청의 `persona` 로 고르며 비우면 최저가형입니다. 최저가형(`thrifty`)은 호가의 70%에서 시작해 판매자 카드에 50%·30%·15%만 올려 주고 가장 싼 곳에서 삽니다. 품질형(`quality`)은 85%에서 시작해 75%·50%·25%를 올려 주고, 가장 싼 합의가보다 20% 이내로 비싼 곳 중 ECI가 가장 높은 곳에서 삽니다. 구매자의 말마다 `reason` 에 페르소나 기준의 이유(왜 이 값인지)를 남기고, 흥정이 끝나면 `decision.evaluation` 에 페르소나 관점의 이득·일부 이득·손해 판정과 이유를 코드가 씁니다(`agent_m2m/evaluation.py`). 다른 곳보다 비싸게 샀으면 그 이유가 반드시 한 줄 들어갑니다. 판매자의 말에는 최저가가 드러나지 않도록 이유를 남기지 않습니다. 로컬 Gemma는 카드 내용을 대화 문장으로 쓰기만 하며(`agent_m2m/dialogue.py`) 상대 메시지와 최저가를 받지 않습니다. 실패하면 기본 문장을 쓰고 값은 그대로입니다. 구매자는 최대 5번 제안하고, 그때까지 맞지 않으면 판매자의 마지막 값이 최대가 이하일 때 받고 넘으면 결렬입니다. 합의가가 `decision.winner.amountUnits` 가 되어 뒤의 감사·결제·확인이 모두 이 값을 봅니다. 호가는 `listAmountUnits` 에 남습니다. 비교 모델이 모두 결렬되면 판매자가 마지막에 부른 값이 가장 낮은 곳을 그 값에 삽니다. 예산을 넘는 구매이므로 기록에 `overBudget` 을 남기고 대시보드에 `over-budget` 경고를 띄웁니다. 예산 자체는 결제를 막지 않으므로, 막는 일은 감사 규칙이 맡습니다.
 4. **기록(처리 중)**: 결제 직전에 `PROCESSING` 상태로 MongoDB에 먼저 남깁니다.
 5. **감사**: `agent_m2m/rules/` 에 등록한 규칙을 세 자리에서 돌립니다. 막으면 "차단", 알리기만 하면 "경고" 알림이 대시보드의 이상 거래에 뜹니다.
 6. **결제**: ERC-3009 방식입니다. 구매자 지갑이 "이 판매자에게 이 금액을, 이 요청 번호로, 10분 안에만"이라는 내용에 서명만 하고, 중개자 지갑이 AEGIS `transferWithAuthorization` 거래를 보내며 가스비를 냅니다. 그래서 구매자 지갑에는 AEGIS 만 있으면 됩니다. 요청 번호(문자열의 keccak256)가 서명의 일회용 번호(nonce)라 같은 요청 번호는 체인이 한 번만 받습니다. 송금 전에 체인의 감사 규칙(`contracts/src/rules/`)이 한 번 더 검사합니다.
@@ -23,6 +23,7 @@ AI 구매 에이전트가 판매 에이전트들과 흥정해 가장 싼 곳에�
 | 위치 | 무엇 | 언어 |
 | --- | --- | --- |
 | `agent_m2m/` | 서버: 선택·결제·감사·기록·API | Python |
+| `personas/` | 구매 에이전트 페르소나(흥정 방식·고르는 기준) | Markdown |
 | `agent_m2m/rules/` | 서버 감사 규칙 | Python |
 | `tests/` | 서버 자동 테스트 (pytest) | Python |
 | `scripts/` | 로컬 체인 띄우기, 판매 목록 만들기 | Python |
@@ -93,6 +94,7 @@ curl -s -X POST localhost:8000/api/purchase -H 'content-type: application/json' 
 | `prompt` | 예 | 요청 문장 |
 | `budget` | 예 | 예산(AEGIS). 예: `"0.5"` |
 | `priority` | 아니오 | `price`·`intelligence`·`default`. 비우면 Gemma 가 정함 |
+| `persona` | 아니오 | 구매 에이전트 페르소나 `thrifty`(최저가형)·`quality`(품질형). 비우면 `thrifty` |
 | `requestId` | 아니오 | 요청 번호. 같은 요청을 다시 보낼 때 같은 값. 비우면 서버가 만듦 |
 | `userId` | 아니오 | 사용자 |
 | `maxOutputTokens` | 아니오 | 최대 출력 토큰(금액 계산에 씀). 기본 8000 |
@@ -100,7 +102,7 @@ curl -s -X POST localhost:8000/api/purchase -H 'content-type: application/json' 
 
 채팅 화면은 같은 입력을 `POST /api/purchase/stream` 으로 보냅니다. 비교 모델(`plan`)과 흥정 대화(`turn`)를 진행되는 대로 한 줄에 JSON 하나씩 보내고, 마지막에 구매 기록(`done`)이나 오류(`error`)를 보냅니다.
 
-화면이 쓰는 조회 API: `GET /api/purchases`, `/api/purchases/{id}`, `/api/purchases/{id}/alerts`, `/api/alerts`, `/api/alerts/summary`, `/api/wallet`, `/api/mode`. 서버를 켠 뒤 `http://127.0.0.1:8000/docs` 에서 모두 볼 수 있습니다.
+화면이 쓰는 조회 API: `GET /api/purchases`, `/api/purchases/{id}`, `/api/purchases/{id}/alerts`, `/api/alerts`, `/api/alerts/summary`, `/api/wallet`, `/api/mode`, `/api/personas`. 서버를 켠 뒤 `http://127.0.0.1:8000/docs` 에서 모두 볼 수 있습니다.
 
 ## 감사 규칙 추가하기
 

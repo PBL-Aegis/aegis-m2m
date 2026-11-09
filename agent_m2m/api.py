@@ -10,10 +10,12 @@ HTTP API. 화면(web/)과 다른 에이전트가 이 주소들만 부른다.
   GET  /api/alerts/summary           차단·경고 개수
   GET  /api/wallet                   구매 에이전트 지갑 잔액
   GET  /api/mode                     결제 모드(local·live)
+  GET  /api/personas                 구매 에이전트 페르소나 목록(id·이름·목표)
 
 POST /api/purchase 의 입력은 여기서 모양만 검사한다(문자열인지, 금액 형식인지, 네 우선순위 중 하나인지).
 예산(budget)은 사람이 적는 값이라 AEGIS 로 받고(예: "0.5"), 여기서 최소 단위(units)로 바꾼다.
 우선순위는 빼도 된다. 빼면 로컬 Gemma 가 요청 문장을 보고 정한다.
+페르소나(persona)도 빼도 된다. 빼면 최저가형(thrifty)으로 흥정한다. 쓸 수 있는 값은 personas/ 의 파일 이름이다.
 requestId·userId 도 빼도 된다. requestId 를 빼면 서버가 새로 만든다.
 """
 
@@ -33,6 +35,7 @@ from agent_m2m.domain import PRIORITIES
 from agent_m2m.format import parse_aegis
 from agent_m2m.negotiation import NegotiationError
 from agent_m2m.payment import buyer_balance, payment_config
+from agent_m2m.persona import DEFAULT_PERSONA, load_persona, persona_ids
 from agent_m2m.priority_llm import PriorityInferenceError
 from agent_m2m.purchase import run_purchase
 from agent_m2m.selection import SelectionError
@@ -74,6 +77,12 @@ def parse_body(body: Any) -> dict[str, Any] | str:
         if priority not in PRIORITIES:
             return f"priority 는 {', '.join(PRIORITIES)} 중 하나이거나 비어 있어야 합니다"
         request["priority"] = priority
+
+    persona = body.get("persona")
+    if persona is not None:
+        if persona not in persona_ids():
+            return f"persona 는 {', '.join(persona_ids())} 중 하나이거나 비어 있어야 합니다"
+        request["persona"] = persona
 
     if "maxOutputTokens" in body:
         value = body["maxOutputTokens"]
@@ -190,6 +199,13 @@ def get_alert_summary() -> dict[str, int]:
 @app.get("/api/wallet")
 def get_wallet() -> dict[str, Any]:
     return buyer_balance()
+
+
+@app.get("/api/personas")
+def get_personas() -> list[dict[str, Any]]:
+    """기본 페르소나가 맨 앞이다."""
+    ordered = sorted(persona_ids(), key=lambda persona_id: persona_id != DEFAULT_PERSONA)
+    return [{key: persona[key] for key in ("id", "name", "goal")} for persona in map(load_persona, ordered)]
 
 
 @app.get("/api/mode")

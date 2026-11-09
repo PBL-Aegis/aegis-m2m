@@ -12,6 +12,7 @@ from agent_m2m.dialogue import LineWriter
 from agent_m2m.audit import AuditBlockedError
 from agent_m2m.negotiation import NegotiationError, negotiate
 from agent_m2m.payment import buyer_balance, request_id_hash
+from agent_m2m.persona import load_persona
 from agent_m2m.purchase import run_purchase
 from agent_m2m.rules import over_budget
 from agent_m2m.selection import SelectionError
@@ -75,16 +76,25 @@ def test_기록에_판매자_최저가가_담기지_않는다():
     assert not hasattr(SellerAgent(100_000, RATIO), "floor_units")
 
 
-def test_카드가_없으면_양쪽은_첫_제안_뒤_차이의_25퍼센트씩_움직인다():
+def test_카드가_없으면_판매자는_25퍼센트_구매자는_페르소나의_카드_없음_비율로_움직인다():
     turns = negotiate(4_000, LARGE_BUDGET, 0.5)["transcript"]
-    assert [turn["priceUnits"] for turn in turns[:4]] == [3_000, 3_750, 3_180, 3_610]
+    # 최저가형: 호가의 70% 에서 시작해 15% 씩 올린다.
+    assert [turn["priceUnits"] for turn in turns[:4]] == [2_800, 3_700, 2_930, 3_510]
 
 
-def test_상대는_새_카드에_75퍼센트_이미_쓴_카드에_50퍼센트_양보한다():
+def test_판매자는_새_카드에_75퍼센트_이미_쓴_카드에_50퍼센트_양보한다():
     turns = negotiate(4_000, LARGE_BUDGET, 0.5, buyer_cards=(RIVAL_CHEAPER,))["transcript"]
-    assert [turn["priceUnits"] for turn in turns[:4]] == [3_000, 3_250, 3_060, 3_160]
+    assert [turn["priceUnits"] for turn in turns[:4]] == [2_800, 3_100, 2_840, 2_970]
     assert turns[0]["card"] == RIVAL_CHEAPER
     assert turns[1]["card"] == NO_CARD
+
+
+def test_구매자는_판매자_카드에_페르소나의_비율만큼_양보한다():
+    thrifty = negotiate(4_000, LARGE_BUDGET, 0.5, seller_cards=(BETTER,))["transcript"]
+    quality = negotiate(4_000, LARGE_BUDGET, 0.5, seller_cards=(BETTER,), persona=load_persona("quality"))["transcript"]
+    # 최저가형은 새 카드 50%·이미 낸 카드 30%, 품질형은 75%·50% 다.
+    assert [turn["priceUnits"] for turn in thrifty[:6]] == [2_800, 3_700, 3_250, 3_590, 3_350, 3_530]
+    assert [turn["priceUnits"] for turn in quality[:6]] == [3_400, 3_850, 3_730, 3_820, 3_770, 3_810]
 
 
 def test_카드는_사실인_것만_고른다():
@@ -101,7 +111,7 @@ def test_대사가_바뀌어도_값은_그대로다():
     plain = negotiate(100_000, LARGE_BUDGET, RATIO)
     spoken = negotiate(100_000, LARGE_BUDGET, RATIO, write_line=lambda role, card, price: f"{role} {price}")
     assert spoken["agreedUnits"] == plain["agreedUnits"]
-    assert spoken["transcript"][0]["text"] == "buyer 75000"
+    assert spoken["transcript"][0]["text"] == "buyer 70000"
 
 
 def line_reply(line):
@@ -197,11 +207,11 @@ def test_합의가가_같으면_표_순서와_상관없이_성능이_높은_모�
     candidates = [candidate("openai", "low", 4_001, eci=150), candidate("openai", "high", 4_001, eci=160)]
     turn = {"from": "seller", "action": "counter", "priceUnits": 3_500, "text": ""}
 
-    monkeypatch.setattr(shopping, "negotiate", lambda *args: {"status": "agreed", "agreedUnits": 3_500, "transcript": [dict(turn)]})
+    monkeypatch.setattr(shopping, "negotiate", lambda *args: {"status": "agreed", "askUnits": 4_001, "agreedUnits": 3_500, "transcript": [dict(turn)]})
     assert shop(candidates, "price", LARGE_BUDGET)["winner"]["key"] == "high"
 
     def no_deal(*args):
-        raise NegotiationError("결렬", {"status": "no-deal", "transcript": [dict(turn)]})
+        raise NegotiationError("결렬", {"status": "no-deal", "askUnits": 4_001, "transcript": [dict(turn)]})
 
     monkeypatch.setattr(shopping, "negotiate", no_deal)
     over = shop(candidates, "price", 3_300)
@@ -322,3 +332,14 @@ def test_결제가_실패하면_차단으로_표시하지_않는다(monkeypatch)
     record = run_purchase({**INPUT, "requestId": "req-pay-failed"})
     assert record["status"] == "FAILED"
     assert "blockedRule" not in record
+
+
+def test_요청의_페르소나로_흥정하고_결정에_페르소나와_평가를_남긴다():
+    record = run_purchase({**INPUT, "persona": "quality", "requestId": "req-quality"})
+    decision = record["decision"]
+    assert record["status"] == "SETTLED"
+    assert decision["persona"]["id"] == "quality"
+    assert decision["persona"]["hash"].startswith("sha256:")
+    assert decision["evaluation"]["persona"] == "quality"
+    assert all(turn["reason"]["persona"] == "quality" for quote in decision["quotes"] for turn in quote["transcript"] if turn["from"] == "buyer")
+    assert run_purchase({**INPUT, "requestId": "req-default"})["decision"]["persona"]["id"] == "thrifty"
