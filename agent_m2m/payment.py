@@ -5,14 +5,10 @@
 중개자 키는 결제 서버에 있어야 하므로 운영자(토큰 발급·규칙 설정 권한)와 다른, 권한 없는 지갑을 쓴다.
 같은 지갑이면 서버가 뚫렸을 때 토큰 발급과 체인 한도 변경 권한까지 함께 넘어간다.
 토큰은 서명을 확인하고 체인의 감사 규칙(contracts/)을 돌린 뒤 구매자 지갑에서 송금한다.
-live 는 transferWithAuthorization 이 있는 토큰(contracts/src/AegisToken.sol)을 배포한 주소에서만 동작한다.
 
-기본값은 local 이다. 이 컴퓨터의 anvil(scripts/local_chain.py)에 올린 토큰으로 보낸다. 실제 자산은 오가지 않는다.
-자동 테스트(pytest)도 테스트 전용 anvil(AEGIS_LOCAL_RPC_URL)을 띄워 같은 local 경로로 진짜 결제한다.
-Base Sepolia 전송은 두 가지가 모두 켜져 있을 때만 일어난다.
-  AEGIS_PAYMENT_MODE=live
-  AEGIS_REAL_PAYMENT_APPROVED=yes
-개인키는 이 파일 안에서만 읽고, 밖으로 내보내지 않는다. 화면과 기록에는 주소만 남는다.
+결제는 이 컴퓨터의 로컬 체인(anvil, scripts/local_chain.py)에만 보낸다. 실제 자산은 오가지 않는다.
+자동 테스트(pytest)도 테스트 전용 anvil(AEGIS_LOCAL_RPC_URL)을 띄워 같은 경로로 진짜 결제한다.
+계정은 anvil 공개 테스트 계정이라 개인키를 환경변수로 받지 않는다. 화면과 기록에는 주소만 남는다.
 """
 
 import functools
@@ -102,10 +98,8 @@ ANVIL_MNEMONIC = "test test test test test test test test test test test junk"
 DEFAULT_LOCAL_RPC_URL = "http://127.0.0.1:8545"
 LOOPBACK_HOSTS = {"127.0.0.1", "localhost", "::1"}
 LOCAL_CHAIN_ID = 31337
-BASE_SEPOLIA_CHAIN_ID = 84532
 # 로컬 체인은 거래를 바로 블록에 넣으므로 결과를 짧은 간격으로 확인한다.
 LOCAL_POLL_SECONDS = 0.1
-LIVE_POLL_SECONDS = 4.0
 # local 중개자. 운영자 권한이 없는 지갑이다. 판매자 번호(2번부터 차례로 붙음)와 겹치지 않게 멀리 둔다.
 # anvil 이 처음부터 ETH 를 주는 계정이 아니라서 scripts/local_chain.py 가 운영자 ETH 를 보내 준다.
 LOCAL_RELAYER_INDEX = 100
@@ -164,33 +158,14 @@ def request_id_hash(request_id: str) -> str:
     return Web3.to_hex(Web3.keccak(text=request_id))
 
 
-def _required_env(name: str) -> str:
-    value = (os.environ.get(name) or "").strip()
-    if value == "":
-        raise PaymentError(f"{name} 환경변수가 필요합니다")
-    return value
-
-
 def payment_config() -> dict[str, Any]:
     """화면에 보여줄 수 있는 설정만 모은다. 개인키는 여기에 들어가지 않는다."""
-    approved = os.environ.get("AEGIS_REAL_PAYMENT_APPROVED") == "yes"
-    requested = (os.environ.get("AEGIS_PAYMENT_MODE") or "local").strip().lower()
-    mode = "live" if requested == "live" and approved else "local"
-    if mode == "local":
-        return {
-            "mode": mode,
-            "tokenAddress": local_token_address(),
-            "chainId": LOCAL_CHAIN_ID,
-            "rpcUrl": local_rpc_url(),
-            "buyerAddress": anvil_account(1).address,
-        }
-    key = (os.environ.get("AEGIS_BUYER_PRIVATE_KEY") or "").strip()
     return {
-        "mode": mode,
-        "tokenAddress": os.environ.get("AEGIS_TOKEN_ADDRESS", ""),
-        "chainId": int(os.environ.get("AEGIS_CHAIN_ID") or BASE_SEPOLIA_CHAIN_ID),
-        "rpcUrl": os.environ.get("AEGIS_RPC_URL") or "https://sepolia.base.org",
-        "buyerAddress": None if key == "" else Account.from_key(key).address,
+        "mode": "local",
+        "tokenAddress": local_token_address(),
+        "chainId": LOCAL_CHAIN_ID,
+        "rpcUrl": local_rpc_url(),
+        "buyerAddress": anvil_account(1).address,
     }
 
 
@@ -205,17 +180,12 @@ def token_contract(w3: Web3, address: str):
 def buyer_balance() -> dict[str, Any]:
     """대시보드에 보여줄 구매 에이전트 지갑의 AEGIS 잔액. 조회하지 못하면 units는 None이고 사유를 남긴다."""
     config = payment_config()
-    if config["buyerAddress"] is None:
-        return {"units": None, "status": "잔액 조회 안 함 · 지갑 미구성"}
-    if config["tokenAddress"].strip() == "":
-        return {"units": None, "status": "잔액 조회 안 함 · 토큰 주소 미구성"}
     try:
-        token = token_contract(web3_for(config), config["tokenAddress"].strip())
+        token = token_contract(web3_for(config), config["tokenAddress"])
         balance = token.functions.balanceOf(Web3.to_checksum_address(config["buyerAddress"])).call()
     except Exception:  # noqa: BLE001
         return {"units": None, "status": "잔액 조회 실패 · RPC 응답 없음"}
-    where = "Base Sepolia" if config["mode"] == "live" else "로컬 체인"
-    return {"units": int(balance), "status": f"{where} 온체인 잔액 조회 완료"}
+    return {"units": int(balance), "status": "로컬 체인 온체인 잔액 조회 완료"}
 
 
 # 중개자 지갑 하나로 거의 동시에 보내면 거래 순번(nonce)이 겹쳐 뒤의 거래가 거절된다.
@@ -251,10 +221,8 @@ def pay(amount_units: int, recipient: str, purchase_id: str, request_id: str) ->
     to = Web3.to_checksum_address(recipient)
     request_hash = request_id_hash(request_id)
 
-    live = config["mode"] == "live"
-    token_address = Web3.to_checksum_address(_required_env("AEGIS_TOKEN_ADDRESS") if live else config["tokenAddress"])
-    buyer: LocalAccount = Account.from_key(_required_env("AEGIS_BUYER_PRIVATE_KEY")) if live else anvil_account(1)
-    relayer: LocalAccount = Account.from_key(_required_env("AEGIS_RELAYER_PRIVATE_KEY")) if live else anvil_account(LOCAL_RELAYER_INDEX)
+    token_address = Web3.to_checksum_address(config["tokenAddress"])
+    buyer, relayer = anvil_account(1), anvil_account(LOCAL_RELAYER_INDEX)
     w3 = web3_for(config)
     token = token_contract(w3, token_address)
 
@@ -289,9 +257,7 @@ def pay(amount_units: int, recipient: str, purchase_id: str, request_id: str) ->
 
     # 여기부터는 거래가 체인에 나간 뒤다. 어떤 실패든 송금 후 실패로 알린다.
     try:
-        receipt = w3.eth.wait_for_transaction_receipt(
-            tx_hash, poll_latency=LIVE_POLL_SECONDS if live else LOCAL_POLL_SECONDS
-        )
+        receipt = w3.eth.wait_for_transaction_receipt(tx_hash, poll_latency=LOCAL_POLL_SECONDS)
     except Exception as error:  # noqa: BLE001
         raise PaymentError(f"전송 결과를 확인하지 못했습니다: {tx_hash} ({error})", sent=True) from error
     if receipt["status"] != 1:

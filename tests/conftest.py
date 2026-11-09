@@ -21,8 +21,6 @@ ROOT = Path(__file__).resolve().parent.parent
 # agent_m2m 을 불러오기 전에 정해야 .env.local 보다 앞선다.
 os.environ["AGENT_M2M_DATA_DIR"] = str(ROOT / "tests" / "fixtures")
 os.environ["AEGIS_LOCAL_RPC_URL"] = "http://127.0.0.1:8546"
-os.environ["AEGIS_PAYMENT_MODE"] = "local"
-os.environ["AEGIS_REAL_PAYMENT_APPROVED"] = "no"
 os.environ.pop("AA_API_KEY", None)
 
 from agent_m2m import store  # noqa: E402

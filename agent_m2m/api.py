@@ -8,7 +8,7 @@ HTTP API. 화면(web/)과 다른 에이전트가 이 주소들만 부른다.
   GET  /api/alerts                   최근 알림과, 그중 구매 기록이 있는 구매 번호
   GET  /api/alerts/summary           차단·경고 개수
   GET  /api/wallet                   구매 에이전트 지갑 잔액
-  GET  /api/mode                     결제 모드(local·live)
+  GET  /api/mode                     결제 모드(항상 local)
 
 POST /api/purchase 의 입력은 여기서 모양만 검사한다(문자열인지, 금액 형식인지, 네 우선순위 중 하나인지).
 예산(budget)은 사람이 적는 값이라 AEGIS 로 받고(예: "0.5"), 여기서 최소 단위(units)로 바꾼다.
