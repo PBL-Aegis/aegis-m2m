@@ -14,6 +14,8 @@ import type { AuditAlert, AuditStage } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
+const MODE_LABEL = { rule: "규칙형", llm: "LLM형", hybrid: "이중형" } as const;
+
 const STAGES: AuditStage[] = ["on-request", "before-payment", "after-payment"];
 
 function stageBadge(stage: AuditStage, alerts: AuditAlert[], processing: boolean) {
@@ -46,6 +48,7 @@ export default async function PurchaseDetailPage({ params }: { params: Promise<{
           {shortTime(record.createdAt)} · 우선순위 {PRIORITY_LABEL[decision.priority]}
           {decision.prioritySource === "local-llm" && ` (${decision.priorityModel}이(가) 판단)`}
           {decision.persona !== undefined && ` · ${decision.persona.name}`}
+          {decision.negotiationMode !== undefined && ` · ${MODE_LABEL[decision.negotiationMode]}`}
         </span>
       </div>
 

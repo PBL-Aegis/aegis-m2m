@@ -20,6 +20,7 @@ from agent_m2m.benchmark import load_snapshot
 from agent_m2m.domain import PaymentResult, PurchaseRecord, now_iso
 from agent_m2m.payment import PaymentError, pay
 from agent_m2m.persona import DEFAULT_PERSONA, load_persona
+from agent_m2m.persona_llm import DEFAULT_MODE
 from agent_m2m.priority_llm import infer_priority
 from agent_m2m.provider import mock_result, verify_payment
 from agent_m2m.selection import decide
@@ -31,8 +32,8 @@ def run_purchase(
     on_event: Callable[[dict[str, Any]], None] = lambda event: None,
 ) -> PurchaseRecord:
     """
-    purchase_input: prompt·budgetUnits, 선택으로 priority·persona·requestId·userId·maxOutputTokens·requiredCapabilities.
-    페르소나가 없으면 기본 페르소나(최저가형)로 흥정한다.
+    purchase_input: prompt·budgetUnits, 선택으로 priority·persona·negotiationMode·requestId·userId·maxOutputTokens·requiredCapabilities.
+    페르소나가 없으면 기본 페르소나(최저가형)로, 흥정 방식이 없으면 규칙형(rule)으로 흥정한다.
     우선순위가 없으면 로컬 Gemma 가 요청 문장을 보고 정한다. 요청 번호가 없으면 새로 만들고, 사용자가 없으면 None.
     흥정 진행은 on_event 로 바로 알린다(shopping.py).
     """
@@ -63,7 +64,8 @@ def run_purchase(
 
     # 흥정 — 모두 결렬되면 기록 없이 멈춘다. 합의가를 winner 금액에 넣어 뒤의 감사·결제·확인이 모두 이 값을 본다.
     persona = load_persona(request.get("persona") or DEFAULT_PERSONA)
-    decision.update(shop(decision["candidates"], request["priority"], request["budgetUnits"], on_event, persona))
+    mode = request.get("negotiationMode") or DEFAULT_MODE
+    decision.update(shop(decision["candidates"], request["priority"], request["budgetUnits"], on_event, persona, mode))
 
     # 결제 직전에 처리 중으로 먼저 남긴다. 중간에 멈춰도 기록이 남는다.
     record: PurchaseRecord = {

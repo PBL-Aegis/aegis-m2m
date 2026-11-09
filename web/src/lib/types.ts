@@ -155,6 +155,12 @@ export interface NegotiationReason {
   rule: string;
   text: string;
   inputs: Record<string, string | number>;
+  /** 이 값을 누가 정했는지. rule 은 코드, llm 은 LLM, fallback 은 LLM 값이 검사에 걸려 코드 값으로 바꾼 경우다. 이 칸이 생기기 전 기록에는 없다. */
+  source?: "rule" | "llm" | "fallback";
+  /** LLM 을 부른 자리의 검사 결과. 걸린 검사 이름(over-max·out-of-range·unknown-number·persona-line·llm-error). */
+  check?: { passed: boolean; failures: string[] };
+  /** 검사에 걸려 쓰지 않은 LLM 의 제안. */
+  llm?: { action: string; priceUnits: number; reason: string };
 }
 
 /** 흥정 대화 한 줄. */
@@ -274,6 +280,8 @@ export interface Decision {
   quotes?: Negotiation[];
   /** 흥정한 페르소나와 그 관점의 평가. 페르소나가 생기기 전 기록에는 없다. */
   persona?: PersonaRef;
+  /** 구매자가 값을 정한 방식(rule·llm·hybrid). 이 칸이 생기기 전 기록에는 없다. */
+  negotiationMode?: "rule" | "llm" | "hybrid";
   evaluation?: Evaluation;
 }
 

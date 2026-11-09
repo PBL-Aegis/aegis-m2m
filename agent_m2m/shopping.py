@@ -24,6 +24,7 @@ from agent_m2m.evaluation import evaluate
 from agent_m2m.format import aegis_text
 from agent_m2m.negotiation import NegotiationError, negotiate
 from agent_m2m.persona import load_persona, reason
+from agent_m2m.persona_llm import DEFAULT_MODE
 from agent_m2m.selection import SelectionError
 from agent_m2m.seller import find_seller
 
@@ -93,9 +94,10 @@ def shop(
     budget_units: int,
     on_event: Callable[[dict[str, Any]], None] = lambda event: None,
     persona: dict[str, Any] | None = None,
+    mode: str = DEFAULT_MODE,
 ) -> dict[str, Any]:
     """비교 모델과 흥정해 산 곳을 고른다. {winner, negotiation, quotes, persona, evaluation}.
-    persona 가 없으면 기본 페르소나다. 판매자 값을 하나도 못 받았을 때만 NegotiationError."""
+    persona 가 없으면 기본 페르소나, mode 는 구매자가 값을 정하는 방식(persona_llm.py)이다. 어디서 살지는 방식과 상관없이 코드가 정한다. 판매자 값을 하나도 못 받았을 때만 NegotiationError."""
     persona = persona or load_persona()
     compared = compared_models(candidates, priority)
     sellers = {candidate["key"]: find_seller(candidate["providerId"]) for candidate in compared}
@@ -104,6 +106,7 @@ def shop(
             "type": "plan",
             "priority": priority,
             "persona": {"id": persona["id"], "name": persona["name"]},
+            "negotiationMode": mode,
             "models": [
                 {
                     "key": candidate["key"],
@@ -138,6 +141,7 @@ def shop(
                     seller_cards(candidate, rival),
                     lambda role, card, price, candidate=candidate, rival=rival: writer.write(role, card, price, candidate, rival),
                     persona,
+                    mode,
                 )
             )
         except NegotiationError as error:
@@ -168,5 +172,6 @@ def shop(
         "negotiation": chosen,
         "quotes": quotes,
         "persona": {key: persona[key] for key in ("id", "name", "goal", "hash")},
+        "negotiationMode": mode,
         "evaluation": evaluate(persona, chosen, quotes, budget_units),
     }

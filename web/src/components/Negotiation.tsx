@@ -10,7 +10,7 @@ import { useState } from "react";
 
 import { aegisText } from "@/lib/format";
 import type { StatusView } from "@/lib/purchase-view";
-import type { NegotiationTurn } from "@/lib/types";
+import type { NegotiationReason, NegotiationTurn } from "@/lib/types";
 
 /** 막대가 안 보일 만큼 좁아지지 않게 하는 최소 폭(%). */
 const MIN_GAP_PERCENT = 1.5;
@@ -24,6 +24,33 @@ export function BuyerAvatar() {
         <circle cx="17" cy="20" r="1" />
       </svg>
     </span>
+  );
+}
+
+const SOURCE_LABEL = { rule: "규칙", llm: "LLM", fallback: "대체" } as const;
+
+const CHECK_LABEL: Record<string, string> = {
+  "over-max": "최대가 초과",
+  "out-of-range": "범위 밖 값",
+  "unknown-number": "근거 없는 숫자",
+  "persona-line": "페르소나 선 위반",
+  "llm-error": "LLM 응답 없음",
+};
+
+/** 구매자가 이 값을 정한 이유. 누가 정했는지와, LLM 값이 검사에 걸렸으면 무엇에 걸렸는지 함께 보여준다. */
+function ReasonLine({ reason }: { reason: NegotiationReason }) {
+  const failures = reason.check?.failures ?? [];
+  return (
+    <p className="why">
+      {reason.source !== undefined && <span className={`whySource ${reason.source}`}>{SOURCE_LABEL[reason.source]}</span>}
+      {reason.text}
+      {failures.length > 0 && (
+        <span className="whyCheck">
+          {reason.llm !== undefined && `LLM 제안 ${aegisText(reason.llm.priceUnits)} · `}
+          {failures.map((failure) => CHECK_LABEL[failure] ?? failure).join(", ")}
+        </span>
+      )}
+    </p>
   );
 }
 
@@ -101,7 +128,7 @@ export function NegotiationBlock({
                 <div className="msgBody">
                   {index < 2 && <span className="msgName">구매 에이전트</span>}
                   <div className="bubble buyer">{turn.text}</div>
-                  {turn.reason !== undefined && <p className="why">{turn.reason.text}</p>}
+                  {turn.reason !== undefined && <ReasonLine reason={turn.reason} />}
                 </div>
               </div>
             ) : (
