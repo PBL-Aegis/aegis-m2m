@@ -148,12 +148,43 @@ export interface ScoredCandidate {
   rank: number;
 }
 
+/** 구매 에이전트가 이 값을 부르거나 받거나 거절한 이유. 페르소나 규칙과 그때의 숫자다. */
+export interface NegotiationReason {
+  persona: string;
+  /** opening·concede·accept·last-round·over-max·cancel·over-budget */
+  rule: string;
+  text: string;
+  inputs: Record<string, string | number>;
+}
+
 /** 흥정 대화 한 줄. */
 export interface NegotiationTurn {
   from: "buyer" | "seller";
   action: "offer" | "counter" | "accept" | "reject";
   priceUnits: number;
   text: string;
+  /** 이 말을 하며 낸 근거 카드(성능 우위 등). */
+  card?: string;
+  /** 구매 에이전트의 말에만 있다. 페르소나가 생기기 전 기록에는 없다. */
+  reason?: NegotiationReason;
+}
+
+/** 구매 에이전트의 페르소나(personas/*.md). hash 는 그때 쓴 파일의 지문이다. */
+export interface PersonaRef {
+  id: string;
+  name: string;
+  goal: string;
+  hash?: string;
+}
+
+/** 흥정이 끝난 뒤 페르소나 관점에서 이 구매가 이득이었는지. 코드가 기록의 숫자로 정한다. */
+export interface Evaluation {
+  persona: string;
+  personaName: string;
+  goal: string;
+  verdict: "good" | "partial" | "bad";
+  headline: string;
+  lines: string[];
 }
 
 /** 구매 에이전트와 판매 에이전트의 흥정 결과. 판매자의 최저가는 담기지 않는다. */
@@ -184,7 +215,7 @@ export interface StreamModel {
 
 /** /api/purchase/stream 이 한 줄씩 보내는 진행 소식. */
 export type PurchaseStreamEvent =
-  | { type: "plan"; priority: Priority; models: StreamModel[] }
+  | { type: "plan"; priority: Priority; persona?: { id: string; name: string }; models: StreamModel[] }
   | { type: "turn"; key: string; turn: NegotiationTurn }
   | { type: "done"; record: PurchaseRecord }
   | { type: "error"; error: string };
@@ -241,6 +272,9 @@ export interface Decision {
   negotiation?: Negotiation;
   /** 후보로 남아 흥정한 곳 전부. 이 칸이 생기기 전 기록에는 없다. */
   quotes?: Negotiation[];
+  /** 흥정한 페르소나와 그 관점의 평가. 페르소나가 생기기 전 기록에는 없다. */
+  persona?: PersonaRef;
+  evaluation?: Evaluation;
 }
 
 /** local 은 이 컴퓨터의 anvil(자동 테스트 포함), live 는 Base Sepolia. 예전 기록에는 체인 없이 흐름만 잇던 "mock" 이 남아 있을 수 있다. */

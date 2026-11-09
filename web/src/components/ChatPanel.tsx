@@ -10,10 +10,11 @@
 import Link from "next/link";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 
+import { EvaluationCard } from "@/components/EvaluationCard";
 import { BuyerAvatar, NegotiationBlock } from "@/components/Negotiation";
 import { aegisText, parseAegis } from "@/lib/format";
 import { dealStatus, endsDeal, failureText, isOverBudget, purchaseReason, purchaseTitle, quotesOf, quoteStatus } from "@/lib/purchase-view";
-import type { NegotiationTurn, Priority, PurchaseRecord, PurchaseStreamEvent, StreamModel } from "@/lib/types";
+import type { NegotiationTurn, PersonaRef, Priority, PurchaseRecord, PurchaseStreamEvent, StreamModel } from "@/lib/types";
 
 /** 흥정 말풍선 하나를 보여주는 간격. 서버는 흥정을 순식간에 끝내므로 읽을 시간을 여기서 준다. */
 const TURN_DELAY_MS = 650;
@@ -41,16 +42,18 @@ interface Turn {
   id: number;
   prompt: string;
   priority: Priority | null;
+  personaName: string | null;
   blocks: Block[];
   record: PurchaseRecord | null;
   error: string | null;
 }
 
-function planText(priority: Priority, models: StreamModel[]): string {
+function planText(priority: Priority, personaName: string | null, models: StreamModel[]): string {
   const opening = PLAN_OPENING[priority] ?? "";
   const names = models.map((model) => model.displayName);
   if (names.length === 1) return `${opening} ${names[0]} 판매 에이전트와 흥정할게요.`;
-  return `${opening} ${names.join("와 ")} 판매 에이전트와 차례로 흥정해서 더 싸게 합의한 쪽을 고를게요.`;
+  const pick = personaName === null ? "더 싸게 합의한 쪽을" : `${personaName} 기준으로 한 곳을`;
+  return `${opening} ${names.join("와 ")} 판매 에이전트와 차례로 흥정해서 ${pick} 고를게요.`;
 }
 
 function sleep(ms: number): Promise<void> {
@@ -58,7 +61,7 @@ function sleep(ms: number): Promise<void> {
 }
 
 function PurchaseResult({ record, anchor }: { record: PurchaseRecord; anchor: (element: HTMLElement | null) => void }) {
-  const { winner, budgetUnits } = record.decision;
+  const { winner, budgetUnits, evaluation } = record.decision;
   const reason = purchaseReason(record);
   const failure = failureText(record);
   const blocked = record.blockedRule !== undefined;
@@ -71,6 +74,7 @@ function PurchaseResult({ record, anchor }: { record: PurchaseRecord; anchor: (e
           {reason !== null && <p>{reason}</p>}
           {failure !== null && <p>{failure}</p>}
         </div>
+        {evaluation !== undefined && <EvaluationCard evaluation={evaluation} />}
         {(blocked || isOverBudget(record)) && (
           <Link className={`warnLink${blocked ? " risk" : ""}`} href="/dashboard/alerts">
             {blocked ? "이상 거래에 차단 기록을 남겼어요" : "이상 거래에 경고를 남겼어요"}
@@ -109,6 +113,8 @@ export function ChatPanel() {
   const [prompt, setPrompt] = useState("");
   const [budget, setBudget] = useState("0.3");
   const [priority, setPriority] = useState<string>(AUTO);
+  const [personas, setPersonas] = useState<PersonaRef[]>([]);
+  const [persona, setPersona] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [turns, setTurns] = useState<Turn[]>([]);
@@ -116,6 +122,17 @@ export function ChatPanel() {
   const log = useRef<HTMLDivElement>(null);
   const finalCard = useRef<HTMLElement | null>(null);
   const shownFinal = useRef<number | null>(null);
+
+  // 페르소나는 서버의 personas/ 파일 목록이고 맨 앞이 기본값이다. 못 받으면 고르지 않고 보내 서버의 기본 페르소나로 흥정한다.
+  useEffect(() => {
+    fetch("/api/personas")
+      .then((response) => (response.ok ? (response.json() as Promise<PersonaRef[]>) : []))
+      .then((list) => {
+        setPersonas(list);
+        setPersona((current) => current ?? list[0]?.id ?? null);
+      })
+      .catch(() => setPersonas([]));
+  }, []);
 
   // 말풍선이 늘면 아래로 따라가고, 결과가 나오면 구매 이유의 첫 줄이 먼저 보이게 한다.
   useEffect(() => {
@@ -143,6 +160,7 @@ export function ChatPanel() {
       update(id, (turn) => ({
         ...turn,
         priority: event.priority,
+        personaName: event.persona?.name ?? null,
         blocks: event.models.map((model) => ({ ...model, turns: [] })),
       }));
     } else if (event.type === "turn") {
@@ -179,7 +197,7 @@ export function ChatPanel() {
     if (text === "" || busy || parseAegis(budget) === null) return;
 
     const id = Date.now();
-    setTurns((prev) => [...prev, { id, prompt: text, priority: null, blocks: [], record: null, error: null }]);
+    setTurns((prev) => [...prev, { id, prompt: text, priority: null, personaName: null, blocks: [], record: null, error: null }]);
     setPrompt("");
     setBusy(true);
 
@@ -213,7 +231,12 @@ export function ChatPanel() {
       const response = await fetch("/api/purchase/stream", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ prompt: text, budget: budget.trim(), ...(priority === AUTO ? {} : { priority }) }),
+        body: JSON.stringify({
+          prompt: text,
+          budget: budget.trim(),
+          ...(priority === AUTO ? {} : { priority }),
+          ...(persona === null ? {} : { persona }),
+        }),
       });
       if (response.ok) {
         await readEvents(response, push);
@@ -285,6 +308,22 @@ export function ChatPanel() {
               AEGIS
             </label>
             <div className="composerActions">
+              {personas.length > 0 && (
+                <div className="personaToggle" role="radiogroup" aria-label="구매 에이전트 페르소나">
+                  {personas.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      role="radio"
+                      aria-checked={item.id === persona}
+                      disabled={busy}
+                      onClick={() => setPersona(item.id)}
+                    >
+                      {item.name}
+                    </button>
+                  ))}
+                </div>
+              )}
               <div className="priorityPicker">
                 <button
                   type="button"
@@ -371,7 +410,7 @@ function TurnView({ turn, anchor }: { turn: Turn; anchor: (element: HTMLElement 
         <div className="msg">
           <BuyerAvatar />
           <div className="msgBody">
-            <div className="bubble agent">{planText(turn.priority, turn.blocks)}</div>
+            <div className="bubble agent">{planText(turn.priority, turn.personaName, turn.blocks)}</div>
           </div>
         </div>
       )}

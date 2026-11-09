@@ -3,7 +3,7 @@
  */
 
 import { aegisText } from "@/lib/format";
-import type { Negotiation, NegotiationTurn, PaymentMode, PurchaseRecord } from "@/lib/types";
+import type { Evaluation, Negotiation, NegotiationTurn, PaymentMode, PurchaseRecord } from "@/lib/types";
 
 export type Tone = "live" | "win" | "ok" | "warn" | "risk" | "mute";
 
@@ -75,11 +75,11 @@ export function failureText(record: PurchaseRecord): string | null {
   return `${stage} ${record.failureReason}`;
 }
 
-/** 왜 이곳에서 샀는지. 흥정이 생기기 전 기록에는 없다. */
+/** 왜 이곳에서 샀는지. 흥정이 생기기 전 기록에는 없고, 페르소나 평가가 있는 기록은 평가(EvaluationCard)가 대신 말한다. */
 export function purchaseReason(record: PurchaseRecord): string | null {
   const { decision } = record;
   const chosen = decision.negotiation;
-  if (chosen === undefined) return null;
+  if (chosen === undefined || decision.evaluation !== undefined) return null;
 
   const { winner, budgetUnits } = decision;
   const name = winner.displayName;
@@ -112,6 +112,12 @@ export function purchaseReason(record: PurchaseRecord): string | null {
   if (cancelled !== undefined) sentences.push(`${cancelled.sellerName}와의 합의는 취소했어요.`);
   return sentences.join(" ");
 }
+
+export const VERDICT_VIEW: Record<Evaluation["verdict"], StatusView> = {
+  good: { label: "이득", tone: "ok" },
+  partial: { label: "일부 이득", tone: "warn" },
+  bad: { label: "손해", tone: "risk" },
+};
 
 /** 돈이 오간 체인. local 은 이 컴퓨터의 anvil, live 는 Base Sepolia 다. */
 export function chainLabel(mode: PaymentMode): string {

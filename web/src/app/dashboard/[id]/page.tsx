@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import { AlertList, alertTone, STAGE_LABEL } from "@/components/AlertList";
 import { CopyButton } from "@/components/CopyButton";
+import { EvaluationCard } from "@/components/EvaluationCard";
 import { CandidateTables } from "@/components/DecisionView";
 import { NegotiationBlock } from "@/components/Negotiation";
 import { getPurchase, listAlertsForPurchase } from "@/lib/api";
@@ -44,6 +45,7 @@ export default async function PurchaseDetailPage({ params }: { params: Promise<{
         <span className="muted">
           {shortTime(record.createdAt)} · 우선순위 {PRIORITY_LABEL[decision.priority]}
           {decision.prioritySource === "local-llm" && ` (${decision.priorityModel}이(가) 판단)`}
+          {decision.persona !== undefined && ` · ${decision.persona.name}`}
         </span>
       </div>
 
@@ -53,6 +55,7 @@ export default async function PurchaseDetailPage({ params }: { params: Promise<{
             <h2>{purchaseTitle(record)}</h2>
             {reason !== null && <p>{reason}</p>}
             {failure !== null && <p>{failure}</p>}
+            {decision.evaluation !== undefined && <EvaluationCard evaluation={decision.evaluation} />}
           </section>
 
           {quotes.length > 0 && (

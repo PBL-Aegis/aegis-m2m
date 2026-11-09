@@ -3,6 +3,7 @@
 /**
  * 판매 에이전트 한 곳과의 흥정. 채팅에서는 진행 중에 펼쳐 두고, 끝나면 접는다.
  * 막대는 구매자 값과 판매자 값 사이의 간격이다. 흥정이 진행될수록 좁아진다.
+ * 구매자 말풍선 아래에는 그 값을 부른 이유(페르소나 근거)를 붙인다.
  */
 
 import { useState } from "react";
@@ -100,6 +101,7 @@ export function NegotiationBlock({
                 <div className="msgBody">
                   {index < 2 && <span className="msgName">구매 에이전트</span>}
                   <div className="bubble buyer">{turn.text}</div>
+                  {turn.reason !== undefined && <p className="why">{turn.reason.text}</p>}
                 </div>
               </div>
             ) : (
