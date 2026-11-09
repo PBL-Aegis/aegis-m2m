@@ -90,11 +90,9 @@ def test_판매자는_새_카드에_75퍼센트_이미_쓴_카드에_50퍼센트
 
 
 def test_구매자는_판매자_카드에_페르소나의_비율만큼_양보한다():
-    thrifty = negotiate(4_000, LARGE_BUDGET, 0.5, seller_cards=(BETTER,))["transcript"]
-    quality = negotiate(4_000, LARGE_BUDGET, 0.5, seller_cards=(BETTER,), persona=load_persona("quality"))["transcript"]
-    # 최저가형은 새 카드 50%·이미 낸 카드 30%, 품질형은 75%·50% 다.
-    assert [turn["priceUnits"] for turn in thrifty[:6]] == [2_800, 3_700, 3_250, 3_590, 3_350, 3_530]
-    assert [turn["priceUnits"] for turn in quality[:6]] == [3_400, 3_850, 3_730, 3_820, 3_770, 3_810]
+    turns = negotiate(4_000, LARGE_BUDGET, 0.5, seller_cards=(BETTER,), persona=load_persona("quality"))["transcript"]
+    # 새 카드 50%, 이미 낸 카드 30% 다.
+    assert [turn["priceUnits"] for turn in turns[:6]] == [2_800, 3_700, 3_250, 3_590, 3_350, 3_530]
 
 
 def test_카드는_사실인_것만_고른다():

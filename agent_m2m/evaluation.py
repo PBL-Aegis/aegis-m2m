@@ -39,7 +39,8 @@ def evaluate(persona: dict[str, Any], chosen: dict[str, Any], quotes: list[dict[
         if paid < price:
             lines.append(f"{name}의 {label} {aegis_text(price)}보다 {aegis_text(price - paid)} 싸게 샀습니다.")
         elif paid == price:
-            lines.append(f"{name}의 {label}도 {aegis_text(price)}로 같습니다.")
+            tie = f" 값이 같아 ECI가 {eci_gap:.2f} 높은 이곳을 골랐습니다." if eci_gap > 0 else ""
+            lines.append(f"{name}의 {label}도 {aegis_text(price)}로 같습니다.{tie}")
         elif eci_gap > 0 and paid <= price * (1 + persona["premiumLimit"]):
             lines.append(
                 f"{name}의 {label} {aegis_text(price)}보다 {aegis_text(paid - price)}({(paid - price) / price:.0%}) 비싸게 샀습니다. "

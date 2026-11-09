@@ -30,8 +30,9 @@ def pair_table(monkeypatch):
 def test_페르소나는_마크다운_파일에서_읽는다():
     assert persona_ids() == ("quality", "thrifty")
     assert (THRIFTY["name"], THRIFTY["openingRatio"], THRIFTY["premiumLimit"]) == ("최저가형", 0.7, 0)
-    assert (QUALITY["name"], QUALITY["openingRatio"], QUALITY["premiumLimit"]) == ("품질형", 0.85, 0.2)
-    assert QUALITY["concede"] == {"new": 0.75, "used": 0.5, "none": 0.25}
+    assert (QUALITY["name"], QUALITY["openingRatio"], QUALITY["premiumLimit"]) == ("품질형", 0.7, 0.2)
+    # 많이 양보하면 판매자가 덜 깎아 줘 같은 모델을 더 비싸게 산다. 그래서 흥정은 같고 고르는 기준만 다르다.
+    assert QUALITY["concede"] == THRIFTY["concede"] == {"new": 0.5, "used": 0.3, "none": 0.15}
     assert THRIFTY["goal"].startswith("같은 일을 하는 모델이면 가장 싸게")
     assert THRIFTY["hash"].startswith("sha256:")
 
@@ -52,12 +53,13 @@ def test_설정이_틀린_페르소나는_받지_않는다(raw, message):
         load_persona("no-such-persona")
 
 
-def test_같은_페르소나면_항상_같은_흥정이고_페르소나가_다르면_값이_다르다():
+def test_두_페르소나는_같은_판매자와_같은_값에_합의한다():
     assert negotiate(100_000, LARGE_BUDGET, 0.8, persona=QUALITY) == negotiate(100_000, LARGE_BUDGET, 0.8, persona=QUALITY)
     thrifty = negotiate(100_000, LARGE_BUDGET, 0.8, persona=THRIFTY)
     quality = negotiate(100_000, LARGE_BUDGET, 0.8, persona=QUALITY)
-    assert (thrifty["transcript"][0]["priceUnits"], quality["transcript"][0]["priceUnits"]) == (70_000, 85_000)
-    assert thrifty["agreedUnits"] < quality["agreedUnits"]
+    assert [turn["priceUnits"] for turn in thrifty["transcript"]] == [turn["priceUnits"] for turn in quality["transcript"]]
+    assert thrifty["transcript"][0]["reason"]["text"].startswith("최저가형: ")
+    assert quality["transcript"][0]["reason"]["text"].startswith("품질형: ")
 
 
 def test_구매자의_말마다_페르소나_근거가_있고_판매자의_말에는_없다():
@@ -152,3 +154,9 @@ def test_API_는_페르소나_목록을_주고_없는_페르소나는_받지_않
     response = client.post("/api/purchase", json={"prompt": "요약", "budget": "1", "priority": "price", "persona": "greedy"})
     assert response.status_code == 400
     assert "persona" in response.json()["error"]
+
+
+def test_값이_같아_성능으로_골랐으면_평가에_그_이유가_적힌다():
+    chosen, other = quote("a", "agreed", 50_000, eci=160), quote("b", "cancelled", 50_000, eci=150)
+    evaluation = evaluate(THRIFTY, chosen, [chosen, other], LARGE_BUDGET)
+    assert any("값이 같아 ECI가 10.00 높은 이곳을 골랐습니다" in line for line in evaluation["lines"])
