@@ -12,14 +12,7 @@
       "eciCiHigh": "142.5",
       "inputPricePerMillion": "0.4",
       "outputPricePerMillion": "1.6",
-      "openRouterId": "openai/test-mini",
-      "outputTokensPerSecond": "60",
-      "aaSlugs": [
-        "test-mini"
-      ],
-      "aaModelNames": [
-        "Test Mini"
-      ]
+      "openRouterId": "openai/test-mini"
     },
     {
       "key": "anthropic/test-haiku",
@@ -29,14 +22,7 @@
       "eciCiHigh": "163",
       "inputPricePerMillion": "1",
       "outputPricePerMillion": "5",
-      "openRouterId": "anthropic/test-haiku",
-      "outputTokensPerSecond": "40",
-      "aaSlugs": [
-        "test-haiku"
-      ],
-      "aaModelNames": [
-        "Test Haiku"
-      ]
+      "openRouterId": "anthropic/test-haiku"
     },
     {
       "key": "google/test-flash",
@@ -46,14 +32,7 @@
       "eciCiHigh": "152",
       "inputPricePerMillion": "0.3",
       "outputPricePerMillion": "2.5",
-      "openRouterId": "google/test-flash",
-      "outputTokensPerSecond": "150",
-      "aaSlugs": [
-        "test-flash"
-      ],
-      "aaModelNames": [
-        "Test Flash"
-      ]
+      "openRouterId": "google/test-flash"
     }
   ]
 }
