@@ -106,27 +106,3 @@ def test_하루_한도의_80퍼센트부터는_결제마다_임박_알림이_남
     records = [run_purchase({**INPUT, "userId": user}) for _ in range(5)]
     assert all(r["status"] == "SETTLED" for r in records)
     assert len(alerts_with(user, "한도 임박")) == 2  # 4건째, 5건째
-
-
-def test_상한_근처_결제가_짧은_시간에_여러_번이면_쪼개기_알림이_남고_결제는_진행된다(monkeypatch, unit):
-    monkeypatch.setattr(limit, "PER_PAYMENT_UNITS", unit)  # 이 결제는 1건 상한의 100%
-    monkeypatch.setattr(limit, "SPLIT_COUNT", 3)
-    user = "user-split"
-    records = [run_purchase({**INPUT, "userId": user}) for _ in range(3)]
-    assert all(r["status"] == "SETTLED" for r in records)
-    assert len(alerts_with(user, "쪼개기 의심")) == 1
-
-
-def test_상한에서_먼_작은_결제는_여러_번이어도_쪼개기_알림이_없다(unit):
-    user = "user-small"
-    for _ in range(4):
-        run_purchase({**INPUT, "userId": user})
-    assert alerts_with(user, "쪼개기 의심") == []
-
-
-def test_막힌_시도도_쪼개기_탐지에_센다(monkeypatch, unit):
-    monkeypatch.setattr(limit, "PER_PAYMENT_UNITS", unit - 1)  # 모든 시도가 1건 상한에 막힘
-    user = "user-blocked-split"
-    records = [run_purchase({**INPUT, "userId": user}) for _ in range(3)]
-    assert all(r["status"] == "FAILED" for r in records)
-    assert len(alerts_with(user, "쪼개기 의심")) == 1

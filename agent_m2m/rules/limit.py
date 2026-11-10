@@ -1,5 +1,4 @@
 import os
-import time
 from datetime import datetime, timezone
 
 from pymongo import ReturnDocument
@@ -21,33 +20,16 @@ def _units(name: str, default: str) -> int:
 PER_PAYMENT_UNITS = _units("AUDIT_LIMIT_PER_PAYMENT", "0.5")
 PER_DAY_UNITS = _units("AUDIT_LIMIT_PER_DAY", "3")
 WARN_RATIO = float(os.environ.get("AUDIT_LIMIT_WARN_RATIO", "0.8"))
-SPLIT_MIN_RATIO = float(os.environ.get("AUDIT_SPLIT_MIN_RATIO", "0.8"))
-SPLIT_WINDOW_SECONDS = int(os.environ.get("AUDIT_SPLIT_WINDOW_SECONDS", "600"))
-SPLIT_COUNT = int(os.environ.get("AUDIT_SPLIT_COUNT", "3"))
 
 
 def _day() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
 
-def _watch_split(ctx, db, user: str, amount: int) -> None:
-    # 쪼개기 탐지: 상한 근처 결제 시도가 짧은 시간에 여러 번이면 알림. 막힌 시도도 센다(알림만, 막지는 않음).
-    if amount < PER_PAYMENT_UNITS * SPLIT_MIN_RATIO:
-        return
-    now = time.time()
-    recent = db["limit_recent"]
-    recent.insert_one({"user": user, "at": now})
-    count = recent.count_documents({"user": user, "at": {"$gte": now - SPLIT_WINDOW_SECONDS}})
-    if count >= SPLIT_COUNT:
-        ctx.alert(RULE, f"쪼개기 의심: {SPLIT_WINDOW_SECONDS}초 안에 상한 근처 결제 {count}건")
-
-
 def check_limit(ctx) -> None:
     amount = ctx.decision["winner"]["amountUnits"]
     user = ctx.request.get("userId") or "anonymous"
     db = store.database()
-
-    _watch_split(ctx, db, user, amount)  # 한도 검사보다 먼저: 막히더라도 시도는 기록한다
 
     if amount > PER_PAYMENT_UNITS:
         raise AuditBlockedError(RULE, f"1건 상한 초과: {amount} units")
