@@ -5,6 +5,7 @@ import pytest
 from agent_m2m import audit, store
 from agent_m2m.purchase import run_purchase
 from agent_m2m.rules import limit
+from tests.helpers import increase_chain_time
 
 INPUT = {"prompt": "이 글 요약해 줘", "budgetUnits": 50_000, "priority": "price"}
 
@@ -102,6 +103,7 @@ def test_성공한_결제는_예약을_돌려주지_않는다(unit):
 
 def test_하루_한도의_80퍼센트부터는_결제마다_임박_알림이_남고_결제는_진행된다(monkeypatch, unit):
     monkeypatch.setattr(limit, "PER_DAY_UNITS", unit * 5)  # 4건째부터 80% 이상
+    increase_chain_time(60)  # unit 을 재며 한 건 샀다. 체인의 결제 횟수 창(60초에 5건)을 새로 연다
     user = "user-warn"
     records = [run_purchase({**INPUT, "userId": user}) for _ in range(5)]
     assert all(r["status"] == "SETTLED" for r in records)
