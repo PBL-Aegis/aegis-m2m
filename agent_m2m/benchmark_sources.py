@@ -1,17 +1,13 @@
 """
-세 출처에서 값을 떠서 판매 목록(catalog)과 스냅샷을 만든다.
+두 출처에서 값을 떠서 판매 목록(catalog)과 스냅샷을 만든다.
 앱(구매 시 자동 갱신)과 scripts/capture_benchmark.py 가 같이 쓴다.
 
   Epoch AI       — 성능. Epoch Capabilities Index(ECI)와 95% 신뢰구간. 여러 벤치마크를 난이도까지
                    고려해 통계적으로 합친 지수다. 키 없이 받는다.
   OpenRouter     — 가격. 실제로 파는 1M 토큰당 입력·출력 단가. 키 없이 받는다.
-  Artificial Analysis — 속도. 출력 속도(1초에 내보내는 토큰 수)의 최근 72시간 중앙값. AA_API_KEY 가 필요하다.
 
 판매 목록은 사람이 이름을 적지 않고 build_catalog 가 만든다. 짝짓기는 추측하지 않는다.
-  - 세 출처의 모델 이름에서 기호를 빼고 소문자로 바꾼 값이 정확히 같을 때만 짝짓는다.
-  - AA 는 같은 모델을 생각 단계(effort)별로 따로 잰다. 끝까지 걸린 시간은 단계에 따라 몇 배씩 달라지지만
-    출력 속도는 모델을 돌리는 서버의 속도라 단계가 달라도 거의 같다(같은 모델 19쌍에서 중앙값 8% 차이).
-    그래서 단계를 고르지 않고, AA 가 잰 단계들의 출력 속도 평균을 쓴다.
+  - 두 출처의 모델 이름에서 기호를 빼고 소문자로 바꾼 값이 정확히 같을 때만 짝짓는다.
   - 값이 비거나 0 인 모델도 뺀다. 빈칸을 기본값으로 채우지 않는다.
   - ECI 가 MIN_ECI 보다 낮은 모델은 팔지 않는다(판매 최소 품질 기준). 운영 판단으로 정한 값이다.
 뺀 모델은 이유와 함께 catalog["excluded"] 에 남긴다.
@@ -22,7 +18,6 @@
 
 import csv
 import io
-import math
 import re
 from collections.abc import Callable
 from datetime import datetime, timezone
@@ -30,7 +25,6 @@ from typing import Any
 
 import httpx
 
-AA_URL = "https://artificialanalysis.ai/api/v2/language/models/free"
 EPOCH_ECI_URL = "https://epoch.ai/data/eci_scores.csv"
 OPENROUTER_URL = "https://openrouter.ai/api/v1/models"
 # 판매 최소 품질 기준. 이보다 ECI 가 낮은 모델은 판매 목록에 넣지 않는다.
@@ -40,7 +34,7 @@ _DECIMAL = re.compile(r"^\d+(\.\d+)?$")
 
 
 def http_get(url: str, headers: dict[str, str] | None = None) -> httpx.Response:
-    """세 출처를 부르는 곳. 테스트는 이 함수를 바꿔 끼워 가짜 응답을 준다."""
+    """두 출처를 부르는 곳. 테스트는 이 함수를 바꿔 끼워 가짜 응답을 준다."""
     return httpx.get(url, headers=headers, timeout=20)
 
 
@@ -96,17 +90,6 @@ def parse_csv(text: str) -> list[dict[str, str]]:
     return [{name: (cells[column] if column < len(cells) else "") for column, name in enumerate(header)} for cells in body]
 
 
-def fetch_aa(key: str) -> list[dict[str, Any]]:
-    response = http_get(AA_URL, headers={"x-api-key": key})
-    if response.status_code >= 400:
-        raise RuntimeError(f"AA API {response.status_code}: {response.text[:200]}")
-    body = response.json()
-    data = body.get("data") if isinstance(body, dict) else None
-    if not isinstance(data, list) or not data:
-        raise RuntimeError("AA 응답에 모델 목록이 없습니다")
-    return data
-
-
 def fetch_epoch() -> list[dict[str, str]]:
     response = http_get(EPOCH_ECI_URL)
     if response.status_code >= 400:
@@ -136,24 +119,6 @@ def _openrouter_name(model: dict[str, Any]) -> str:
 def _is_base_listing(model: dict[str, Any]) -> bool:
     """":free", ":batch" 처럼 같은 모델의 다른 판매 방식은 빼고 기본 판매만 본다."""
     return isinstance(model.get("id"), str) and ":" not in model["id"]
-
-
-def _aa_base_name(model: dict[str, Any]) -> str:
-    """AA 이름 "Claude Haiku 5.5 (High)" 에서 단계 표시를 뗀다."""
-    return re.sub(r"\s*\(.*?\)", "", str(model.get("name") or "")).strip()
-
-
-def _output_speed(model: dict[str, Any]) -> str | None:
-    return _positive_decimal(_at(model, "performance.median_output_tokens_per_second"))
-
-
-def _average_output_speed(variants: list[dict[str, Any]]) -> str | None:
-    """같은 모델의 단계별 출력 속도 평균(소수점 둘째 자리). 값이 있는 단계만 센다."""
-    speeds = [float(value) for value in map(_output_speed, variants) if value is not None]
-    if not speeds:
-        return None
-    mean = sum(speeds) / len(speeds)
-    return js_number_text(math.floor(mean * 100 + 0.5) / 100)
 
 
 def _capabilities_of(model: dict[str, Any]) -> list[str]:
@@ -191,17 +156,15 @@ def _iso(now: datetime) -> str:
 def build_catalog(
     epoch_rows: list[dict[str, str]],
     openrouter_models: list[dict[str, Any]],
-    aa_models: list[dict[str, Any]],
     recipient_of: Callable[[str], str],
     now: datetime | None = None,
 ) -> dict[str, Any]:
     """
-    세 출처를 짝지어 판매 목록을 만든다. recipient_of(provider_id) 는 회사별 판매자 주소를 돌려준다.
+    두 출처를 짝지어 판매 목록을 만든다. recipient_of(provider_id) 는 회사별 판매자 주소를 돌려준다.
     ECI 가 높은 순서로 적는다.
     """
     now = now or datetime.now(timezone.utc)
     openrouter = _group_by([model for model in openrouter_models if _is_base_listing(model)], lambda model: normalize_name(_openrouter_name(model)))
-    aa = _group_by(aa_models, lambda model: normalize_name(_aa_base_name(model)))
     entries: list[dict[str, Any]] = []
     excluded: list[dict[str, str]] = []
 
@@ -231,10 +194,6 @@ def build_catalog(
         if input_price is None or output_price is None:
             skip("OpenRouter 가격 없음 또는 0")
             continue
-        variants = [item for item in aa.get(key, []) if _output_speed(item) is not None]
-        if not variants:
-            skip("Artificial Analysis 에 같은 이름 없음" if not aa.get(key) else "AA 출력 속도 없음 또는 0")
-            continue
 
         provider_id, provider_model_id = listing["id"].split("/", 1)
         entries.append(
@@ -245,7 +204,6 @@ def build_catalog(
                 "displayName": name,
                 "epochModel": name,
                 "openRouterId": listing["id"],
-                "aaSlugs": sorted(str(item.get("slug")) for item in variants),
                 "recipient": recipient_of(provider_id),
                 "capabilities": _capabilities_of(listing),
             }
@@ -253,10 +211,7 @@ def build_catalog(
 
     return {
         "catalogVersion": f"agent-m2m-{_iso(now)[:10]}",
-        "matching": (
-            f"ECI {MIN_ECI} 이상이고, Epoch·OpenRouter·AA 이름(기호 제거, 소문자)이 정확히 같은 모델만. "
-            "속도는 AA 가 잰 생각 단계들의 출력 속도 평균"
-        ),
+        "matching": f"ECI {MIN_ECI} 이상이고, Epoch·OpenRouter 이름(기호 제거, 소문자)이 정확히 같은 모델만",
         "entries": entries,
         "excluded": excluded,
     }
@@ -266,10 +221,9 @@ def build_snapshot(
     catalog: dict[str, Any],
     epoch_rows: list[dict[str, str]],
     openrouter_models: list[dict[str, Any]],
-    aa_models: list[dict[str, Any]],
     now: datetime | None = None,
 ) -> dict[str, Any]:
-    """판매 목록의 모델마다 세 출처의 값을 짝지어 스냅샷을 만든다. 하나라도 없으면 멈춘다."""
+    """판매 목록의 모델마다 두 출처의 값을 짝지어 스냅샷을 만든다. 하나라도 없으면 멈춘다."""
     now = now or datetime.now(timezone.utc)
     models = []
     for entry in catalog["entries"]:
@@ -279,10 +233,6 @@ def build_snapshot(
         listing = next((model for model in openrouter_models if model.get("id") == entry["openRouterId"]), None)
         if listing is None:
             raise RuntimeError(f"OpenRouter 에 {entry['openRouterId']} 가 없습니다")
-        variants = [next((model for model in aa_models if model.get("slug") == slug), None) for slug in entry["aaSlugs"]]
-        missing_slug = next((slug for slug, found in zip(entry["aaSlugs"], variants) if found is None), None)
-        if missing_slug is not None:
-            raise RuntimeError(f"AA 에 슬러그 {missing_slug} 가 없습니다")
 
         values = {
             "eci": _positive_decimal(epoch.get("eci")),
@@ -290,7 +240,6 @@ def build_snapshot(
             "eciCiHigh": _positive_decimal(epoch.get("eci_ci_high")),
             "inputPricePerMillion": per_million(_at(listing, "pricing.prompt")),
             "outputPricePerMillion": per_million(_at(listing, "pricing.completion")),
-            "outputTokensPerSecond": _average_output_speed(variants),
         }
         missing = [name for name, value in values.items() if value is None]
         if missing:
@@ -300,24 +249,15 @@ def build_snapshot(
         if epoch.get("date") is not None:
             model["epochDate"] = epoch["date"]
         model.update(values)
-        model.update(
-            {
-                "openRouterId": entry["openRouterId"],
-                "aaSlugs": entry["aaSlugs"],
-                "aaModelNames": [str(variant["name"]) for variant in variants],
-            }
-        )
+        model["openRouterId"] = entry["openRouterId"]
         models.append(model)
 
     iso = _iso(now)
     return {
-        "snapshotId": f"epoch-openrouter-aa-{iso[:16]}",
+        "snapshotId": f"epoch-openrouter-{iso[:16]}",
         "capturedAt": iso,
-        "source": "epoch.ai + openrouter.ai + artificialanalysis.ai",
-        "sources": {"epoch": EPOCH_ECI_URL, "openRouter": OPENROUTER_URL, "aa": AA_URL},
-        "note": (
-            "성능은 Epoch Capabilities Index(95% 신뢰구간 포함), 가격은 OpenRouter 판매 단가, "
-            "속도는 Artificial Analysis 가 잰 출력 속도(토큰/초) 최근 72시간 중앙값을 생각 단계별로 평균낸 값입니다."
-        ),
+        "source": "epoch.ai + openrouter.ai",
+        "sources": {"epoch": EPOCH_ECI_URL, "openRouter": OPENROUTER_URL},
+        "note": "성능은 Epoch Capabilities Index(95% 신뢰구간 포함), 가격은 OpenRouter 판매 단가입니다.",
         "models": models,
     }

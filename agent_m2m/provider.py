@@ -3,6 +3,7 @@
 
 돈을 받았는지 스스로 확인한 뒤에만 결과를 준다. 구매 쪽이 "보냈다"고 말한 것을 믿지 않고,
 체인의 거래 기록을 직접 읽어 요청 번호·수신자·금액을 대조한다.
+흥정한 구매는 DealSettled 기록의 합의 해시·대화 해시도 DB 의 기록으로 다시 계산한 값과 대조한다(verify_deal).
 모델 출력 자체는 Mock이다. 실제 OpenAI·Anthropic·Google API를 부르지 않는다.
 """
 
@@ -11,11 +12,15 @@ from typing import Any
 from eth_abi import decode
 from web3 import Web3
 
+from agent_m2m.deal import hash_deal, transcript_hash
 from agent_m2m.domain import PaymentResult
 from agent_m2m.payment import payment_config, request_id_hash, web3_for
 
 # Paid(bytes32 indexed requestId, address indexed from, address indexed to, uint256 amount)
 PAID_TOPIC = Web3.to_hex(Web3.keccak(text="Paid(bytes32,address,address,uint256)"))
+# DealSettled(bytes32 indexed requestId, address indexed buyer, address indexed seller,
+#             bytes32 dealHash, uint256 askUnits, uint256 agreedUnits, bytes32 transcriptHash)
+DEAL_SETTLED_TOPIC = Web3.to_hex(Web3.keccak(text="DealSettled(bytes32,address,address,bytes32,uint256,uint256,bytes32)"))
 
 
 class DeliveryError(Exception):
@@ -60,6 +65,51 @@ def verify_payment(payment: PaymentResult, winner: dict[str, Any], request_id: s
     expected_request = request_id_hash(request_id)
     if not any(_is_paid(log, token, expected_request, expected_to, winner["amountUnits"]) for log in receipt["logs"]):
         raise DeliveryError("이 거래에는 이 요청 번호로 약속한 수신자에게 약속한 금액을 보낸 기록이 없습니다")
+
+
+def _settled_deal(log: dict[str, Any], token: str) -> dict[str, Any] | None:
+    """DealSettled 기록이면 그 내용, 아니면 None."""
+    try:
+        if Web3.to_checksum_address(log["address"]) != token:
+            return None
+        topics = [_hex(topic) for topic in log["topics"]]
+        if len(topics) != 4 or topics[0] != DEAL_SETTLED_TOPIC:
+            return None
+        data = log["data"]
+        deal_hash, ask, agreed, transcript = decode(
+            ["bytes32", "uint256", "uint256", "bytes32"], bytes.fromhex(data[2:]) if isinstance(data, str) else bytes(data)
+        )
+        return {
+            "requestId": topics[1],
+            "buyer": _topic_address(topics[2]),
+            "seller": _topic_address(topics[3]),
+            "dealHash": Web3.to_hex(deal_hash),
+            "askUnits": ask,
+            "agreedUnits": agreed,
+            "transcriptHash": Web3.to_hex(transcript),
+        }
+    except Exception:  # noqa: BLE001 — 모양이 다른 기록은 이 합의가 아니다.
+        return None
+
+
+def verify_deal(payment: PaymentResult, decision: dict[str, Any]) -> None:
+    """체인에 저장된 합의가 DB 기록과 같은지 확인한다. 합의 해시와 대화 해시를 DB 의 기록으로 다시 계산해 대조한다."""
+    deal = decision["deal"]
+    if transcript_hash(decision["negotiation"]) != deal["transcriptHash"]:
+        raise DeliveryError("DB 의 흥정 대화가 합의에 남긴 해시와 다릅니다")
+    receipt = get_receipt(payment["txHash"])
+    token = Web3.to_checksum_address(payment["tokenAddress"])
+    expected = {
+        "requestId": deal["requestId"].lower(),
+        "buyer": Web3.to_checksum_address(deal["buyer"]),
+        "seller": Web3.to_checksum_address(deal["seller"]),
+        "dealHash": hash_deal(deal),
+        "askUnits": deal["askUnits"],
+        "agreedUnits": deal["agreedUnits"],
+        "transcriptHash": deal["transcriptHash"].lower(),
+    }
+    if not any(_settled_deal(log, token) == expected for log in receipt["logs"]):
+        raise DeliveryError("이 거래에는 DB 의 합의와 같은 DealSettled 기록이 없습니다")
 
 
 def mock_result(prompt: str, winner: dict[str, Any]) -> str:

@@ -18,7 +18,7 @@ def clear_env(monkeypatch):
         monkeypatch.delenv(name, raising=False)
 
 
-def test_Qwen_이_고른_우선순위와_모델_이름을_돌려준다(monkeypatch):
+def test_Gemma_가_고른_우선순위와_모델_이름을_돌려준다(monkeypatch):
     calls = []
 
     def post(url, body, timeout):
@@ -26,10 +26,10 @@ def test_Qwen_이_고른_우선순위와_모델_이름을_돌려준다(monkeypat
         return ollama_reply('{"priority":"price"}')
 
     monkeypatch.setattr(priority_llm, "http_post", post)
-    assert infer_priority("최대한 싸게 요약해 줘") == {"priority": "price", "model": "qwen3.5:4b"}
+    assert infer_priority("최대한 싸게 요약해 줘") == {"priority": "price", "model": "gemma4:12b"}
     url, body = calls[0]
     assert url == "http://127.0.0.1:11434/api/chat"
-    assert body["format"]["properties"]["priority"]["enum"] == ["default", "price", "speed", "intelligence"]
+    assert body["format"]["properties"]["priority"]["enum"] == ["default", "price", "intelligence"]
     assert body["messages"][1] == {"role": "user", "content": "최대한 싸게 요약해 줘"}
 
 
@@ -41,7 +41,7 @@ def test_네_값_밖의_답은_받지_않는다(monkeypatch):
 
 def test_Ollama_가_실패하면_모델_출력_없이_고정_메시지로_멈춘다(monkeypatch):
     monkeypatch.setattr(priority_llm, "http_post", lambda url, body, timeout: ollama_reply("요청 원문이 섞인 오류", 500))
-    with pytest.raises(PriorityInferenceError, match="로컬 Qwen 우선순위 추론에 실패했습니다"):
+    with pytest.raises(PriorityInferenceError, match="로컬 Gemma 우선순위 추론에 실패했습니다"):
         infer_priority("싸게")
 
 

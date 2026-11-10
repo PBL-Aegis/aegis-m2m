@@ -8,11 +8,10 @@
   4) 총점과 고정된 동점 규칙으로 1등을 정한다
 필터를 점수보다 먼저 거는 이유는, 못 쓸 후보가 점수의 기준선을 흔들지 않게 하기 위해서다.
 
-세 점수는 각각 한 출처에서 오고, 모두 후보 중 가장 나쁜 값 0점·가장 좋은 값 100점으로 편다.
+두 점수는 각각 한 출처에서 오고, 모두 후보 중 가장 나쁜 값 0점·가장 좋은 값 100점으로 편다.
   가격 점수 = (log 최고 금액 − log 내 금액) ÷ (log 최고 − log 최저) × 100   (OpenRouter 판매 단가)
-  속도 점수 = (log 내 출력 속도 − log 최저) ÷ (log 최고 − log 최저) × 100   (AA 출력 속도, 토큰/초)
   성능 점수 = (내 ECI − 최저 ECI) ÷ (최고 − 최저) × 100                    (Epoch ECI)
-가격과 속도는 후보끼리 몇 배~수십 배 차이 나서 로그로 편다. 그러면 2배 싼 것은 어느 가격대에서든 같은
+가격은 후보끼리 몇 배~수십 배 차이 나서 로그로 편다. 그러면 2배 싼 것은 어느 가격대에서든 같은
 만큼 점수가 오르고, 아주 싼 모델 하나가 나머지를 0점 가까이로 누르거나(비율 방식) 아주 비싼 모델 하나에
 나머지가 끌려가는(직선 방식) 일이 줄어든다.
 ECI 는 여러 벤치마크를 난이도까지 고려해 합친 지수라 0 이 "능력 없음"이 아니고 차이 자체가 의미를
@@ -78,13 +77,6 @@ def log_lower_is_better_score(value: float, minimum: float, maximum: float) -> f
     return (math.log(maximum) - math.log(value)) / (math.log(maximum) - math.log(minimum)) * 100
 
 
-def log_higher_is_better_score(value: float, minimum: float, maximum: float) -> float:
-    """클수록 좋은 값(출력 속도)을 로그로 바꿔 후보 중 최소 0점·최대 100점으로 편다."""
-    if maximum == minimum:
-        return 100
-    return (math.log(value) - math.log(minimum)) / (math.log(maximum) - math.log(minimum)) * 100
-
-
 def _round(value: float) -> float:
     """소수점 6자리 반올림(.5 는 위로)."""
     return math.floor(value * 1e6 + 0.5) / 1e6
@@ -105,13 +97,11 @@ def _is_positive_int(value: object, allow_zero: bool = False) -> bool:
 
 
 def _compare(left: dict[str, Any], right: dict[str, Any]) -> int:
-    """총점이 같으면 금액, 출력 속도, Provider 이름, 모델 id 순. 무작위는 없다."""
+    """총점이 같으면 금액, Provider 이름, 모델 id 순. 무작위는 없다."""
     if left["totalScore"] != right["totalScore"]:
         return -1 if left["totalScore"] > right["totalScore"] else 1
     if left["amountUnits"] != right["amountUnits"]:
         return -1 if left["amountUnits"] < right["amountUnits"] else 1
-    if left["outputTokensPerSecond"] != right["outputTokensPerSecond"]:
-        return -1 if left["outputTokensPerSecond"] > right["outputTokensPerSecond"] else 1
     if left["providerId"] != right["providerId"]:
         return -1 if left["providerId"] < right["providerId"] else 1
     return -1 if left["providerModelId"] < right["providerModelId"] else 1
@@ -146,18 +136,13 @@ def decide(request: dict[str, Any], source: dict[str, Any] | None = None) -> Dec
         if not math.isfinite(eci):
             # 한 출처라도 비면 기본값으로 메우지 않고 멈춘다. 빈칸을 채우면 점수가 조작된다.
             raise SelectionError(f"{entry['key']}: Epoch ECI 가 없어 성능 점수를 만들 수 없습니다")
-        speed = _number(metrics.get("outputTokensPerSecond"))
-        if not math.isfinite(speed) or speed <= 0:
-            raise SelectionError(f"{entry['key']}: AA 출력 속도가 없어 속도 점수를 만들 수 없습니다")
         priced.append(
             {
                 "entry": entry,
                 "amountUnits": units,
-                "outputTokensPerSecond": speed,
                 "eci": eci,
                 "eciCiLow": _number(metrics.get("eciCiLow")),
                 "eciCiHigh": _number(metrics.get("eciCiHigh")),
-                "aaModelNames": metrics.get("aaModelNames"),
             }
         )
 
@@ -185,8 +170,6 @@ def decide(request: dict[str, Any], source: dict[str, Any] | None = None) -> Dec
     # 3) 점수 — 기준값은 살아남은 후보에서만 뽑는다
     min_amount = min(item["amountUnits"] for item in eligible)
     max_amount = max(item["amountUnits"] for item in eligible)
-    min_speed = min(item["outputTokensPerSecond"] for item in eligible)
-    max_speed = max(item["outputTokensPerSecond"] for item in eligible)
     min_eci = min(item["eci"] for item in eligible)
     max_eci = max(item["eci"] for item in eligible)
     weights = PRIORITY_WEIGHTS[request["priority"]]
@@ -195,11 +178,8 @@ def decide(request: dict[str, Any], source: dict[str, Any] | None = None) -> Dec
     for candidate in eligible:
         entry = candidate["entry"]
         price_score = _round(log_lower_is_better_score(candidate["amountUnits"], min_amount, max_amount))
-        time_score = _round(log_higher_is_better_score(candidate["outputTokensPerSecond"], min_speed, max_speed))
         intelligence_score = _round(eci_score(candidate["eci"], min_eci, max_eci))
-        total_score = _round(
-            (price_score * weights["price"] + time_score * weights["time"] + intelligence_score * weights["intelligence"]) / 100
-        )
+        total_score = _round((price_score * weights["price"] + intelligence_score * weights["intelligence"]) / 100)
         scored.append(
             {
                 "key": entry["key"],
@@ -208,13 +188,10 @@ def decide(request: dict[str, Any], source: dict[str, Any] | None = None) -> Dec
                 "providerModelId": entry["providerModelId"],
                 "recipient": entry["recipient"],
                 "amountUnits": candidate["amountUnits"],
-                "outputTokensPerSecond": candidate["outputTokensPerSecond"],
                 "eci": candidate["eci"],
                 "eciCiLow": candidate["eciCiLow"],
                 "eciCiHigh": candidate["eciCiHigh"],
-                "aaModelNames": candidate["aaModelNames"],
                 "priceScore": price_score,
-                "timeScore": time_score,
                 "intelligenceScore": intelligence_score,
                 "totalScore": total_score,
                 "rank": 0,
@@ -239,16 +216,13 @@ def decide(request: dict[str, Any], source: dict[str, Any] | None = None) -> Dec
         "references": {
             "minAmountUnits": min_amount,
             "maxAmountUnits": max_amount,
-            "minOutputTokensPerSecond": min_speed,
-            "maxOutputTokensPerSecond": max_speed,
             "minEci": min_eci,
             "maxEci": max_eci,
         },
         "performanceSources": {
             "performance": "Epoch Capabilities Index (95% 신뢰구간)",
             "price": "OpenRouter 판매 단가",
-            "speed": "Artificial Analysis 출력 속도(토큰/초), 최근 72시간 중앙값의 생각 단계별 평균",
-            "combine": "가격·속도는 로그로, 성능(ECI)은 그대로 후보 중 가장 나쁜 값 0점·가장 좋은 값 100점으로 폄",
+            "combine": "가격은 로그로, 성능(ECI)은 그대로 후보 중 가장 나쁜 값 0점·가장 좋은 값 100점으로 폄",
         },
         "candidates": scored,
         "rejected": rejected,

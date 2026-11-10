@@ -32,19 +32,14 @@ def listing(model_id: str, name: str, prompt: str = "0.000001") -> dict:
     }
 
 
-def aa(slug: str, name: str, speed: float | None = 100) -> dict:
-    return {"slug": slug, "name": name, "performance": {"median_output_tokens_per_second": speed}}
-
-
 def recipient(provider: str) -> str:
     return f"0x{provider}"
 
 
-def test_세_출처_이름이_기호_대소문자만_다르면_짝짓고_OpenRouter_기능을_옮긴다():
+def test_두_출처_이름이_기호_대소문자만_다르면_짝짓고_OpenRouter_기능을_옮긴다():
     catalog = build_catalog(
         [epoch("Claude Opus 5.5")],
         [listing("anthropic/claude-opus-5.5", "Claude Opus 5.5")],
-        [aa("claude-opus-5-5", "Claude Opus 5.5")],
         recipient,
     )
     assert catalog["entries"] == [
@@ -55,7 +50,6 @@ def test_세_출처_이름이_기호_대소문자만_다르면_짝짓고_OpenRou
             "displayName": "Claude Opus 5.5",
             "epochModel": "Claude Opus 5.5",
             "openRouterId": "anthropic/claude-opus-5.5",
-            "aaSlugs": ["claude-opus-5-5"],
             "recipient": "0xanthropic",
             "capabilities": ["reasoning", "tools", "vision"],
         }
@@ -63,28 +57,30 @@ def test_세_출처_이름이_기호_대소문자만_다르면_짝짓고_OpenRou
     assert normalize_name("Claude Opus 5.5") == normalize_name("claude-opus-5.5")
 
 
-def test_AA_생각_단계가_여러_개면_모두_묶고_출력_속도는_단계별_평균을_쓴다():
+def test_스냅샷은_두_출처의_값만_담는다():
     epoch_rows = [epoch("Model A")]
     listings = [listing("org/model-a", "Model A")]
-    variants = [aa("a-low", "Model A (Low)", 100), aa("a-max", "Model A (Max)", 110), aa("a-off", "Model A (Non-reasoning)", None)]
-    catalog = build_catalog(epoch_rows, listings, variants, recipient)
-    assert [[entry["key"], entry["aaSlugs"]] for entry in catalog["entries"]] == [["org/model-a", ["a-low", "a-max"]]]
-    snapshot = build_snapshot(catalog, epoch_rows, listings, variants)
-    assert snapshot["models"][0]["outputTokensPerSecond"] == "105"
-    assert snapshot["models"][0]["aaModelNames"] == ["Model A (Low)", "Model A (Max)"]
-
-
-def test_AA_에_이름은_있지만_출력_속도가_없으면_뺀다():
-    catalog = build_catalog([epoch("Model B")], [listing("org/model-b", "Model B")], [aa("b", "Model B", None)], recipient)
-    assert catalog["entries"] == []
-    assert catalog["excluded"] == [{"name": "Model B", "reason": "AA 출력 속도 없음 또는 0"}]
+    catalog = build_catalog(epoch_rows, listings, recipient)
+    snapshot = build_snapshot(catalog, epoch_rows, listings)
+    assert snapshot["source"] == "epoch.ai + openrouter.ai"
+    assert set(snapshot["sources"]) == {"epoch", "openRouter"}
+    assert snapshot["models"][0] == {
+        "key": "org/model-a",
+        "epochModel": "Model A",
+        "epochDate": "2026-10-01",
+        "eci": "150",
+        "eciCiLow": "148",
+        "eciCiHigh": "152",
+        "inputPricePerMillion": "1",
+        "outputPricePerMillion": "2",
+        "openRouterId": "org/model-a",
+    }
 
 
 def test_이름이_다르거나_가격이_0_이면_추측하지_않고_이유와_함께_뺀다():
     catalog = build_catalog(
         [epoch("Model C"), epoch("Model D")],
         [listing("org/model-c-pro", "Model C Pro"), listing("org/model-d", "Model D", "0")],
-        [aa("c", "Model C"), aa("d", "Model D")],
         recipient,
     )
     assert catalog["entries"] == []
@@ -95,6 +91,6 @@ def test_이름이_다르거나_가격이_0_이면_추측하지_않고_이유와
 
 
 def test_ECI_가_최소_성능_기준보다_낮으면_이유와_함께_뺀다():
-    catalog = build_catalog([epoch("Model E", "139.9")], [listing("org/model-e", "Model E")], [aa("e", "Model E")], recipient)
+    catalog = build_catalog([epoch("Model E", "139.9")], [listing("org/model-e", "Model E")], recipient)
     assert catalog["entries"] == []
     assert catalog["excluded"] == [{"name": "Model E", "reason": "최소 성능 기준(ECI 140) 미만: 139.9"}]
