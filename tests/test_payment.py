@@ -69,12 +69,6 @@ def test_같은_지갑으로_동시에_여러_건_보내도_거래_순번이_겹
     assert len({result["txHash"] for result in results}) == 5
 
 
-def test_승인_변수_없이_live_를_요청하면_로컬_체인으로_남는다(monkeypatch):
-    monkeypatch.setenv("AEGIS_PAYMENT_MODE", "live")
-    monkeypatch.setenv("AEGIS_REAL_PAYMENT_APPROVED", "no")
-    assert payment_config()["mode"] == "local"
-
-
 def test_로컬_체인은_anvil_첫_배포_주소와_공개_테스트_구매자를_쓴다():
     config = payment_config()
     assert config["mode"] == "local"

@@ -8,7 +8,6 @@ from agent_m2m.selection import (
     amount_units,
     decide,
     eci_score,
-    log_higher_is_better_score,
     log_lower_is_better_score,
 )
 from tests.conftest import ROOT
@@ -34,14 +33,14 @@ def test_세_후보가_모두_예산_안이면_기본_우선순위는_테스트_
     assert decision["rejected"] == []
     assert decision["winner"]["key"] == "google/test-flash"
     assert decision["winner"]["amountUnits"] == 20120
-    assert decision["weights"] == {"price": 34, "time": 33, "intelligence": 33}
+    assert decision["weights"] == {"price": 50, "intelligence": 50}
 
 
 def test_가격_우선이면_테스트_OpenAI_를_고른다():
     decision = decide(request("price"))
     assert decision["winner"]["key"] == "openai/test-mini"
     assert decision["winner"]["amountUnits"] == 12960
-    assert decision["weights"] == {"price": 80, "time": 10, "intelligence": 10}
+    assert decision["weights"] == {"price": 90, "intelligence": 10}
 
 
 def test_reasoning_기능을_요구하면_테스트_Google_은_사유와_함께_탈락한다():
@@ -52,7 +51,7 @@ def test_reasoning_기능을_요구하면_테스트_Google_은_사유와_함께_
 
 
 def test_같은_입력이면_항상_같은_결과가_나온다():
-    assert decide(request("speed")) == decide(request("speed"))
+    assert decide(request("default")) == decide(request("default"))
 
 
 def test_ECI_는_후보_중_최저_0점_최고_100점으로_편다():
@@ -62,13 +61,12 @@ def test_ECI_는_후보_중_최저_0점_최고_100점으로_편다():
     assert eci_score(150, 150, 150) == 100
 
 
-def test_성능_점수에_ECI_신뢰구간_속도를_잰_AA_항목을_남긴다():
+def test_성능_점수에_ECI_와_신뢰구간을_남긴다():
     decision = decide(request("intelligence"))
     haiku = next(item for item in decision["candidates"] if item["key"] == "anthropic/test-haiku")
     assert haiku["intelligenceScore"] == 100
     assert haiku["eci"] == 160
     assert [haiku["eciCiLow"], haiku["eciCiHigh"]] == [157, 163]
-    assert haiku["aaModelNames"] == ["Test Haiku"]
     assert decision["references"]["minEci"] == 140
     assert decision["references"]["maxEci"] == 160
     flash = next(item for item in decision["candidates"] if item["key"] == "google/test-flash")
@@ -102,12 +100,3 @@ def test_가격_우선에서_가장_싼_후보_100점_가장_비싼_후보_0점_
     assert score["anthropic/test-haiku"] == 0
     assert score["google/test-flash"] == pytest.approx(61.31, abs=0.05)
 
-
-def test_출력_속도는_클수록_좋다():
-    assert log_higher_is_better_score(150, 40, 150) == 100
-    assert log_higher_is_better_score(40, 40, 150) == pytest.approx(0, abs=1e-9)
-    decision = decide(request("speed"))
-    assert decision["winner"]["key"] == "google/test-flash"
-    assert decision["winner"]["outputTokensPerSecond"] == 150
-    assert decision["references"]["minOutputTokensPerSecond"] == 40
-    assert decision["references"]["maxOutputTokensPerSecond"] == 150

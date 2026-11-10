@@ -9,14 +9,13 @@ from datetime import datetime, timezone
 from typing import Any
 
 # 요청이 무엇을 중요하게 보는지. 이 네 값이 가중치 한 줄을 고른다.
-PRIORITIES: tuple[str, ...] = ("default", "price", "speed", "intelligence")
+PRIORITIES: tuple[str, ...] = ("default", "price", "intelligence")
 
-# 우선순위마다 고정된 배점표(가격·시간·지능, 합 100). 코드 밖에서 바꿀 수 없다.
+# 우선순위마다 고정된 배점표(가격·성능, 합 100). 코드 밖에서 바꿀 수 없다.
 PRIORITY_WEIGHTS: dict[str, dict[str, int]] = {
-    "default": {"price": 34, "time": 33, "intelligence": 33},
-    "price": {"price": 80, "time": 10, "intelligence": 10},
-    "speed": {"price": 10, "time": 80, "intelligence": 10},
-    "intelligence": {"price": 10, "time": 10, "intelligence": 80},
+    "default": {"price": 50, "intelligence": 50},
+    "price": {"price": 90, "intelligence": 10},
+    "intelligence": {"price": 10, "intelligence": 90},
 }
 
 # 구매 기록·결정·결제 결과·알림. 모양은 web/src/lib/types.ts 의 같은 이름 타입을 따른다.
