@@ -1,8 +1,7 @@
 """
 구매 에이전트의 페르소나. 흥정 방식(첫 제안, 양보 비율)과 어디서 살지를 정한다.
 
-페르소나는 personas/<id>.md 파일 하나다. 맨 위 --- 사이에 숫자 설정을 적고, 본문에 목표와 흥정 태도를 글로 적는다.
-규칙형 흥정은 숫자만, LLM형·이중형 흥정은 본문 글도 읽는다(persona_llm.py).
+페르소나는 personas/<id>.md 파일 하나다. 맨 위 --- 사이에 숫자 설정을 적고, 본문에 사람이 읽을 목표를 적는다.
   opening_ratio      첫 제안 = 호가 × 이 값
   concede_new_card   판매자가 처음 낸 근거 카드에 값 차이 중 올려 주는 비율
   concede_used_card  판매자가 이미 낸 카드를 다시 냈을 때 비율
@@ -65,8 +64,6 @@ def _parse(persona_id: str, raw: str) -> dict[str, Any]:
         "openingRatio": numbers["opening_ratio"],
         "concede": {"new": numbers["concede_new_card"], "used": numbers["concede_used_card"], "none": numbers["concede_no_card"]},
         "premiumLimit": numbers["premium_limit"],
-        # LLM 흥정(persona_llm.py)이 읽는 본문 전체. 목표·흥정 태도를 글로 적어 둔다.
-        "body": body,
         "hash": f"sha256:{hashlib.sha256(raw.encode()).hexdigest()}",
     }
 

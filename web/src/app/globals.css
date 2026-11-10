@@ -715,7 +715,3 @@ tr.winner td { background: var(--violet-soft); }
 .evaluationHead { display: flex; align-items: center; gap: 8px; font-size: 15px; }
 .evaluationGoal { margin: 0; font-size: 13px; color: var(--muted); }
 .evaluation ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; font-size: 14px; color: var(--ink-soft); }
-.whySource { margin-right: 6px; padding: 1px 6px; border-radius: 6px; background: var(--line); color: var(--muted); font-weight: 600; }
-.whySource.llm { background: var(--violet-soft); color: var(--violet-ink); }
-.whySource.fallback { background: var(--amber-soft); color: var(--amber); }
-.whyCheck { display: block; color: var(--amber); }
