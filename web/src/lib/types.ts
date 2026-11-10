@@ -177,6 +177,18 @@ export interface PersonaRef {
   hash?: string;
 }
 
+/** settleDeal 로 체인에 남기는 합의. 금액은 units, 해시와 주소는 0x 문자열이다. */
+export interface Deal {
+  requestId: string;
+  buyer: string;
+  seller: string;
+  modelKey: string;
+  askUnits: number;
+  agreedUnits: number;
+  transcriptHash: string;
+  decisionHash: string;
+}
+
 /** 흥정이 끝난 뒤 페르소나 관점에서 이 구매가 이득이었는지. 코드가 기록의 숫자로 정한다. */
 export interface Evaluation {
   persona: string;
@@ -274,6 +286,8 @@ export interface Decision {
   quotes?: Negotiation[];
   /** 흥정한 페르소나와 그 관점의 평가. 페르소나가 생기기 전 기록에는 없다. */
   persona?: PersonaRef;
+  /** 체인에 저장한 합의. 대화와 결정 근거는 해시만 담는다. 이 칸이 생기기 전 기록에는 없다. */
+  deal?: Deal;
   evaluation?: Evaluation;
 }
 
@@ -290,6 +304,8 @@ export interface PaymentResult {
   chainId: number;
   /** 체인에 넘긴 요청 번호(keccak256). 이 칸이 생기기 전 기록에는 없다. */
   requestIdHash?: string;
+  /** settleDeal 로 체인에 저장한 합의의 해시. 흥정한 구매에만 있다. */
+  dealHash?: string;
   /** 체인에 보냈을 때(local·live)만 채워진다. */
   blockNumber?: string;
 }

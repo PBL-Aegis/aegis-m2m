@@ -112,6 +112,12 @@ export default async function PurchaseDetailPage({ params }: { params: Promise<{
                 <dt>체인</dt>
                 <dd>{payment === null ? "-" : chainLabel(payment.mode)}</dd>
               </div>
+              {payment?.dealHash !== undefined && (
+                <div>
+                  <dt>체인 합의</dt>
+                  <dd title={payment.dealHash}>{shortHash(payment.dealHash)}</dd>
+                </div>
+              )}
               {decision.snapshotCapturedAt !== undefined && (
                 <div>
                   <dt>가격 기준일</dt>

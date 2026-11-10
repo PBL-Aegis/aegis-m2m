@@ -1,5 +1,8 @@
 """
-결제. AEGIS 토큰(ERC-20)의 ERC-3009 transferWithAuthorization 으로 선택된 모델의 수신자 주소에 보낸다.
+결제. AEGIS 토큰(ERC-20)의 ERC-3009 서명으로 선택된 모델의 수신자 주소에 보낸다.
+흥정한 구매는 settle_deal 로 AegisToken.settleDeal 을 부른다. 합의(deal.py)를 체인에 저장하고 그 합의가만큼 보낸다.
+이때 서명의 nonce 는 요청 번호가 아니라 합의 해시라서, 구매자 서명이 합의 내용 전체에 대한 동의가 된다.
+pay 는 합의 없이 transferWithAuthorization 으로 바로 보내는 경로다.
 구매자 지갑은 "이 수신자에게 이 금액을, 이 요청 번호로, 10분 안에만"이라는 내용에 서명만 한다.
 거래는 중개자 지갑이 보내고 가스비도 중개자가 낸다. 그래서 구매자 지갑에는 AEGIS 만 있으면 된다.
 중개자 키는 결제 서버에 있어야 하므로 운영자(토큰 발급·규칙 설정 권한)와 다른, 권한 없는 지갑을 쓴다.
@@ -22,6 +25,7 @@ from eth_account.signers.local import LocalAccount
 from web3 import Web3
 from web3.utils.address import get_create_address
 
+from agent_m2m.deal import deal_tuple, hash_deal
 from agent_m2m.domain import PaymentResult
 
 AEGIS_ABI: list[dict[str, Any]] = [
@@ -36,6 +40,32 @@ AEGIS_ABI: list[dict[str, Any]] = [
             {"name": "validAfter", "type": "uint256"},
             {"name": "validBefore", "type": "uint256"},
             {"name": "nonce", "type": "bytes32"},
+            {"name": "v", "type": "uint8"},
+            {"name": "r", "type": "bytes32"},
+            {"name": "s", "type": "bytes32"},
+        ],
+        "outputs": [],
+    },
+    {
+        "type": "function",
+        "name": "settleDeal",
+        "stateMutability": "nonpayable",
+        "inputs": [
+            {
+                "name": "deal",
+                "type": "tuple",
+                "components": [
+                    {"name": "requestId", "type": "bytes32"},
+                    {"name": "buyer", "type": "address"},
+                    {"name": "seller", "type": "address"},
+                    {"name": "modelKey", "type": "bytes32"},
+                    {"name": "askUnits", "type": "uint256"},
+                    {"name": "agreedUnits", "type": "uint256"},
+                    {"name": "transcriptHash", "type": "bytes32"},
+                    {"name": "decisionHash", "type": "bytes32"},
+                ],
+            },
+            {"name": "validBefore", "type": "uint256"},
             {"name": "v", "type": "uint8"},
             {"name": "r", "type": "bytes32"},
             {"name": "s", "type": "bytes32"},
@@ -196,7 +226,8 @@ _sending = threading.Lock()
 def sign_authorization(
     buyer: LocalAccount, token_address: str, chain_id: int, to: str, amount_units: int, request_hash: str, valid_before: int
 ) -> Any:
-    """구매자가 ERC-3009 결제 내용에 서명한다. 요청 번호가 서명의 일회용 번호(nonce)다. 체인에 보내지 않는다."""
+    """구매자가 ERC-3009 결제 내용에 서명한다. request_hash 가 서명의 일회용 번호(nonce)다. 체인에 보내지 않는다.
+    pay 는 요청 번호를, settle_deal 은 합의 해시를 넘긴다."""
     return buyer.sign_typed_data(
         domain_data={
             "name": TOKEN_DOMAIN_NAME,
@@ -233,36 +264,18 @@ def pay(amount_units: int, recipient: str, purchase_id: str, request_id: str) ->
     valid_before = int(w3.eth.get_block("latest")["timestamp"]) + AUTHORIZATION_SECONDS
     signature = sign_authorization(buyer, token_address, config["chainId"], to, amount_units, request_hash, valid_before)
 
-    # 여기서 나는 오류(서명·유효기간·체인 규칙의 revert 포함)는 거래를 보내기 전이다. 가스 추정에서 먼저 걸린다.
-    with _sending:
-        transaction = token.functions.transferWithAuthorization(
-            buyer.address,
-            to,
-            amount_units,
-            0,
-            valid_before,
-            request_hash,
-            signature.v,
-            signature.r.to_bytes(32, "big"),
-            signature.s.to_bytes(32, "big"),
-        ).build_transaction(
-            {
-                "from": relayer.address,
-                "nonce": w3.eth.get_transaction_count(relayer.address, "pending"),
-                "chainId": config["chainId"],
-            }
-        )
-        signed = relayer.sign_transaction(transaction)
-        tx_hash = Web3.to_hex(w3.eth.send_raw_transaction(signed.raw_transaction))
-
-    # 여기부터는 거래가 체인에 나간 뒤다. 어떤 실패든 송금 후 실패로 알린다.
-    try:
-        receipt = w3.eth.wait_for_transaction_receipt(tx_hash, poll_latency=LOCAL_POLL_SECONDS)
-    except Exception as error:  # noqa: BLE001
-        raise PaymentError(f"전송 결과를 확인하지 못했습니다: {tx_hash} ({error})", sent=True) from error
-    if receipt["status"] != 1:
-        raise PaymentError(f"전송이 실패했습니다: {tx_hash}", sent=True)
-
+    function = token.functions.transferWithAuthorization(
+        buyer.address,
+        to,
+        amount_units,
+        0,
+        valid_before,
+        request_hash,
+        signature.v,
+        signature.r.to_bytes(32, "big"),
+        signature.s.to_bytes(32, "big"),
+    )
+    receipt, tx_hash = _send(w3, function, relayer, config["chainId"])
     return {
         "mode": config["mode"],
         "txHash": tx_hash,
@@ -275,3 +288,64 @@ def pay(amount_units: int, recipient: str, purchase_id: str, request_id: str) ->
         "requestIdHash": request_hash,
         "blockNumber": str(receipt["blockNumber"]),
     }
+
+
+def settle_deal(deal: dict[str, Any], purchase_id: str) -> PaymentResult:
+    """합의(deal.build_deal)대로 settleDeal 을 부른다. 구매자는 합의 해시를 nonce 로 서명한다. 결과에 dealHash 를 더 담는다."""
+    config = payment_config()
+    token_address = Web3.to_checksum_address(config["tokenAddress"])
+    buyer, relayer = anvil_account(1), anvil_account(LOCAL_RELAYER_INDEX)
+    if Web3.to_checksum_address(deal["buyer"]) != buyer.address:
+        raise PaymentError("합의의 구매자가 이 구매 에이전트 지갑이 아닙니다")
+    w3 = web3_for(config)
+    token = token_contract(w3, token_address)
+    to, amount_units = Web3.to_checksum_address(deal["seller"]), deal["agreedUnits"]
+
+    balance = token.functions.balanceOf(buyer.address).call()
+    if balance < amount_units:
+        raise PaymentError(f"지갑 잔액이 부족합니다: 보유 {balance} / 필요 {amount_units}")
+
+    deal_hash = hash_deal(deal)
+    valid_before = int(w3.eth.get_block("latest")["timestamp"]) + AUTHORIZATION_SECONDS
+    signature = sign_authorization(buyer, token_address, config["chainId"], to, amount_units, deal_hash, valid_before)
+    function = token.functions.settleDeal(
+        deal_tuple(deal), valid_before, signature.v, signature.r.to_bytes(32, "big"), signature.s.to_bytes(32, "big")
+    )
+    receipt, tx_hash = _send(w3, function, relayer, config["chainId"])
+    return {
+        "mode": config["mode"],
+        "txHash": tx_hash,
+        "from": buyer.address,
+        "relayer": relayer.address,
+        "to": to,
+        "amountUnits": amount_units,
+        "tokenAddress": token_address,
+        "chainId": config["chainId"],
+        "requestIdHash": deal["requestId"],
+        "dealHash": deal_hash,
+        "blockNumber": str(receipt["blockNumber"]),
+    }
+
+
+def _send(w3: Web3, function: Any, relayer: LocalAccount, chain_id: int) -> tuple[Any, str]:
+    """중개자가 거래를 보내고 영수증을 기다린다. (영수증, 거래 해시)."""
+    # 여기서 나는 오류(서명·유효기간·체인 규칙의 revert 포함)는 거래를 보내기 전이다. 가스 추정에서 먼저 걸린다.
+    with _sending:
+        transaction = function.build_transaction(
+            {
+                "from": relayer.address,
+                "nonce": w3.eth.get_transaction_count(relayer.address, "pending"),
+                "chainId": chain_id,
+            }
+        )
+        signed = relayer.sign_transaction(transaction)
+        tx_hash = Web3.to_hex(w3.eth.send_raw_transaction(signed.raw_transaction))
+
+    # 여기부터는 거래가 체인에 나간 뒤다. 어떤 실패든 송금 후 실패로 알린다.
+    try:
+        receipt = w3.eth.wait_for_transaction_receipt(tx_hash, poll_latency=LOCAL_POLL_SECONDS)
+    except Exception as error:  # noqa: BLE001
+        raise PaymentError(f"전송 결과를 확인하지 못했습니다: {tx_hash} ({error})", sent=True) from error
+    if receipt["status"] != 1:
+        raise PaymentError(f"전송이 실패했습니다: {tx_hash}", sent=True)
+    return receipt, tx_hash
