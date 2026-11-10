@@ -1,27 +1,29 @@
 # agent-M2M (Python 서버판)
 
-AI 구매 에이전트가 벤치마크 표로 모델을 고르고 AEGIS 토큰으로 결제하는 데모입니다. 모델 선택은 고정 규칙이 하고, 모델 응답은 Mock 문장입니다.
+AI 구매 에이전트가 판매 에이전트들과 흥정해 가장 싼 곳에서 AEGIS 토큰으로 결제하는 데모입니다. 비교 모델은 표로 고정하고, 모델 응답은 Mock 문장입니다.
 
 [agent-M2M](https://github.com/PBL-Aegis/agent-M2M)(TypeScript)과 기능이 같고, **서버를 Python(FastAPI)으로 옮긴 판**입니다. 화면은 같은 Next.js 화면을 그대로 쓰고, 화면은 Python 서버의 API 만 부릅니다. 스마트 컨트랙트(Solidity)도 그대로입니다.
 
 ## 흐름
 
-요청 → 감사(요청 직후) → 선택 → 기록(처리 중) → 감사(송금 직전) → 결제 → 확인 → 결과 → 기록(성공·실패) → 감사(결제 후)
+요청 → 감사(요청 직후) → 호가 계산 → 흥정 → 기록(처리 중) → 감사(송금 직전) → 결제 → 확인 → 결과 → 기록(성공·실패) → 감사(결제 후)
 
-1. **요청**: 요청 내용, 예산(AEGIS), 우선순위(싸게·빠르게·똑똑하게), 필요 기능, 요청 번호(`requestId`), 사용자(`userId`). 요청 번호를 비우면 서버가 만듭니다. 우선순위를 비우면 로컬 Qwen이 요청 문장을 읽고 정하고, Qwen이 응답하지 않으면 결제 전에 멈춥니다(503).
-2. **선택**: 후보마다 금액 계산 → 필요 기능으로 거르기 → 가격·속도·성능 점수 → 우선순위별 비중으로 합산 → 고정 규칙으로 동점 처리(`agent_m2m/selection.py`).
-3. **기록(처리 중)**: 결제 직전에 `PROCESSING` 상태로 MongoDB에 먼저 남깁니다.
-4. **감사**: `agent_m2m/rules/` 에 등록한 규칙을 세 자리에서 돌립니다. 막으면 "차단", 알리기만 하면 "경고" 알림이 대시보드의 이상 거래에 뜹니다.
-5. **결제**: ERC-3009 방식입니다. 구매자 지갑이 "이 판매자에게 이 금액을, 이 요청 번호로, 10분 안에만"이라는 내용에 서명만 하고, 중개자 지갑이 AEGIS `transferWithAuthorization` 거래를 보내며 가스비를 냅니다. 그래서 구매자 지갑에는 AEGIS 만 있으면 됩니다. 요청 번호(문자열의 keccak256)가 서명의 일회용 번호(nonce)라 같은 요청 번호는 체인이 한 번만 받습니다. 송금 전에 체인의 감사 규칙(`contracts/src/rules/`)이 한 번 더 검사합니다.
-6. **확인**: 판매창구가 체인의 `Paid` 기록에서 요청 번호·수신자·금액을 대조합니다.
-7. **결과**: Mock 응답 문장.
-8. **기록(성공·실패)**: 상태를 `SETTLED` 또는 `FAILED` 로 바꿉니다. 실패는 송금 전(`before-send`)·송금 후(`after-send`)를 구분합니다.
+1. **요청**: 요청 내용, 예산(AEGIS), 우선순위(싸게·똑똑하게·기본), 필요 기능, 요청 번호(`requestId`), 사용자(`userId`). 요청 번호를 비우면 서버가 만듭니다. 우선순위를 비우면 로컬 Qwen이 요청 문장을 읽고 정하고, Qwen이 응답하지 않으면 결제 전에 멈춥니다(503).
+2. **호가 계산**: 고정된 단가(`data/benchmark.json`)로 모델마다 금액을 계산하고 필요 기능으로 거릅니다(`agent_m2m/selection.py`). 함께 계산되는 점수는 구매 결정에 쓰지 않습니다.
+3. **흥정**: 판매 에이전트는 `data/sellers.json` 의 두 회사(Anthropic·OpenAI)이고 파는 모델 6개를 여기서 고정합니다. 우선순위별 비교 모델도 이 파일의 `priorityModels` 표로 정합니다. 싸게는 Haiku 5.5·GPT-6 Luna, 기본은 Sonnet 5.5·GPT-6.1 Terra, 똑똑하게는 Opus 5.5·GPT-6.1 Sol입니다. 표의 모델과 각각 흥정한 뒤 구매 에이전트의 페르소나 기준으로 한 곳에서 사고, 나머지 합의는 이유를 남기고 취소합니다(`agent_m2m/shopping.py`, `negotiation.py`, `seller.py`, `strategy.py`). 구매자는 예산과 호가 중 낮은 값을 넘겨 부르지 않고, 판매자는 최저가(호가 × 회사별 `floorRatio`) 아래로 내리지 않습니다. `floorRatio` 는 판매자의 비공개 설정으로 보는 데모용 값입니다. 양쪽은 번갈아 근거 카드(`agent_m2m/cards.py`)를 내며 다가갑니다. 코드가 호가와 ECI를 비교해 사실인 카드만 냅니다. 판매자는 구매자가 아직 안 쓴 카드에 값 차이의 75%, 이미 쓴 카드에 50%, 카드가 없으면 25%를 양보합니다(시연용 값). 구매자의 첫 제안과 양보 비율, 어디서 살지는 **페르소나**가 정합니다. 페르소나는 `personas/*.md` 파일 하나이고(`agent_m2m/persona.py`), 요청의 `persona` 로 고르며 비우면 최저가형입니다. 최저가형(`thrifty`)은 호가의 70%에서 시작해 판매자 카드에 50%·30%·15%만 올려 주고 가장 싼 곳에서 삽니다. 품질형(`quality`)은 85%에서 시작해 75%·50%·25%를 올려 주고, 가장 싼 합의가보다 20% 이내로 비싼 곳 중 ECI가 가장 높은 곳에서 삽니다. 판매자는 구매자 값과의 차이에 비례해 내리므로 품질형은 같은 모델도 최저가형보다 비싸게 사며, 평가가 그 차이를 설명합니다. 구매자의 말마다 `reason` 에 페르소나 기준의 이유(왜 이 값인지)를 남기고, 흥정이 끝나면 `decision.evaluation` 에 페르소나 관점의 이득·일부 이득·손해 판정과 이유를 코드가 씁니다(`agent_m2m/evaluation.py`). 다른 곳보다 비싸게 샀으면 그 이유가 반드시 한 줄 들어갑니다. 판매자의 말에는 최저가가 드러나지 않도록 이유를 남기지 않습니다. 구매자가 값을 정하는 방식은 요청의 `negotiationMode` 로 고릅니다(`agent_m2m/persona_llm.py`). `rule`(기본)은 코드가 페르소나 숫자로 계산하고, `llm` 은 로컬 LLM(Ollama, 기본 `qwen3:14b`, `AEGIS_NEGOTIATION_MODEL`)이 페르소나 글을 읽고 정한 값을 그대로 쓰며 최대가 세이프가드만 막습니다. `hybrid` 는 LLM 값을 네 검사(최대가, 값 범위, 이유의 숫자, 페르소나 숫자 선)로 보고 걸리면 규칙형 값으로 바꿉니다. LLM 에게는 판매자 문장과 최저가를 주지 않고, 어디서 살지와 평가는 세 방식 모두 코드가 정합니다. 로컬 Gemma는 카드 내용을 대화 문장으로 쓰기만 하며(`agent_m2m/dialogue.py`) 상대 메시지와 최저가를 받지 않습니다. 실패하면 기본 문장을 쓰고 값은 그대로입니다. 구매자는 최대 5번 제안하고, 그때까지 맞지 않으면 판매자의 마지막 값이 최대가 이하일 때 받고 넘으면 결렬입니다. 합의가가 `decision.winner.amountUnits` 가 되어 뒤의 감사·결제·확인이 모두 이 값을 봅니다. 호가는 `listAmountUnits` 에 남습니다. 비교 모델이 모두 결렬되면 판매자가 마지막에 부른 값이 가장 낮은 곳을 그 값에 삽니다. 예산을 넘는 구매이므로 기록에 `overBudget` 을 남기고 대시보드에 `over-budget` 경고를 띄웁니다. 예산 자체는 결제를 막지 않으므로, 막는 일은 감사 규칙이 맡습니다.
+4. **기록(처리 중)**: 결제 직전에 `PROCESSING` 상태로 MongoDB에 먼저 남깁니다.
+5. **감사**: `agent_m2m/rules/` 에 등록한 규칙을 세 자리에서 돌립니다. 막으면 "차단", 알리기만 하면 "경고" 알림이 대시보드의 이상 거래에 뜹니다.
+6. **결제**: ERC-3009 방식입니다. 구매자 지갑이 "이 판매자에게 이 금액을, 이 요청 번호로, 10분 안에만"이라는 내용에 서명만 하고, 중개자 지갑이 AEGIS `transferWithAuthorization` 거래를 보내며 가스비를 냅니다. 그래서 구매자 지갑에는 AEGIS 만 있으면 됩니다. 요청 번호(문자열의 keccak256)가 서명의 일회용 번호(nonce)라 같은 요청 번호는 체인이 한 번만 받습니다. 송금 전에 체인의 감사 규칙(`contracts/src/rules/`)이 한 번 더 검사합니다.
+7. **확인**: 판매창구가 체인의 `Paid` 기록에서 요청 번호·수신자·금액을 대조합니다.
+8. **결과**: Mock 응답 문장.
+9. **기록(성공·실패)**: 상태를 `SETTLED` 또는 `FAILED` 로 바꿉니다. 실패는 송금 전(`before-send`)·송금 후(`after-send`)를 구분합니다.
 
 ## 구성
 
 | 위치 | 무엇 | 언어 |
 | --- | --- | --- |
 | `agent_m2m/` | 서버: 선택·결제·감사·기록·API | Python |
+| `personas/` | 구매 에이전트 페르소나(흥정 방식·고르는 기준) | Markdown |
 | `agent_m2m/rules/` | 서버 감사 규칙 | Python |
 | `tests/` | 서버 자동 테스트 (pytest) | Python |
 | `scripts/` | 로컬 체인 띄우기, 판매 목록 만들기 | Python |
@@ -39,7 +41,7 @@ AI 구매 에이전트가 벤치마크 표로 모델을 고르고 AEGIS 토큰�
 | MongoDB | 구매 기록 저장. 자동 테스트도 임시 DB를 만들어 씀 | 필요 |
 | [Foundry](https://getfoundry.sh) (`forge`, `anvil`) | 컨트랙트 빌드·테스트, 로컬 체인(pytest 도 씀) | 필요 |
 | Node.js 22 | 화면 실행 | 화면을 볼 때만 |
-| [Ollama](https://ollama.com) + `qwen3.5:4b` | 우선순위를 비운 요청에서 요청 문장을 읽고 우선순위를 정함 | 선택 |
+| [Ollama](https://ollama.com) + `gemma4:12b` | 우선순위를 비운 요청에서 요청 문장을 읽고 우선순위를 정함 | 선택 |
 
 ### 2. 받고 준비하기
 
@@ -91,13 +93,16 @@ curl -s -X POST localhost:8000/api/purchase -H 'content-type: application/json' 
 | --- | --- | --- |
 | `prompt` | 예 | 요청 문장 |
 | `budget` | 예 | 예산(AEGIS). 예: `"0.5"` |
-| `priority` | 아니오 | `price`·`speed`·`intelligence`·`default`. 비우면 Qwen 이 정함 |
+| `priority` | 아니오 | `price`·`intelligence`·`default`. 비우면 Gemma 가 정함 |
+| `persona` | 아니오 | 구매 에이전트 페르소나 `thrifty`(최저가형)·`quality`(품질형). 비우면 `thrifty` |
 | `requestId` | 아니오 | 요청 번호. 같은 요청을 다시 보낼 때 같은 값. 비우면 서버가 만듦 |
 | `userId` | 아니오 | 사용자 |
 | `maxOutputTokens` | 아니오 | 최대 출력 토큰(금액 계산에 씀). 기본 8000 |
 | `requiredCapabilities` | 아니오 | 필요 기능 `reasoning`·`tools`·`vision` |
 
-화면이 쓰는 조회 API: `GET /api/purchases`, `/api/purchases/{id}`, `/api/purchases/{id}/alerts`, `/api/alerts`, `/api/alerts/summary`, `/api/wallet`, `/api/mode`. 서버를 켠 뒤 `http://127.0.0.1:8000/docs` 에서 모두 볼 수 있습니다.
+채팅 화면은 같은 입력을 `POST /api/purchase/stream` 으로 보냅니다. 비교 모델(`plan`)과 흥정 대화(`turn`)를 진행되는 대로 한 줄에 JSON 하나씩 보내고, 마지막에 구매 기록(`done`)이나 오류(`error`)를 보냅니다.
+
+화면이 쓰는 조회 API: `GET /api/purchases`, `/api/purchases/{id}`, `/api/purchases/{id}/alerts`, `/api/alerts`, `/api/alerts/summary`, `/api/wallet`, `/api/mode`, `/api/personas`. 서버를 켠 뒤 `http://127.0.0.1:8000/docs` 에서 모두 볼 수 있습니다.
 
 ## 감사 규칙 추가하기
 
@@ -209,12 +214,13 @@ contract AegisToken is ERC20, EIP712, Ownable, PaymentRules, MaxAmountRule {
 | 이름 | 기본값 | 뜻 |
 | --- | --- | --- |
 | `AEGIS_LOCAL_RPC_URL` | `http://127.0.0.1:8545` | 로컬 체인 주소. 이 컴퓨터 주소만 받음. 자동 테스트는 `8546` 을 씀 |
-| `AA_API_KEY` | (비움) | Artificial Analysis API 키. 속도 값의 자동 갱신·판매 목록 생성에 필요. 없으면 저장된 숫자로 계속 돔 |
 | `MONGODB_URI` | `mongodb://127.0.0.1:27017` | MongoDB 접속 주소 |
 | `MONGODB_DB` | `agent_m2m` | 기록을 담을 데이터베이스 이름 |
 | `AEGIS_OLLAMA_URL` | `http://127.0.0.1:11434` | 우선순위 추론용 Ollama. 루프백 주소만 받음 |
-| `AEGIS_OLLAMA_MODEL` | `qwen3.5:4b` | 우선순위 추론 모델 |
+| `AEGIS_OLLAMA_MODEL` | `gemma4:12b` | 우선순위 추론 모델 |
 | `AEGIS_OLLAMA_TIMEOUT_SECONDS` | `30` | 추론 대기 시간(초, 최대 60) |
+| `AEGIS_NEGOTIATION_MODEL` | `qwen3:14b` | LLM형·이중형 흥정에서 구매자 수를 정하는 모델 |
+| `AEGIS_NEGOTIATION_TIMEOUT_SECONDS` | `120` | 흥정 판단 대기 시간(초) |
 | `AGENT_M2M_API_URL` | `http://127.0.0.1:8000` | 화면이 부르는 서버 주소(화면 쪽에서만 읽음) |
 
 ## 로컬 체인
@@ -225,20 +231,19 @@ contract AegisToken is ERC20, EIP712, Ownable, PaymentRules, MaxAmountRule {
 
 ## 벤치마크와 판매 모델
 
-판매 모델(`data/catalog.json`)과 점수의 시작값(`data/benchmark.json`)은 세 출처에서 떠온 실제 값입니다. 성능은 [Epoch AI](https://epoch.ai/benchmarks) ECI, 가격은 [OpenRouter](https://openrouter.ai/api/v1/models) 판매 단가, 속도는 [Artificial Analysis](https://artificialanalysis.ai/methodology/performance-benchmarking) 출력 속도입니다. 세 점수 모두 후보 중 가장 나쁜 값 0점·가장 좋은 값 100점이고, 가격과 속도는 로그로 폅니다. 계산식과 짝짓기 규칙은 `agent_m2m/selection.py`, `agent_m2m/benchmark_sources.py` 맨 위에 있습니다.
+판매 모델(`data/catalog.json`)과 점수의 시작값(`data/benchmark.json`)은 두 출처에서 떠온 실제 값입니다. 성능은 [Epoch AI](https://epoch.ai/benchmarks) ECI, 가격은 [OpenRouter](https://openrouter.ai/api/v1/models) 판매 단가입니다. 두 점수 모두 후보 중 가장 나쁜 값 0점·가장 좋은 값 100점이고, 가격은 로그로 폅니다. 계산식과 짝짓기 규칙은 `agent_m2m/selection.py`, `agent_m2m/benchmark_sources.py` 맨 위에 있습니다.
 
-| 우선순위 | 가격 | 속도 | 성능 |
-|---|---|---|---|
-| 싸게 (`price`) | 80 | 10 | 10 |
-| 빠르게 (`speed`) | 10 | 80 | 10 |
-| 똑똑하게 (`intelligence`) | 10 | 10 | 80 |
-| 기본 (`default`) | 34 | 33 | 33 |
+| 우선순위 | 가격 | 성능 |
+|---|---|---|
+| 싸게 (`price`) | 90 | 10 |
+| 똑똑하게 (`intelligence`) | 10 | 90 |
+| 기본 (`default`) | 50 | 50 |
 
-구매 요청이 들어왔을 때 가장 최근 값이 1시간보다 오래됐으면 세 출처에서 판매 목록에 있는 모델의 숫자만 새로 받습니다. 받다가 실패하면 마지막 값으로 계속하고 실패 사유를 결정 기록에 남깁니다.
+위 점수와 비중은 비교 모델 표를 정할 때 참고한 값이고, 구매 결정에는 쓰지 않습니다. 구매 때는 외부 사이트에 접속하지 않고 `data/benchmark.json` 에 고정한 단가만 씁니다(떠 온 날짜: 2026-11-03). 모델을 바꿀 때만 아래 명령으로 다시 뜨고 `data/sellers.json` 의 표를 함께 고칩니다.
 
 ```bash
 uv run python scripts/capture_benchmark.py --list   # 저장하지 않고 짝지어진 모델과 뺀 모델만 보기
-uv run python scripts/capture_benchmark.py          # data/catalog.json · benchmark.json · sellers.json 갱신
+uv run python scripts/capture_benchmark.py          # data/catalog.json · benchmark.json 갱신. sellers.json 에 등록된 회사만
 ```
 
 ## 기록 저장소

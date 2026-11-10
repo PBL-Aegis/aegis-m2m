@@ -14,6 +14,7 @@ import threading
 import time
 from pathlib import Path
 
+import httpx
 import pytest
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -21,7 +22,6 @@ ROOT = Path(__file__).resolve().parent.parent
 # agent_m2m 을 불러오기 전에 정해야 .env.local 보다 앞선다.
 os.environ["AGENT_M2M_DATA_DIR"] = str(ROOT / "tests" / "fixtures")
 os.environ["AEGIS_LOCAL_RPC_URL"] = "http://127.0.0.1:8546"
-os.environ.pop("AA_API_KEY", None)
 
 from agent_m2m import store  # noqa: E402
 from tests.helpers import chain_rpc  # noqa: E402
@@ -64,6 +64,17 @@ def local_chain():
     yield
     process.terminate()
     process.wait(timeout=10)
+
+
+@pytest.fixture(autouse=True)
+def no_dialogue_model(monkeypatch):
+    """흥정 대사는 실제 Ollama 를 부르지 않는다. 실패로 처리돼 기본 문장을 쓴다."""
+    from agent_m2m import dialogue
+
+    def fail(url, body, timeout):
+        raise httpx.ConnectError("테스트는 Ollama 를 부르지 않습니다")
+
+    monkeypatch.setattr(dialogue, "http_post", fail)
 
 
 @pytest.fixture(autouse=True)

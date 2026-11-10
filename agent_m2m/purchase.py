@@ -1,31 +1,41 @@
 """
 구매 한 건의 전체 흐름.
 
-  요청 → 감사(요청 직후) → 모델 선택 → 기록(처리 중) → 감사(송금 직전) → 결제 → 판매창구 확인
+  요청 → 감사(요청 직후) → 모델 선택 → 흥정 → 기록(처리 중) → 감사(송금 직전) → 결제 → 판매창구 확인
   → 결과 → 기록(성공·실패) → 감사(결제 후)
 
 실패하면 결과 없이 실패 사유와 송금 전·후 여부를 남긴다. 실패한 건을 자동으로 다시 결제하지 않는다.
 """
 
 import uuid
+from collections.abc import Callable
 from typing import Any
 
 # 감사 규칙 파일들을 불러와 audit.py 의 규칙 목록에 등록한다.
 import agent_m2m.rules  # noqa: F401
+import agent_m2m.rules.over_budget  # noqa: F401
 from agent_m2m import store
-from agent_m2m.audit import run_after_payment, run_before_payment, run_on_request
-from agent_m2m.benchmark import load_fresh_snapshot
+from agent_m2m.audit import AuditBlockedError, run_after_payment, run_before_payment, run_on_request
+from agent_m2m.benchmark import load_snapshot
 from agent_m2m.domain import PaymentResult, PurchaseRecord, now_iso
 from agent_m2m.payment import PaymentError, pay
+from agent_m2m.persona import DEFAULT_PERSONA, load_persona
+from agent_m2m.persona_llm import DEFAULT_MODE
 from agent_m2m.priority_llm import infer_priority
 from agent_m2m.provider import mock_result, verify_payment
 from agent_m2m.selection import decide
+from agent_m2m.shopping import shop
 
 
-def run_purchase(purchase_input: dict[str, Any]) -> PurchaseRecord:
+def run_purchase(
+    purchase_input: dict[str, Any],
+    on_event: Callable[[dict[str, Any]], None] = lambda event: None,
+) -> PurchaseRecord:
     """
-    purchase_input: prompt·budgetUnits, 선택으로 priority·requestId·userId·maxOutputTokens·requiredCapabilities.
-    우선순위가 없으면 로컬 Qwen 이 요청 문장을 보고 정한다. 요청 번호가 없으면 새로 만들고, 사용자가 없으면 None.
+    purchase_input: prompt·budgetUnits, 선택으로 priority·persona·negotiationMode·requestId·userId·maxOutputTokens·requiredCapabilities.
+    페르소나가 없으면 기본 페르소나(최저가형)로, 흥정 방식이 없으면 규칙형(rule)으로 흥정한다.
+    우선순위가 없으면 로컬 Gemma 가 요청 문장을 보고 정한다. 요청 번호가 없으면 새로 만들고, 사용자가 없으면 None.
+    흥정 진행은 on_event 로 바로 알린다(shopping.py).
     """
     purchase_id = str(uuid.uuid4())
     if store.purchase_exists(purchase_id):
@@ -42,18 +52,20 @@ def run_purchase(purchase_input: dict[str, Any]) -> PurchaseRecord:
     if previous is not None:
         return previous
 
-    # 우선순위가 없으면 로컬 Qwen 이 요청 문장을 보고 정한다. 실패하면 결제 전에 멈춘다.
+    # 우선순위가 없으면 로컬 Gemma 가 요청 문장을 보고 정한다. 실패하면 결제 전에 멈춘다.
     inferred = infer_priority(incoming["prompt"]) if incoming.get("priority") is None else None
     request = {**incoming, "priority": inferred["priority"] if inferred else incoming["priority"]}
 
-    # 1) 선택 — 여기서 실패하면 결제는 시작조차 하지 않는다.
-    source = load_fresh_snapshot()
-    decision = decide(request, source)
-    if source["refreshError"] is not None:
-        decision["snapshotRefreshError"] = source["refreshError"]
+    # 1) 호가 계산 — 고정된 단가로 후보마다 금액을 낸다. 여기서 실패하면 결제는 시작조차 하지 않는다.
+    decision = decide(request, load_snapshot())
     decision["prioritySource"] = "request" if inferred is None else "local-llm"
     if inferred is not None:
         decision["priorityModel"] = inferred["model"]
+
+    # 흥정 — 모두 결렬되면 기록 없이 멈춘다. 합의가를 winner 금액에 넣어 뒤의 감사·결제·확인이 모두 이 값을 본다.
+    persona = load_persona(request.get("persona") or DEFAULT_PERSONA)
+    mode = request.get("negotiationMode") or DEFAULT_MODE
+    decision.update(shop(decision["candidates"], request["priority"], request["budgetUnits"], on_event, persona, mode))
 
     # 결제 직전에 처리 중으로 먼저 남긴다. 중간에 멈춰도 기록이 남는다.
     record: PurchaseRecord = {
@@ -97,6 +109,9 @@ def run_purchase(purchase_input: dict[str, Any]) -> PurchaseRecord:
             "failureReason": str(error) or "알 수 없는 오류",
             "failureStage": "after-send" if sent else "before-send",
         }
+        # 감사 규칙이 막은 건과 결제가 실패한 건을 화면에서 구분한다.
+        if isinstance(error, AuditBlockedError):
+            outcome["blockedRule"] = error.rule
     updated_at = store.update_purchase(purchase_id, outcome)
     settled = {**record, **outcome, "updatedAt": updated_at}
 
