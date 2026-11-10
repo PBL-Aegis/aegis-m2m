@@ -7,4 +7,5 @@ purchase.py 가 이 패키지를 한 번 불러오므로, 새 규칙은 아래�
 예: from agent_m2m.rules import limit  # noqa: F401
 """
 
+from agent_m2m.rules import limit  # noqa: F401
 from agent_m2m.rules import replay  # noqa: F401

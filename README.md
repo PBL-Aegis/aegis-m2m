@@ -188,6 +188,8 @@ contract AegisToken is ERC20, EIP712, Ownable, PaymentRules, MaxAmountRule {
 
 ### 등록된 규칙
 
+- **한도 규칙** (`agent_m2m/rules/limit.py`): 1건 0.5 AEGIS, 하루 3 AEGIS를 넘으면 결제를 막고, 하루 한도의 80%부터 임박 알림을 남깁니다. 사기 탐지가 아니라 에이전트에게 맡긴 지출 한도(기본 방어)입니다.
+  설정은 `AUDIT_LIMIT_PER_PAYMENT`, `AUDIT_LIMIT_PER_DAY`, `AUDIT_LIMIT_WARN_RATIO`로 바꿀 수 있고(`.env.example` 참고), 체인은 `LimitRule.sol`이 같은 한도를 강제합니다.
 - **replay** (재시도·재전송, `agent_m2m/rules/replay.py`): 요청 번호당 결제는 1번. 같은 번호가 다시 오면 처리 중·송금 후 실패는 기록 없이 409(`rule: "replay"`), 성공은 이전 기록을 그대로 응답, 송금 전 실패는 다시 처리합니다. 서버는 `AUDIT_REQUEST_ID_TTL_SECONDS`(기본 86400)초 뒤 번호를 잊고, 체인은 ERC-3009 nonce 로 영구히 기억해 `AuthorizationAlreadyUsed` 로 revert 합니다. 기록 없이 끝난 요청의 번호는 `AUDIT_REQUEST_ID_LEASE_SECONDS`(기본 120)초 뒤 다시 받습니다.
 - **duplicate-purchase** (같은 결과 중복 구매, `agent_m2m/rules/replay.py`): 에이전트가 반복 루프에 빠져 같은 것을 계속 사는 경우를 막습니다. 한 사용자가 같은 문장으로 같은 모델을 `AUDIT_REPEAT_WINDOW_SECONDS`(기본 60)초 안에 `AUDIT_REPEAT_COUNT`(기본 3)번째 사려 하면 송금 직전에 막혀 `FAILED`·`before-send` 로 남습니다. 송금 전에 실패한 건은 횟수에서 뺍니다. 같은 문장만 반복하는 것은 일괄 작업에서 정상이라 막지 않습니다.
 - **결제 횟수** (`contracts/src/rules/ReplayRule.sol`, 체인만): 구매자 지갑(`from`)별 `rateWindow`(기본 60)초에 `rateLimit`(기본 5)건을 넘으면 `TooManyPayments` 로 revert 되어 `FAILED`·`before-send` 로 남습니다. 값은 운영자가 `setRateLimit` 로 바꿉니다.
