@@ -177,27 +177,39 @@ def test_요청_번호는_보관_기간_뒤_지워지도록_남긴다():
     assert any(index.get("expireAfterSeconds") == 0 and index["key"] == [("expiresAt", 1)] for index in indexes.values())
 
 
-# 같은 문장 반복
+# 같은 결과 중복 구매 (에이전트 반복 루프)
 
 
-def send_times(count: int, name: str, user_id: str) -> list[str | None]:
-    return [
-        blocked_rule({**purchase_input(name), "requestId": f"{name}-{user_id}-{index}", "userId": user_id})
+def buy_times(count: int, name: str, user_id: str, priority: str = "price") -> list[str | None]:
+    """요청 번호를 바꿔 가며 같은 문장으로 산다. 막힌 건은 규칙 이름, 아니면 None."""
+    records = [
+        run_purchase({**purchase_input(name), "priority": priority, "requestId": f"{name}-{user_id}-{priority}-{index}", "userId": user_id})
         for index in range(count)
     ]
+    return [record.get("blockedRule") for record in records]
 
 
-def test_요청_번호가_달라도_창_안에서_횟수에_닿으면_repeat_prompt_로_막힌다():
-    rules = send_times(replay.REPEAT_COUNT, "repeat", "repeat-user")
+def test_같은_문장으로_같은_모델을_창_안에서_횟수만큼_사면_송금_전에_막힌다():
+    balance = buyer_balance()["units"]
+    rules = buy_times(replay.REPEAT_COUNT, "dup", "dup-user")
 
-    assert rules == [None] * (replay.REPEAT_COUNT - 1) + ["repeat-prompt"]
-    blocks = [alert for alert in store.list_alerts(500) if alert["rule"] == "repeat-prompt" and alert["userId"] == "repeat-user"]
-    assert [(alert["blocked"], alert["stage"]) for alert in blocks] == [(True, "on-request")]
+    assert rules == [None] * (replay.REPEAT_COUNT - 1) + ["duplicate-purchase"]
+    blocks = [alert for alert in store.list_alerts(500) if alert["rule"] == "duplicate-purchase" and alert["userId"] == "dup-user"]
+    assert [(alert["blocked"], alert["stage"]) for alert in blocks] == [(True, "before-payment")]
+    paid = [record for record in store.list_purchases(500) if record["userId"] == "dup-user" and record["status"] == "SETTLED"]
+    assert balance - buyer_balance()["units"] == sum(record["payment"]["amountUnits"] for record in paid)
 
 
-def test_API_로_보내면_409_와_규칙_이름을_돌려준다():
+def test_같은_문장만_반복하는_것은_막지_않는다():
+    """요청 직후에는 막지 않는다. 일괄 작업에서 같은 문장을 다시 보내는 것은 정상이다."""
+    for index in range(replay.REPEAT_COUNT + 1):
+        request = {**purchase_input("dup-prompt"), "requestId": f"dup-prompt-{index}", "userId": "dup-prompt-user"}
+        assert replay._check_request(audit.RequestContext("p", request, lambda *_: None)) is None
+
+
+def test_API_로_보내면_막힌_규칙_이름이_기록에_남는다():
     def send(index: int):
-        body = {**api_body("repeat-api"), "requestId": f"repeat-api-{index}"}
+        body = {**api_body("dup-api"), "requestId": f"dup-api-{index}"}
         return client.post("/api/purchase", json=body)
 
     for index in range(replay.REPEAT_COUNT - 1):
@@ -205,30 +217,37 @@ def test_API_로_보내면_409_와_규칙_이름을_돌려준다():
 
     blocked = send(replay.REPEAT_COUNT)
 
-    assert blocked.status_code == 409
-    assert blocked.json()["rule"] == "repeat-prompt"
+    assert blocked.json()["blockedRule"] == "duplicate-purchase"
 
 
 def test_막힌_요청_번호는_창이_지난_뒤_다시_쓸_수_있다(monkeypatch):
-    send_times(replay.REPEAT_COUNT - 1, "repeat-again", "repeat-again-user")
-    request = {**purchase_input("repeat-again"), "requestId": "repeat-again-blocked", "userId": "repeat-again-user"}
-    assert blocked_rule(request) == "repeat-prompt"
+    buy_times(replay.REPEAT_COUNT - 1, "dup-again", "dup-again-user")
+    request = {**purchase_input("dup-again"), "requestId": "dup-again-blocked", "userId": "dup-again-user"}
+    assert run_purchase(request)["blockedRule"] == "duplicate-purchase"
 
     advance_clock(monkeypatch, replay.REPEAT_WINDOW_SECONDS)
     assert run_purchase(request)["status"] == "SETTLED"
 
 
+def test_송금_전에_실패한_구매는_횟수에서_뺀다():
+    for index in range(replay.REPEAT_COUNT):
+        request = {**purchase_input("dup-failed"), "requestId": f"dup-failed-{index}", "userId": "dup-failed-user"}
+        assert fail_before_send(request)["status"] == "FAILED"
+
+    assert buy_times(replay.REPEAT_COUNT - 1, "dup-failed", "dup-failed-user") == [None] * (replay.REPEAT_COUNT - 1)
+
+
 def test_사용자와_문장은_따로_센다():
     rules = [
-        *send_times(replay.REPEAT_COUNT - 1, "repeat-apart", "repeat-apart-a"),
-        *send_times(1, "repeat-apart", "repeat-apart-b"),
-        *send_times(1, "repeat-apart-other", "repeat-apart-a"),
+        *buy_times(replay.REPEAT_COUNT - 1, "dup-apart", "dup-apart-a"),
+        *buy_times(1, "dup-apart", "dup-apart-b"),
+        *buy_times(1, "dup-apart-other", "dup-apart-a"),
     ]
-    assert "repeat-prompt" not in rules
+    assert "duplicate-purchase" not in rules
 
 
-def test_같은_요청_번호의_재전송은_같은_문장으로_세지_않는다():
-    request = {**purchase_input("repeat-retry"), "requestId": "repeat-retry", "userId": "repeat-retry-user"}
+def test_같은_요청_번호의_재전송은_다시_세지_않는다():
+    request = {**purchase_input("dup-retry"), "requestId": "dup-retry", "userId": "dup-retry-user"}
     first = run_purchase(request)
     for _ in range(replay.REPEAT_COUNT):
         assert run_purchase(request)["id"] == first["id"]

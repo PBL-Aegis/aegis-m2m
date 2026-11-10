@@ -7,15 +7,18 @@ contracts/src/rules/ReplayRule.sol 이 막는다.
                    성공(SETTLED)              새로 결제하지 않고 이전 기록을 돌려줌
                    송금 전 실패(before-send)  다시 처리
                    송금 후 실패(after-send)   이중 결제 위험이 있어 멈추고 사용자 확인(409)
-  repeat-prompt  한 사용자가 같은 문장을 창(기본 60초) 안에 기본 3번 보내면, 요청 번호가 달라도 멈추고 사용자 확인(409).
-                 사용자가 없는 요청은 한 사용자로 묶어 센다.
+  duplicate-purchase  에이전트 반복 루프. 한 사용자가 같은 문장으로 같은 모델을 창(기본 60초) 안에 기본 3번째 사려 하면,
+                      요청 번호가 달라도 송금 직전에 멈춘다. 같은 결과를 또 사는 것이라서다.
+                      송금 전에 실패한 건은 돈이 나가지 않았으니 횟수에서 뺀다. 사용자가 없는 요청은 한 사용자로 묶어 센다.
+                      같은 문장만 반복하는 것은 막지 않는다. 에이전트는 일괄 작업에서 같은 문장을 정상적으로 다시 보낸다.
 
 "확인"과 "기록"은 MongoDB 명령 하나로 같이 한다.
 
   replay_request_ids  쓴 요청 번호. 요청 번호를 `_id` 로 넣으므로 같은 번호를 두 번 넣으면 DB 가 거부한다.
-  replay_prompts      사용자별 같은 문장 횟수 창. 창 시작 시각과 그 안의 횟수를 문서 하나에서 함께 바꾼다.
+  replay_purchases    사용자·문장·모델별 구매 횟수 창. 창 시작 시각과 그 안의 횟수를 문서 하나에서 함께 바꾼다.
+  replay_holds        구매 한 건이 어느 창에 횟수를 더했는지. 송금 전에 실패하면 이것을 보고 한 번만 뺀다.
 
-두 컬렉션 모두 expiresAt 이 지나면 MongoDB 의 TTL index 가 문서를 지운다(약 1분 간격으로 돈다).
+세 컬렉션 모두 expiresAt 이 지나면 MongoDB 의 TTL index 가 문서를 지운다(약 1분 간격으로 돈다).
 """
 
 import hashlib
@@ -29,7 +32,7 @@ from pymongo.collection import Collection
 from pymongo.errors import DuplicateKeyError
 
 from agent_m2m import store
-from agent_m2m.audit import ON_REQUEST_CHECKS, AuditBlockedError, RequestContext
+from agent_m2m.audit import AFTER_PAYMENT_CHECKS, BEFORE_PAYMENT_CHECKS, ON_REQUEST_CHECKS, AuditBlockedError, AuditContext, RequestContext
 from agent_m2m.domain import PurchaseRecord
 
 
@@ -48,7 +51,8 @@ REPEAT_COUNT = _positive_integer("AUDIT_REPEAT_COUNT", "3")
 REPEAT_WINDOW_SECONDS = _positive_integer("AUDIT_REPEAT_WINDOW_SECONDS", "60")
 
 REQUEST_IDS = "replay_request_ids"
-PROMPTS = "replay_prompts"
+PURCHASES = "replay_purchases"
+HOLDS = "replay_holds"
 # 사용자가 없는 요청을 묶어 셀 때 쓰는 이름.
 ANONYMOUS = "(사용자 없음)"
 
@@ -91,9 +95,9 @@ def _claim_request_id(request_id: str, purchase_id: str, now: float) -> dict[str
     return existing
 
 
-def _count_prompt(key: str, now: float) -> int:
+def _count_purchase(key: str, now: float) -> dict[str, Any]:
     """
-    같은 문장 한 번을 창에 더하고, 더한 뒤의 창 안 횟수를 돌려준다.
+    같은 구매 한 번을 창에 더하고, 더한 뒤의 창 문서(windowStart·count)를 돌려준다.
     창이 없거나 시작한 지 창 길이가 지났으면 지금부터 새 창을 연다.
     """
     fresh = {
@@ -102,7 +106,7 @@ def _count_prompt(key: str, now: float) -> int:
             {"$lte": ["$windowStart", now - REPEAT_WINDOW_SECONDS]},
         ]
     }
-    updated = _collection(PROMPTS).find_one_and_update(
+    return _collection(PURCHASES).find_one_and_update(
         {"_id": key},
         [
             {
@@ -116,23 +120,36 @@ def _count_prompt(key: str, now: float) -> int:
         upsert=True,
         return_document=ReturnDocument.AFTER,
     )
-    return updated["count"]
 
 
-def _check_repeat(ctx: RequestContext, now: float) -> None:
-    request_id = ctx.request["requestId"]
+def _check_duplicate_purchase(ctx: AuditContext) -> None:
     user = ctx.request["userId"] or ANONYMOUS
     prompt_hash = hashlib.sha256(ctx.request["prompt"].strip().encode()).hexdigest()
-    count = _count_prompt(f"{user}:{prompt_hash}", now)
-    if count < REPEAT_COUNT:
-        return
-
-    # 처리하지 않은 요청이니 번호를 묶어 두지 않는다.
-    _collection(REQUEST_IDS).delete_one({"_id": request_id, "purchaseId": ctx.purchase_id})
-    raise AuditBlockedError(
-        "repeat-prompt",
-        f"같은 문장이 {REPEAT_WINDOW_SECONDS}초 안에 {count}번 들어와 멈췄습니다. 사용자 확인이 필요합니다: {user}",
+    model = ctx.decision["winner"]["key"]
+    key = f"{user}:{prompt_hash}:{model}"
+    now = _now()
+    window = _count_purchase(key, now)
+    _collection(HOLDS).insert_one(
+        {"_id": ctx.purchase_id, "key": key, "windowStart": window["windowStart"], "expiresAt": _expires_at(now, REPEAT_WINDOW_SECONDS)}
     )
+    if window["count"] < REPEAT_COUNT:
+        return
+    raise AuditBlockedError(
+        "duplicate-purchase",
+        f"같은 문장으로 같은 모델({ctx.decision['winner']['displayName']})을 {REPEAT_WINDOW_SECONDS}초 안에 "
+        f"{window['count']}번째 사려 해서 멈췄습니다. 에이전트 반복 루프일 수 있습니다: {user}",
+    )
+
+
+def _release_on_failure(ctx: AuditContext, record: PurchaseRecord) -> None:
+    """송금 전에 실패한 구매는 더한 횟수를 한 번만 뺀다. 그사이 새 창이 열렸으면 빼지 않는다."""
+    if record.get("status") != "FAILED" or record.get("failureStage") != "before-send":
+        return
+    hold = _collection(HOLDS).find_one_and_delete({"_id": ctx.purchase_id})
+    if hold:
+        _collection(PURCHASES).update_one(
+            {"_id": hold["key"], "windowStart": hold["windowStart"], "count": {"$gt": 0}}, {"$inc": {"count": -1}}
+        )
 
 
 def _check_claimed(ctx: RequestContext, claim: dict[str, Any], now: float) -> PurchaseRecord | None:
@@ -169,9 +186,10 @@ def _check_request(ctx: RequestContext) -> PurchaseRecord | None:
     now = _now()
     claim = _claim_request_id(ctx.request["requestId"], ctx.purchase_id, now)
     if claim is None:
-        _check_repeat(ctx, now)
         return None
     return _check_claimed(ctx, claim, now)
 
 
 ON_REQUEST_CHECKS.append(_check_request)
+BEFORE_PAYMENT_CHECKS.append(_check_duplicate_purchase)
+AFTER_PAYMENT_CHECKS.append(_release_on_failure)
