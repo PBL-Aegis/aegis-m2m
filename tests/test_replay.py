@@ -1,7 +1,4 @@
-from concurrent.futures import ThreadPoolExecutor
-from datetime import UTC
 
-import pytest
 from fastapi.testclient import TestClient
 
 from agent_m2m import audit, purchase, store
@@ -27,22 +24,6 @@ def api_body(name: str) -> dict:
         "requestId": f"replay-{name}",
         "userId": f"replay-user-{name}",
     }
-
-
-def blocked_rule(request: dict) -> str | None:
-    try:
-        run_purchase(request)
-        return None
-    except audit.AuditBlockedError as error:
-        return error.rule
-
-
-def purchases_of(request_id: str) -> list[dict]:
-    return [record for record in store.list_purchases(500) if record["requestId"] == request_id]
-
-
-def alerts_of(request_id: str) -> list[dict]:
-    return [alert for alert in store.list_alerts(500) if alert["requestId"] == request_id]
 
 
 def advance_clock(monkeypatch, seconds: int) -> None:
@@ -71,112 +52,6 @@ def fail_after_send(monkeypatch) -> None:
     monkeypatch.setattr(purchase, "verify_payment", fail)
 
 
-# 같은 요청 번호
-
-
-def test_성공한_요청_번호를_다시_보내면_같은_기록을_돌려받고_결제는_1번이다():
-    request = {**purchase_input("settled"), "requestId": "replay-settled", "userId": "replay-user-settled"}
-    first = run_purchase(request)
-    assert first["status"] == "SETTLED"
-    balance = buyer_balance()["units"]
-
-    again = run_purchase(request)
-
-    assert again["id"] == first["id"]
-    assert again["payment"]["txHash"] == first["payment"]["txHash"]
-    assert len(purchases_of(request["requestId"])) == 1
-    assert buyer_balance()["units"] == balance
-    alerts = alerts_of(request["requestId"])
-    assert [(alert["rule"], alert["blocked"], alert["stage"]) for alert in alerts] == [("replay", False, "on-request")]
-
-
-def test_같은_요청_번호가_거의_동시에_두_번_오면_하나만_SETTLED_나머지는_409_다():
-    body = api_body("race")
-    with ThreadPoolExecutor(max_workers=2) as pool:
-        responses = list(pool.map(lambda _: client.post("/api/purchase", json=body), range(2)))
-
-    assert sorted(response.status_code for response in responses) == [200, 409]
-    settled = next(response for response in responses if response.status_code == 200)
-    blocked = next(response for response in responses if response.status_code == 409)
-    assert settled.json()["status"] == "SETTLED"
-    assert blocked.json()["rule"] == "replay"
-    assert len(purchases_of(body["requestId"])) == 1
-
-
-def test_막히면_기록_없이_차단_알림만_남는다(monkeypatch):
-    fail_after_send(monkeypatch)
-    request = {**purchase_input("trace"), "requestId": "replay-trace", "userId": "replay-user-trace"}
-    run_purchase(request)
-
-    assert blocked_rule(request) == "replay"
-
-    assert len(purchases_of(request["requestId"])) == 1
-    blocks = [alert for alert in alerts_of(request["requestId"]) if alert["blocked"]]
-    assert [(alert["rule"], alert["stage"], alert["userId"]) for alert in blocks] == [
-        ("replay", "on-request", request["userId"])
-    ]
-    assert store.existing_purchase_ids([blocks[0]["purchaseId"]]) == set()
-
-
-def test_송금_전에_실패한_요청_번호는_다시_처리한다():
-    request = {**purchase_input("before-send"), "requestId": "replay-before-send", "userId": "replay-user-before-send"}
-    failed = fail_before_send(request)
-    assert (failed["status"], failed["failureStage"]) == ("FAILED", "before-send")
-
-    again = run_purchase(request)
-
-    assert again["status"] == "SETTLED"
-    assert again["id"] != failed["id"]
-
-
-def test_송금_전에_실패한_요청_번호를_동시에_다시_보내도_하나만_처리한다():
-    request = {**purchase_input("retry-race"), "requestId": "replay-retry-race", "userId": "replay-user-retry-race"}
-    fail_before_send(request)
-
-    with ThreadPoolExecutor(max_workers=2) as pool:
-        rules = list(pool.map(lambda _: blocked_rule(request), range(2)))
-
-    assert rules.count("replay") == 1
-    assert [record["status"] for record in purchases_of(request["requestId"])].count("SETTLED") == 1
-
-
-def test_송금_후에_실패한_요청_번호는_409_로_멈춘다(monkeypatch):
-    fail_after_send(monkeypatch)
-    body = api_body("after-send")
-    failed = client.post("/api/purchase", json=body).json()
-    assert (failed["status"], failed["failureStage"]) == ("FAILED", "after-send")
-    monkeypatch.undo()
-
-    again = client.post("/api/purchase", json=body)
-
-    assert again.status_code == 409
-    assert again.json()["rule"] == "replay"
-    assert len(purchases_of(body["requestId"])) == 1
-
-
-def test_기록_없이_끝난_요청_번호는_잠시_처리_중으로_막고_그_뒤에는_다시_받는다(monkeypatch):
-    request = {**purchase_input("no-record"), "requestId": "replay-no-record", "userId": "replay-user-no-record"}
-    with pytest.raises(Exception):
-        run_purchase({**request, "requiredCapabilities": ["없는 기능"]})
-
-    assert blocked_rule(request) == "replay"
-
-    advance_clock(monkeypatch, replay.REQUEST_ID_LEASE_SECONDS)
-    assert run_purchase(request)["status"] == "SETTLED"
-
-
-def test_요청_번호는_보관_기간_뒤_지워지도록_남긴다():
-    request = {**purchase_input("ttl"), "requestId": "replay-ttl", "userId": "replay-user-ttl"}
-    run_purchase(request)
-
-    collection = store.database()[replay.REQUEST_IDS]
-    claim = collection.find_one({"_id": request["requestId"]})
-    expires_at = claim["expiresAt"].replace(tzinfo=UTC).timestamp()
-    assert round(expires_at - claim["claimedAt"]) == replay.REQUEST_ID_TTL_SECONDS
-    indexes = collection.index_information()
-    assert any(index.get("expireAfterSeconds") == 0 and index["key"] == [("expiresAt", 1)] for index in indexes.values())
-
-
 # 같은 결과 중복 구매 (에이전트 반복 루프)
 
 
@@ -198,13 +73,6 @@ def test_같은_문장으로_같은_모델을_창_안에서_횟수만큼_사면_
     assert [(alert["blocked"], alert["stage"]) for alert in blocks] == [(True, "before-payment")]
     paid = [record for record in store.list_purchases(500) if record["userId"] == "dup-user" and record["status"] == "SETTLED"]
     assert balance - buyer_balance()["units"] == sum(record["payment"]["amountUnits"] for record in paid)
-
-
-def test_같은_문장만_반복하는_것은_막지_않는다():
-    """요청 직후에는 막지 않는다. 일괄 작업에서 같은 문장을 다시 보내는 것은 정상이다."""
-    for index in range(replay.REPEAT_COUNT + 1):
-        request = {**purchase_input("dup-prompt"), "requestId": f"dup-prompt-{index}", "userId": "dup-prompt-user"}
-        assert replay._check_request(audit.RequestContext("p", request, lambda *_: None)) is None
 
 
 def test_API_로_보내면_막힌_규칙_이름이_기록에_남는다():
@@ -246,13 +114,6 @@ def test_사용자와_문장은_따로_센다():
     assert "duplicate-purchase" not in rules
 
 
-def test_같은_요청_번호의_재전송은_다시_세지_않는다():
-    request = {**purchase_input("dup-retry"), "requestId": "dup-retry", "userId": "dup-retry-user"}
-    first = run_purchase(request)
-    for _ in range(replay.REPEAT_COUNT):
-        assert run_purchase(request)["id"] == first["id"]
-
-
 # 체인 규칙과 함께
 
 
@@ -265,12 +126,26 @@ def test_짧은_시간_결제_횟수는_체인이_막아_송금_전_실패로_�
     assert (records[-1]["status"], records[-1]["failureStage"]) == ("FAILED", "before-send")
 
 
-def test_서버_기록이_사라져도_체인이_같은_요청_번호의_결제를_막는다():
+def test_같은_요청_번호로_다시_보내면_체인이_막아_돈은_한_번만_나간다():
+    """서버는 요청 번호를 기억하지 않는다. 다시 보내면 새로 흥정하지만 체인이 같은 요청 번호의 합의를 한 번만 받는다."""
     request = {**purchase_input("chain"), "requestId": "replay-chain", "userId": "replay-user-chain"}
     first = run_purchase(request)
     assert first["status"] == "SETTLED"
     balance = buyer_balance()["units"]
-    store.database()[replay.REQUEST_IDS].delete_one({"_id": request["requestId"]})
+
+    again = run_purchase(request)
+
+    assert (again["status"], again["failureStage"]) == ("FAILED", "before-send")
+    assert buyer_balance()["units"] == balance
+
+
+def test_송금_후에_실패한_요청_번호를_다시_보내도_체인이_막는다(monkeypatch):
+    request = {**purchase_input("chain-after"), "requestId": "replay-chain-after", "userId": "replay-user-chain-after"}
+    fail_after_send(monkeypatch)
+    first = run_purchase(request)
+    assert (first["status"], first["failureStage"]) == ("FAILED", "after-send")
+    balance = buyer_balance()["units"]
+    monkeypatch.undo()
 
     again = run_purchase(request)
 
