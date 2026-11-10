@@ -1,7 +1,7 @@
 """
 구매 한 건의 전체 흐름.
 
-  요청 → 감사(요청 직후) → 모델 선택 → 흥정 → 기록(처리 중) → 감사(송금 직전) → 결제 → 판매창구 확인
+  요청 → 감사(요청 직후) → 모델 선택 → 흥정 → 합의 만들기 → 기록(처리 중) → 감사(송금 직전) → 결제(합의 저장) → 판매창구 확인
   → 결과 → 기록(성공·실패) → 감사(결제 후)
 
 실패하면 결과 없이 실패 사유와 송금 전·후 여부를 남긴다. 실패한 건을 자동으로 다시 결제하지 않는다.
@@ -18,10 +18,11 @@ from agent_m2m import store
 from agent_m2m.audit import AuditBlockedError, run_after_payment, run_before_payment, run_on_request
 from agent_m2m.benchmark import load_snapshot
 from agent_m2m.domain import PaymentResult, PurchaseRecord, now_iso
-from agent_m2m.payment import PaymentError, pay
+from agent_m2m.deal import build_deal
+from agent_m2m.payment import PaymentError, anvil_account, request_id_hash, settle_deal
 from agent_m2m.persona import DEFAULT_PERSONA, load_persona
 from agent_m2m.priority_llm import infer_priority
-from agent_m2m.provider import mock_result, verify_payment
+from agent_m2m.provider import mock_result, verify_deal, verify_payment
 from agent_m2m.selection import decide
 from agent_m2m.shopping import shop
 
@@ -64,6 +65,8 @@ def run_purchase(
     # 흥정 — 모두 결렬되면 기록 없이 멈춘다. 합의가를 winner 금액에 넣어 뒤의 감사·결제·확인이 모두 이 값을 본다.
     persona = load_persona(request.get("persona") or DEFAULT_PERSONA)
     decision.update(shop(decision["candidates"], request["priority"], request["budgetUnits"], on_event, persona))
+    # 체인에 남길 합의. 대화와 결정 근거는 DB 에 두고 해시만 담는다(deal.py). 기록에 먼저 넣어 나중에 대조할 수 있게 한다.
+    decision["deal"] = build_deal(request_id_hash(request["requestId"]), anvil_account(1).address, decision)
 
     # 결제 직전에 처리 중으로 먼저 남긴다. 중간에 멈춰도 기록이 남는다.
     record: PurchaseRecord = {
@@ -85,12 +88,13 @@ def run_purchase(
         # 2) 감사(송금 직전) — 하나라도 막으면 송금하지 않는다.
         run_before_payment(purchase_id, request, decision)
 
-        # 3) 결제
+        # 3) 결제 — 합의를 체인에 저장하고 그 합의가만큼 보낸다.
         winner = decision["winner"]
-        payment = pay(winner["amountUnits"], winner["recipient"], purchase_id, request["requestId"])
+        payment = settle_deal(decision["deal"], purchase_id)
 
-        # 4) 판매창구가 스스로 확인한 뒤에만 결과를 준다.
+        # 4) 판매창구가 스스로 확인한 뒤에만 결과를 준다. 송금 기록과 체인에 저장된 합의를 DB 기록과 대조한다.
         verify_payment(payment, winner, request["requestId"])
+        verify_deal(payment, decision)
         outcome = {
             "status": "SETTLED",
             "payment": payment,
