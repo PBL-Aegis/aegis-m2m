@@ -194,6 +194,8 @@ contract AegisToken is ERC20, EIP712, Ownable, PaymentRules, MaxAmountRule {
 - **duplicate-purchase** (같은 결과 중복 구매, `agent_m2m/rules/replay.py`): 에이전트가 반복 루프에 빠져 같은 것을 계속 사는 경우를 막습니다. 한 사용자가 같은 문장으로 같은 모델을 `AUDIT_REPEAT_WINDOW_SECONDS`(기본 60)초 안에 `AUDIT_REPEAT_COUNT`(기본 3)번째 사려 하면 송금 직전에 막혀 `FAILED`·`before-send` 로 남습니다. 송금 전에 실패한 건은 횟수에서 뺍니다. 같은 문장만 반복하는 것은 일괄 작업에서 정상이라 막지 않습니다.
 - **결제 횟수** (`contracts/src/rules/ReplayRule.sol`, 체인만): 구매자 지갑(`from`)별 `rateWindow`(기본 60)초에 `rateLimit`(기본 5)건을 넘으면 `TooManyPayments` 로 revert 되어 `FAILED`·`before-send` 로 남습니다. 값은 운영자가 `setRateLimit` 로 바꿉니다.
 - **의도와 다른 상위 등급 구매** (시나리오 3, `unintended-upgrade`, `agent_m2m/rules/upgrade.py`): 우선순위를 사용자가 아니라 로컬 Gemma 가 정했는데 `AUDIT_UPGRADE_MAX_PRIORITY`(기본 `default`)보다 높은 등급(`intelligence`)을 사게 되면 송금 직전에 막아 `FAILED`·`before-send` 로 남깁니다. 이유에 Gemma 가 정한 우선순위와 산 모델·금액이 남습니다. 사용자가 우선순위를 직접 정한 요청은 막지 않습니다. 체인은 우선순위를 누가 정했는지 몰라서 체인 규칙은 없습니다.
+- **일부러 결렬시켜 예산 초과 구매 유도** (시나리오 ①, `holdout`, `agent_m2m/rules/holdout.py`, 서버만): 비교한 곳과의 흥정이 모두 결렬된 뒤 판매자가 마지막에 부른 값에 사게 될 때, 예산을 `AUDIT_HOLDOUT_TOLERANCE_RATIO`(기본 0, 예산 초과는 모두 막음)보다 더 넘으면 송금 직전에 막아 `FAILED`·`before-send` 로 남깁니다. 이유에 예산·실제 금액·버틴 판매자가 남습니다. 허용 폭 안이면 결제하고 `over-budget` 경고만 남깁니다.
+  알림만 남기는 검사 둘: 예산 초과 구매에서 결렬된 판매자의 마지막 `AUDIT_HOLDOUT_STALL_ROUNDS`(기본 3)번 값이 같으면 `holdout-stall`, 판매자별 최근 `AUDIT_HOLDOUT_SELLER_WINDOW`(기본 10)건 중 예산 초과가 `AUDIT_HOLDOUT_SELLER_RATIO`(기본 0.3) 이상이면 `holdout-seller-rate`(`AUDIT_HOLDOUT_SELLER_MIN_DEALS` 기본 3건부터). 체인의 `Deal` 에는 예산이 없어 체인 규칙은 없습니다.
 - 체인 규칙이 `Ownable` 을 상속하면 `is Ownable, PaymentRules` 순서로 둡니다(`AegisToken` 상속 순서와 같아야 컴파일됨).
 
 ### 테스트로 증명하기
