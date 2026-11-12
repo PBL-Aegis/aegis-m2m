@@ -114,6 +114,15 @@ def test_두_판매자가_깎지_않으면_N건째에_가격_맞추기_알림이
         assert name in alert["message"]
 
 
+def test_기준과의_차이가_기준값과_딱_같아도_알린다(monkeypatch):
+    two_sellers(monkeypatch)
+    set_floors(monkeypatch, everyone(round(collusion.REFERENCE_FLOOR_RATIO + collusion.GAP, 6)))
+
+    records = [buy("edge", index) for index in range(collusion.WINDOW)]
+
+    assert [alert["purchaseId"] for alert in alerts_of("edge", "가격 맞추기")] == [records[-1]["id"]]
+
+
 def test_정상_최저가_비율이면_품질형처럼_덜_깎는_구매자도_알림이_없다(monkeypatch):
     two_sellers(monkeypatch)
     personas = ["thrifty"] * collusion.WINDOW + ["quality"] * collusion.WINDOW

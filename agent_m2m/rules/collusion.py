@@ -44,6 +44,7 @@ from agent_m2m.persona import load_persona
 RULE = "seller-collusion"
 QUOTES = "collusion_quotes"
 PRIORITY_LABEL = {"price": "싸게", "default": "기본", "intelligence": "똑똑하게"}
+GAP_DIGITS = 3
 
 
 def _ratio(name: str, fallback: str) -> float:
@@ -135,7 +136,8 @@ def _quote_documents(ctx: AuditContext) -> list[dict[str, Any]]:
                 "referenceUnits": reference,
                 "ratio": actual / ask,
                 "referenceRatio": reference / ask,
-                "gap": (actual - reference) / ask,
+                # 최저가를 값 단위로 올려 맞추느라 0.9 - 0.8 이 0.09997 처럼 나온다. 0.1%p 단위로 맞춰 기준값과 비교한다.
+                "gap": round((actual - reference) / ask, GAP_DIGITS),
                 "at": at,
                 "createdAt": created_at,
             }
