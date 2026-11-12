@@ -212,14 +212,14 @@ def check_collusion(ctx: AuditContext, record: PurchaseRecord) -> None:
     priority = ctx.request["priority"]
     label = PRIORITY_LABEL.get(priority, priority)
     sellers = {document["seller"]: document["sellerName"] for document in documents}
-    reference = f"판매자가 최저가 비율 {REFERENCE_FLOOR_RATIO:g}로 응했다면 받았을 값"
+    reference = f"최저가 비율 {REFERENCE_FLOOR_RATIO:g}로 응했다면 받았을 값"
 
     fixed = _fixed_prices(priority, sellers)
     if fixed:
         ctx.alert(
             RULE,
             f"담합 의심(가격 맞추기): '{label}' 등급 최근 {WINDOW}건에서 비교한 판매자 모두 {reference}보다 "
-            f"호가 대비 평균 {_points(GAP)} 넘게 받았습니다: {_list(fixed)}. 한 곳만 비싸면 다른 곳에서 사므로, 모두 덜 깎은 것이 손해의 원인입니다.",
+            f"호가 대비 평균 {_points(GAP)} 이상 더 받았습니다: {_list(fixed)}. 한 곳만 비싸면 다른 곳에서 사므로, 모두 덜 깎은 것이 손해의 원인입니다.",
         )
 
     rising = _rising(priority, sellers)
@@ -227,7 +227,7 @@ def check_collusion(ctx: AuditContext, record: PurchaseRecord) -> None:
         ctx.alert(
             RULE,
             f"담합 의심(같이 오름): '{label}' 등급에서 비교한 판매자 모두 최근 {WINDOW}건이 그 앞 {WINDOW}건보다 "
-            f"{reference}과의 차이가 {_points(RISE)} 넘게 커졌습니다: {_list(rising)}",
+            f"{reference}과의 차이가 {_points(RISE)} 이상 커졌습니다: {_list(rising)}",
         )
 
     if not fixed:
