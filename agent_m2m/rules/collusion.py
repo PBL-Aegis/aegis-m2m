@@ -1,7 +1,7 @@
 """
 시나리오 ③ · 판매자 담합. 판매 에이전트들이 서로 깎지 않아 구매자가 비싸게 사는 것을 여러 건의 기록으로 드러낸다.
 
-등급마다 비교하는 판매자가 몇 곳뿐이라, 모두가 최저가 비율(floorRatio)을 올리거나 양보를 멈추면 경쟁이 사라진다.
+등급마다 비교하는 판매자가 몇 곳뿐이라, 여럿이 함께 최저가 비율(floorRatio)을 올리거나 양보를 멈추면 경쟁이 줄어든다.
 한 건만 보면 "각자 세게 흥정한 것"과 구분할 수 없어서 막지 않고 알림만 남긴다. 결제가 끝난 뒤(SETTLED) 돈다.
 
 기준선은 재계산이다. 흥정 값은 코드가 계산해서 입력이 같으면 결과도 같다(strategy.py). 그래서 같은 흥정을
@@ -14,11 +14,12 @@
 낙찰되지 않은 판매자의 값도 기록에 있어서(decision["quotes"]) 비교한 판매자 모두를 매 건 본다.
 "최근 N건"은 그 등급의 최근 구매 N건이다. 알림 세 가지(규칙 이름은 모두 seller-collusion):
 
-  가격 맞추기   등급의 판매자 모두 최근 N건 평균 gap 이 AUDIT_COLLUSION_GAP 이상.
-               한 곳만 올리면 구매자가 다른 곳에서 사므로 손해가 아니다. 모두 올려야 담합이다.
-  같이 오름     판매자 모두 최근 N건 평균 gap 이 그 앞 N건보다 AUDIT_COLLUSION_RISE 이상 올랐다.
+  가격 맞추기   등급의 판매자 중 2곳 이상이 최근 N건 평균 gap 이 AUDIT_COLLUSION_GAP 이상.
+               한 곳만 올리면 구매자가 다른 곳에서 사므로 담합이 아니다. 판매자가 2곳인 등급에서는 "모두"와 같다.
+               3곳 이상이면 정상 판매자가 끼어 있어도 나머지가 함께 올린 것을 잡는다(정상 판매자가 덜 싸면 손해가 남는다).
+  같이 오름     판매자 중 2곳 이상이 최근 N건 평균 gap 이 그 앞 N건보다 AUDIT_COLLUSION_RISE 이상 올랐다.
   시장 나누기   가격 맞추기가 걸린 두 등급에서 최근 N건 중 AUDIT_COLLUSION_SHARE 이상을 이긴 판매자가 서로 다르다.
-               싸서 늘 이기는 것만으로는 걸리지 않는다. 그 등급에서 아무도 깎지 않아야 한다.
+               싸서 늘 이기는 것만으로는 걸리지 않는다. 그 등급에서 2곳 이상이 덜 깎아야 한다.
 
 "두 판매자의 양보 패턴이 비슷함"은 보지 않는다. 판매자의 양보 폭은 구매자가 낸 근거 카드가 정해서(cards.py) 늘 같다.
 
@@ -151,29 +152,23 @@ def _gaps(priority: str, seller: str, skip: int = 0) -> list[float]:
 
 
 def _fixed_prices(priority: str, sellers: dict[str, str]) -> dict[str, float] | None:
-    """판매자 모두 최근 N건 평균 gap 이 GAP 이상이면 {판매자 이름: 평균}. 한 곳이라도 아니거나 N건이 안 되면 None."""
-    if len(sellers) < 2:
-        return None
+    """최근 N건 평균 gap 이 GAP 이상인 판매자가 2곳 이상이면 {판매자 이름: 평균}. N건이 안 된 판매자는 세지 않는다."""
     means = {}
     for seller, name in sellers.items():
         gaps = _gaps(priority, seller)
-        if len(gaps) < WINDOW or fmean(gaps) < GAP:
-            return None
-        means[name] = fmean(gaps)
-    return means
+        if len(gaps) == WINDOW and fmean(gaps) >= GAP:
+            means[name] = fmean(gaps)
+    return means if len(means) >= 2 else None
 
 
 def _rising(priority: str, sellers: dict[str, str]) -> dict[str, float] | None:
-    """판매자 모두 최근 N건 평균 gap 이 그 앞 N건보다 RISE 이상 올랐으면 {판매자 이름: 오른 폭}."""
-    if len(sellers) < 2:
-        return None
+    """최근 N건 평균 gap 이 그 앞 N건보다 RISE 이상 오른 판매자가 2곳 이상이면 {판매자 이름: 오른 폭}."""
     rises = {}
     for seller, name in sellers.items():
         recent, earlier = _gaps(priority, seller), _gaps(priority, seller, skip=WINDOW)
-        if len(recent) < WINDOW or len(earlier) < WINDOW or fmean(recent) - fmean(earlier) < RISE:
-            return None
-        rises[name] = fmean(recent) - fmean(earlier)
-    return rises
+        if len(recent) == WINDOW and len(earlier) == WINDOW and fmean(recent) - fmean(earlier) >= RISE:
+            rises[name] = fmean(recent) - fmean(earlier)
+    return rises if len(rises) >= 2 else None
 
 
 def _sellers_in(priority: str) -> dict[str, str]:
@@ -220,15 +215,15 @@ def check_collusion(ctx: AuditContext, record: PurchaseRecord) -> None:
     if fixed:
         ctx.alert(
             RULE,
-            f"담합 의심(가격 맞추기): '{label}' 등급 최근 {WINDOW}건에서 비교한 판매자 모두 {reference}보다 "
-            f"호가 대비 평균 {_points(GAP)} 이상 더 받았습니다: {_list(fixed)}. 한 곳만 비싸면 다른 곳에서 사므로, 모두 덜 깎은 것이 손해의 원인입니다.",
+            f"담합 의심(가격 맞추기): '{label}' 등급 최근 {WINDOW}건에서 비교한 판매자 {len(sellers)}곳 중 {len(fixed)}곳이 {reference}보다 "
+            f"호가 대비 평균 {_points(GAP)} 이상 더 받았습니다: {_list(fixed)}. 한 곳만 비싸면 다른 곳에서 사므로, 여럿이 함께 덜 깎은 것이 손해의 원인입니다.",
         )
 
     rising = _rising(priority, sellers)
     if rising:
         ctx.alert(
             RULE,
-            f"담합 의심(같이 오름): '{label}' 등급에서 비교한 판매자 모두 최근 {WINDOW}건이 그 앞 {WINDOW}건보다 "
+            f"담합 의심(같이 오름): '{label}' 등급에서 비교한 판매자 {len(sellers)}곳 중 {len(rising)}곳이 최근 {WINDOW}건이 그 앞 {WINDOW}건보다 "
             f"{reference}과의 차이가 {_points(RISE)} 이상 커졌습니다: {_list(rising)}",
         )
 
@@ -244,7 +239,7 @@ def check_collusion(ctx: AuditContext, record: PurchaseRecord) -> None:
         if there is not None and there[0] != here[0]:
             ctx.alert(
                 RULE,
-                f"담합 의심(시장 나누기): 아무도 깎지 않는 두 등급에서 이기는 판매자가 갈립니다. "
+                f"담합 의심(시장 나누기): 여러 판매자가 함께 덜 깎는 두 등급에서 이기는 판매자가 갈립니다. "
                 f"'{label}'은 {here[0]}({here[1]:.0%}), '{PRIORITY_LABEL[other]}'은 {there[0]}({there[1]:.0%})가 최근 {WINDOW}건을 가져갔습니다.",
             )
 

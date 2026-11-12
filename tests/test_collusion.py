@@ -146,6 +146,22 @@ def test_한_판매자만_깎지_않으면_구매자가_다른_곳에서_사서_
     assert alerts_of("one") == []
 
 
+def test_판매자_세_곳_중_두_곳만_깎지_않아도_그_두_곳으로_가격_맞추기_알림이_남는다(monkeypatch):
+    keys = keys_by_price()
+    set_tiers(monkeypatch, {"default": keys})
+    colluders, honest = [key.split("/")[0] for key in keys[:2]], keys[2].split("/")[0]
+    set_floors(monkeypatch, {company: 1.0 for company in colluders})
+
+    records = [buy("subset", index) for index in range(collusion.WINDOW)]
+
+    [alert] = alerts_of("subset", "가격 맞추기")
+    assert alert["purchaseId"] == records[-1]["id"]
+    assert "3곳 중 2곳" in alert["message"]
+    names = {quote["key"].split("/")[0]: quote["sellerName"] for quote in records[-1]["decision"]["quotes"]}
+    assert all(names[company] in alert["message"] for company in colluders)
+    assert names[honest] not in alert["message"]
+
+
 def test_두_판매자가_함께_값을_올리면_같이_오름_알림이_남는다(monkeypatch):
     two_sellers(monkeypatch)
     set_floors(monkeypatch, everyone(collusion.REFERENCE_FLOOR_RATIO))
