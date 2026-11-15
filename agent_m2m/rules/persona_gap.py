@@ -6,27 +6,28 @@
 흥정 값은 코드가 계산해 입력이 같으면 결과도 같으므로(strategy.py), 송금 직전에 같은 입력으로 기본 페르소나 흥정을 다시 돌려
 실제 합의가와 비교할 수 있다. 다시 돌릴 때는 대사를 쓰지 않아(write_line 없음) Gemma 가 필요 없고 값은 같다.
 
-  기본 페르소나 요청            검사하지 않는다(다시 돌려도 자기 자신이다).
-  차이 < AUDIT_PERSONA_GAP_RATIO   조용히 통과한다.
-  차이 >= GAP_RATIO              알림(결제는 진행). 품질형이 성능 때문에 일부러 더 낸 정상 거래도 여기서 사람이 읽을 이유와 함께 남는다.
-  차이 >= GAP_RATIO 이고 평가(evaluation)가 bad   설명할 수 없는 손해라 송금 직전에 막는다. AUDIT_PERSONA_BLOCK_BAD=false 면 알림만 한다.
-  차이 >= AUDIT_PERSONA_BLOCK_RATIO              페르소나가 어떻게 설명하든 너무 비싸므로 막는다.
+교수님 11주차 의견: 성향을 이용하는 것은 정당한 영업일 수도 있다. 대신 사용자가 "AI 가 제값에 샀나"를 쉽게 알 수 있어야 한다.
+그래서 이 규칙은 막지 않고 알린다. 품질형은 양보가 빨라 같은 모델도 늘 조금 비싸게 사므로(실제 데이터에서 기본 8.5%,
+똑똑하게 10.3%), 막으면 품질형을 쓸 수 없게 된다.
 
-차이 비율 = (실제 합의가 - 기본 페르소나로 다시 돌린 값) / 실제 합의가. 다시 돌린 값이 더 비싸면 손해가 아니라 통과한다.
+  기본 페르소나 요청              검사하지 않는다(다시 돌려도 자기 자신이다).
+  차이 < AUDIT_PERSONA_GAP_RATIO     조용히 통과한다. 거래 평가의 "최저가 근거"에는 그대로 남는다.
+  차이 >= GAP_RATIO                 알림(결제는 진행). 두 값, 차이, 성능 차이나 같은 모델인지, 양쪽 흥정 요약을 문장으로 남긴다.
+
+차이 비율 = (실제 합의가 - 최저가형으로 다시 계산한 값) / 최저가형으로 다시 계산한 값. "최저가형보다 몇 % 더 냈나"로 읽힌다.
+다시 계산한 값이 더 비싸면 손해가 아니라 통과한다. 다시 계산은 shopping.lowest_price_baseline 이 하고,
+같은 값이 거래 평가의 "최저가 근거"(evaluation.py)로 모든 구매에 남는다.
 체인은 페르소나를 모르므로 체인 규칙은 두지 않는다. 여러 건을 모아 보는 분포 검사는 하지 않는다(단건 검사만).
 """
 
 import os
 from typing import Any
 
-from agent_m2m.audit import BEFORE_PAYMENT_CHECKS, AuditBlockedError, AuditContext
-from agent_m2m.cards import buyer_cards, seller_cards
+from agent_m2m.audit import BEFORE_PAYMENT_CHECKS, AuditContext
 from agent_m2m.evaluation import final_price
 from agent_m2m.format import aegis_text
-from agent_m2m.negotiation import NegotiationError, negotiate
-from agent_m2m.persona import DEFAULT_PERSONA, load_persona
-from agent_m2m.seller import find_seller
-from agent_m2m.shopping import choose, compared_models
+from agent_m2m.persona import DEFAULT_PERSONA
+from agent_m2m.shopping import lowest_price_baseline
 
 RULE = "persona-gap"
 
@@ -42,68 +43,16 @@ def _ratio(name: str, default: str) -> float:
     return value
 
 
-def _flag(name: str, default: str) -> bool:
-    text = os.environ.get(name, default).strip().lower()
-    if text not in ("true", "false"):
-        raise ValueError(f"{name} 는 true 나 false 여야 합니다 (예: {default}): {text}")
-    return text == "true"
-
 
 # 숫자는 코드에 박지 않고 설정값으로 둔다. 테스트는 monkeypatch.setattr(persona_gap, "GAP_RATIO", ...) 로 바꾼다.
 GAP_RATIO = _ratio("AUDIT_PERSONA_GAP_RATIO", "0.05")
-BLOCK_RATIO = _ratio("AUDIT_PERSONA_BLOCK_RATIO", "0.2")
-BLOCK_BAD = _flag("AUDIT_PERSONA_BLOCK_BAD", "true")
 
-
-def _last_seller_price(quote: dict[str, Any]) -> int | None:
-    return next((turn["priceUnits"] for turn in reversed(quote["transcript"]) if turn["from"] == "seller"), None)
 
 
 def baseline(ctx: AuditContext) -> dict[str, Any] | None:
     """같은 입력(후보·우선순위·예산)으로 기본 페르소나가 흥정했다면 어떻게 샀을지. 판매자 값을 하나도 못 받으면 None.
     대사 없이 값만 계산하므로 몇 번을 돌려도 같은 결과다."""
-    persona = load_persona(DEFAULT_PERSONA)
-    budget = ctx.decision["budgetUnits"]
-    compared = compared_models(ctx.decision["candidates"], ctx.request["priority"])
-    quotes: list[dict[str, Any]] = []
-    for candidate in compared:
-        rival = next((other for other in compared if other is not candidate), None)
-        quote = {"key": candidate["key"], "displayName": candidate["displayName"], "eci": candidate["eci"]}
-        try:
-            quote.update(
-                negotiate(
-                    candidate["amountUnits"],
-                    budget,
-                    find_seller(candidate["providerId"])["floorRatio"],
-                    buyer_cards=buyer_cards(candidate, rival),
-                    seller_cards=seller_cards(candidate, rival),
-                    persona=persona,
-                )
-            )
-        except NegotiationError as error:
-            quote.update(error.negotiation)
-        quotes.append(quote)
-
-    agreed = [quote for quote in quotes if quote["status"] == "agreed"]
-    if agreed:
-        chosen = choose(agreed, persona)
-        price = chosen["agreedUnits"]
-    else:
-        # 모두 결렬이면 shopping.py 와 같이 판매자가 마지막에 부른 값이 가장 낮은 곳(값이 같으면 성능이 높은 곳)을 그 값에 산다.
-        priced = [quote for quote in quotes if _last_seller_price(quote) is not None]
-        if not priced:
-            return None
-        chosen = min(priced, key=lambda quote: (_last_seller_price(quote), -quote["eci"]))
-        price = _last_seller_price(chosen)
-    return {
-        "persona": persona["name"],
-        "key": chosen["key"],
-        "displayName": chosen["displayName"],
-        "eci": chosen["eci"],
-        "priceUnits": price,
-        "askUnits": chosen["askUnits"],
-        "transcript": chosen["transcript"],
-    }
+    return lowest_price_baseline(ctx.decision["candidates"], ctx.request["priority"], ctx.decision["budgetUnits"])
 
 
 def _pace_text(who: str, transcript: list[dict[str, Any]], paid: int, ask: int) -> str | None:
@@ -133,7 +82,7 @@ def _pace_text(who: str, transcript: list[dict[str, Any]], paid: int, ask: int) 
 
 
 def explain(ctx: AuditContext, base: dict[str, Any], gap: int, ratio: float) -> str:
-    """차이와 이유를 한 덩어리 문장으로. 알림에도 차단 이유에도 같은 글이 들어간다."""
+    """차이와 이유를 한 덩어리 문장으로. 알림에 이 글이 들어간다."""
     winner, negotiation = ctx.decision["winner"], ctx.decision["negotiation"]
     persona, evaluation = ctx.decision["persona"], ctx.decision["evaluation"]
     paid = winner["amountUnits"]
@@ -180,16 +129,11 @@ def check_persona_gap(ctx: AuditContext) -> None:
     gap = paid - base["priceUnits"]
     if gap <= 0:
         return
-    ratio = gap / paid
+    ratio = gap / base["priceUnits"]
     if ratio < GAP_RATIO:
         return
 
-    message = explain(ctx, base, gap, ratio)
-    if ratio >= BLOCK_RATIO:
-        raise AuditBlockedError(RULE, f"기본 페르소나보다 {BLOCK_RATIO:.0%} 이상 비싸 멈췄습니다. {message}")
-    if BLOCK_BAD and ctx.decision["evaluation"]["verdict"] == "bad":
-        raise AuditBlockedError(RULE, f"설명할 수 없는 값이라 멈췄습니다. {message}")
-    ctx.alert(RULE, message)
+    ctx.alert(RULE, explain(ctx, base, gap, ratio))
 
 
 BEFORE_PAYMENT_CHECKS.append(check_persona_gap)

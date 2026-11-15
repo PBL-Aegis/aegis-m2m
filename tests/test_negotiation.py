@@ -209,10 +209,10 @@ def test_합의가가_같으면_표_순서와_상관없이_성능이_높은_모�
     candidates = [candidate("openai", "low", 4_001, eci=150), candidate("openai", "high", 4_001, eci=160)]
     turn = {"from": "seller", "action": "counter", "priceUnits": 3_500, "text": ""}
 
-    monkeypatch.setattr(shopping, "negotiate", lambda *args: {"status": "agreed", "askUnits": 4_001, "agreedUnits": 3_500, "transcript": [dict(turn)]})
+    monkeypatch.setattr(shopping, "negotiate", lambda *args, **kwargs: {"status": "agreed", "askUnits": 4_001, "agreedUnits": 3_500, "transcript": [dict(turn)]})
     assert shop(candidates, "price", LARGE_BUDGET)["winner"]["key"] == "high"
 
-    def no_deal(*args):
+    def no_deal(*args, **kwargs):
         raise NegotiationError("결렬", {"status": "no-deal", "askUnits": 4_001, "transcript": [dict(turn)]})
 
     monkeypatch.setattr(shopping, "negotiate", no_deal)
