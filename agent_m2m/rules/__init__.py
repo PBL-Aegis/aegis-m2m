@@ -12,3 +12,4 @@ from agent_m2m.rules import persona_gap  # noqa: F401
 from agent_m2m.rules import replay  # noqa: F401
 from agent_m2m.rules import upgrade  # noqa: F401
 from agent_m2m.rules import holdout  # noqa: F401
+from agent_m2m.rules import collusion  # noqa: F401
