@@ -9,7 +9,8 @@
 
 흥정 중인 다른 판매자의 값은 상대에게 알리지 않는다. 근거 카드는 공개된 호가와 ECI 만 비교한다(cards.py).
 
-끝나면 페르소나 관점의 평가(evaluation.py)를 함께 돌려준다.
+끝나면 페르소나 관점의 평가(evaluation.py)를 함께 돌려준다. 평가에는 같은 요청을 최저가형으로 다시 계산한 값(lowest_price_baseline)과
+비교한 "최저가 근거"가 들어간다. 평가는 결정 근거 지문(deal.py)에 들어가 체인에도 지문이 남는다.
 
 on_event 로 진행을 바로 알린다. 비교 모델이 정해지면 plan, 대화가 한 줄 늘면 turn 이다.
 """
@@ -23,7 +24,7 @@ from agent_m2m.dialogue import LineWriter
 from agent_m2m.evaluation import evaluate
 from agent_m2m.format import aegis_text
 from agent_m2m.negotiation import NegotiationError, negotiate
-from agent_m2m.persona import load_persona, reason
+from agent_m2m.persona import DEFAULT_PERSONA, load_persona, reason
 from agent_m2m.selection import SelectionError
 from agent_m2m.seller import find_seller
 
@@ -85,6 +86,52 @@ def _cancel_reason(quote: dict[str, Any], chosen: dict[str, Any], persona: dict[
             f"더 낼 수 있는 한도 {persona['premiumLimit']:.0%} 안이라 이곳은 취소합니다."
         )
     return reason(persona, "cancel", text, chosenKey=chosen["key"], gapUnits=gap, eciGap=round(eci_gap, 2), premiumLimit=persona["premiumLimit"])
+
+
+def lowest_price_baseline(candidates: list[dict[str, Any]], priority: str, budget_units: int) -> dict[str, Any] | None:
+    """같은 입력(후보·우선순위·예산)으로 기본 페르소나(최저가형)가 흥정했다면 어디서 얼마에 샀을지. "최저가로 샀다"의 근거다.
+    대사 없이 값만 계산하므로 Gemma 가 필요 없고, 몇 번을 돌려도 같다. 판매자 값을 하나도 못 받으면 None."""
+    persona = load_persona(DEFAULT_PERSONA)
+    compared = compared_models(candidates, priority)
+    quotes: list[dict[str, Any]] = []
+    for candidate in compared:
+        rival = next((other for other in compared if other is not candidate), None)
+        quote = {"key": candidate["key"], "displayName": candidate["displayName"], "eci": candidate["eci"]}
+        try:
+            quote.update(
+                negotiate(
+                    candidate["amountUnits"],
+                    budget_units,
+                    find_seller(candidate["providerId"])["floorRatio"],
+                    buyer_cards=buyer_cards(candidate, rival),
+                    seller_cards=seller_cards(candidate, rival),
+                    persona=persona,
+                )
+            )
+        except NegotiationError as error:
+            quote.update(error.negotiation)
+        quotes.append(quote)
+
+    agreed = [quote for quote in quotes if quote["status"] == "agreed"]
+    if agreed:
+        chosen = choose(agreed, persona)
+        price = chosen["agreedUnits"]
+    else:
+        # 모두 결렬이면 shop() 과 같이 판매자가 마지막에 부른 값이 가장 낮은 곳(값이 같으면 성능이 높은 곳)을 그 값에 산다.
+        priced = [quote for quote in quotes if _last_seller_price(quote) is not None]
+        if not priced:
+            return None
+        chosen = min(priced, key=lambda quote: (_last_seller_price(quote), -quote["eci"]))
+        price = _last_seller_price(chosen)
+    return {
+        "persona": persona["name"],
+        "key": chosen["key"],
+        "displayName": chosen["displayName"],
+        "eci": chosen["eci"],
+        "priceUnits": price,
+        "askUnits": chosen["askUnits"],
+        "transcript": chosen["transcript"],
+    }
 
 
 def shop(
@@ -168,5 +215,5 @@ def shop(
         "negotiation": chosen,
         "quotes": quotes,
         "persona": {key: persona[key] for key in ("id", "name", "goal", "hash")},
-        "evaluation": evaluate(persona, chosen, quotes, budget_units),
+        "evaluation": evaluate(persona, chosen, quotes, budget_units, lowest_price_baseline(candidates, priority, budget_units)),
     }

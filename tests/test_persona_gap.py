@@ -1,7 +1,7 @@
 import pytest
 
 from agent_m2m import audit, store
-from agent_m2m.audit import AuditBlockedError, AuditContext
+from agent_m2m.audit import AuditContext
 from agent_m2m.benchmark import load_snapshot
 from agent_m2m.format import aegis_text
 from agent_m2m.payment import buyer_balance
@@ -121,38 +121,39 @@ def test_품질형이_성능_때문에_일부러_더_낸_정상_거래는_알림
     assert alert["blocked"] is False
 
 
-def test_차이가_차단_비율_이상이면_송금_전에_막히고_이유가_남는다(gap_only, monkeypatch):
-    monkeypatch.setattr(persona_gap, "BLOCK_RATIO", 0.05)
-    thrifty = run_purchase(request("block-thrifty", "thrifty"))
+def test_같은_모델을_더_비싸게_사도_막지_않고_차이가_알림과_최저가_근거로_남는다(gap_only):
+    # 픽스처의 '싸게'에서는 두 페르소나가 같은 모델을 사고, 품질형은 양보가 빨라 더 비싸게 산다.
+    thrifty = run_purchase(request("same-model-thrifty", "thrifty"))
     balance = buyer_balance()["units"]
-    record = run_purchase(request("block-quality", "quality"))
+    record = run_purchase(request("same-model-quality", "quality"))
 
-    assert (record["status"], record["failureStage"], record["blockedRule"]) == ("FAILED", "before-send", persona_gap.RULE)
-    assert record["payment"] is None and buyer_balance()["units"] == balance
-    [alert] = gap_alerts("gap-block-quality")
-    assert alert["blocked"] is True
-    assert aegis_text(paid(thrifty)) in alert["message"] and "기본 페르소나" in alert["message"]
+    assert record["status"] == "SETTLED"
+    assert record["decision"]["winner"]["key"] == thrifty["decision"]["winner"]["key"]
+    assert buyer_balance()["units"] == balance - paid(record)
+    gap = paid(record) - paid(thrifty)
+    [alert] = gap_alerts("gap-same-model-quality")
+    assert alert["blocked"] is False
+    assert "같은 모델을 더 비싸게" in alert["message"]
+    assert f"({gap / paid(thrifty):.1%})" in alert["message"]  # 차이 비율은 최저가형 값 기준
+
+    proof = record["decision"]["evaluation"]["lowestPrice"]
+    assert (proof["priceUnits"], proof["paidUnits"], proof["gapUnits"]) == (paid(thrifty), paid(record), gap)
+    assert any(line.startswith("최저가 근거:") and aegis_text(gap) in line for line in record["decision"]["evaluation"]["lines"])
 
 
-def test_차이가_있고_평가가_bad_면_설명할_수_없는_손해라_막는다(monkeypatch):
+def test_최저가형_구매에도_다시_계산해도_같다는_최저가_근거가_남는다(gap_only):
+    record = run_purchase(request("proof-thrifty", "thrifty"))
+
+    proof = record["decision"]["evaluation"]["lowestPrice"]
+    assert proof["gapUnits"] == 0 and proof["paidUnits"] == paid(record)
+    assert "다시 계산해도" in record["decision"]["evaluation"]["lines"][1]
+
+
+def test_평가가_bad_여도_막지_않고_알림만_남긴다():
     ctx, alerts = context("quality")
     ctx.decision["evaluation"]["verdict"] = "bad"
-    monkeypatch.setattr(persona_gap, "BLOCK_RATIO", 1.0)
 
-    with pytest.raises(AuditBlockedError) as blocked:
-        persona_gap.check_persona_gap(ctx)
-
-    assert blocked.value.rule == persona_gap.RULE and "설명할 수 없는" in str(blocked.value)
-    assert alerts == []  # 막을 때 알림은 audit.py 가 남긴다
-
-
-def test_bad_차단을_끄면_같은_경우에도_알림만_남는다(monkeypatch):
-    ctx, alerts = context("quality")
-    ctx.decision["evaluation"]["verdict"] = "bad"
-    monkeypatch.setattr(persona_gap, "BLOCK_RATIO", 1.0)
-    monkeypatch.setattr(persona_gap, "BLOCK_BAD", False)
-
-    persona_gap.check_persona_gap(ctx)
+    persona_gap.check_persona_gap(ctx)  # 막으면 AuditBlockedError 가 난다
 
     assert [rule for rule, _ in alerts] == [persona_gap.RULE]
 
