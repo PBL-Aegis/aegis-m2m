@@ -31,7 +31,6 @@ from fastapi.responses import JSONResponse, StreamingResponse
 
 from agent_m2m import store
 from agent_m2m.audit import AuditBlockedError
-from agent_m2m.domain import PRIORITIES
 from agent_m2m.format import parse_aegis
 from agent_m2m.negotiation import NegotiationError
 from agent_m2m.payment import buyer_balance, payment_config
@@ -72,11 +71,15 @@ def parse_body(body: Any) -> dict[str, Any] | str:
             return f"{field} 는 비어 있지 않은 문자열이거나 비어 있어야 합니다"
         request[field] = value.strip()
 
-    priority = body.get("priority")
-    if priority is not None:
-        if priority not in PRIORITIES:
-            return f"priority 는 {', '.join(PRIORITIES)} 중 하나이거나 비어 있어야 합니다"
-        request["priority"] = priority
+    if "priority" in body:
+        return "priority 는 받지 않습니다. 원하는 것을 prompt 에 문장으로 적어 주세요 (예: 성능 좋은 모델로, 싸게)"
+
+    content = body.get("content")
+    if content is not None:
+        if not isinstance(content, str):
+            return "content 는 문자열이거나 비어 있어야 합니다"
+        if content.strip() != "":
+            request["content"] = content
 
     persona = body.get("persona")
     if persona is not None:

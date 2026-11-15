@@ -91,7 +91,9 @@ def _count_purchase(key: str, now: float) -> dict[str, Any]:
 
 def _check_duplicate_purchase(ctx: AuditContext) -> None:
     user = ctx.request["userId"] or ANONYMOUS
-    prompt_hash = hashlib.sha256(ctx.request["prompt"].strip().encode()).hexdigest()
+    # 지시가 같아도 내용(문서)이 다르면 다른 일이다. 둘을 함께 센다.
+    text = f"{ctx.request['prompt'].strip()}\n\n{(ctx.request.get('content') or '').strip()}"
+    prompt_hash = hashlib.sha256(text.encode()).hexdigest()
     model = ctx.decision["winner"]["key"]
     key = f"{user}:{prompt_hash}:{model}"
     now = _now()

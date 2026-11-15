@@ -24,7 +24,7 @@ def test_음수_글자_소수점_7자리_이상은_받지_않는다():
 
 
 def test_budget_을_AEGIS_로_받아_기록에는_최소_단위로_남긴다():
-    response = client.post("/api/purchase", json={"prompt": "이 글 요약해 줘", "budget": "0.5", "priority": "price"})
+    response = client.post("/api/purchase", json={"prompt": "이 글 싸게 요약해 줘", "budget": "0.5"})
     assert response.status_code == 200
     record = response.json()
     assert record["status"] == "SETTLED"
@@ -32,23 +32,31 @@ def test_budget_을_AEGIS_로_받아_기록에는_최소_단위로_남긴다():
 
 
 def test_예전_이름_budgetUnits_로_보내면_budget_을_쓰라고_400_으로_알린다():
-    response = client.post("/api/purchase", json={"prompt": "이 글 요약해 줘", "budgetUnits": 500_000, "priority": "price"})
+    response = client.post("/api/purchase", json={"prompt": "이 글 싸게 요약해 줘", "budgetUnits": 500_000})
     assert response.status_code == 400
     assert "budget" in response.json()["error"]
 
 
 def test_budget_형식이_틀리면_400_이다():
-    response = client.post("/api/purchase", json={"prompt": "이 글 요약해 줘", "budget": "많이", "priority": "price"})
+    response = client.post("/api/purchase", json={"prompt": "이 글 싸게 요약해 줘", "budget": "많이"})
     assert response.status_code == 400
 
 
-def test_빠르게_우선순위는_받지_않는다():
-    response = client.post("/api/purchase", json={"prompt": "빨리 해 줘", "budget": "0.5", "priority": "speed"})
+def test_우선순위_칸은_받지_않고_문장으로_적으라고_알린다():
+    response = client.post("/api/purchase", json={"prompt": "이 글 요약해 줘", "budget": "0.5", "priority": "price"})
     assert response.status_code == 400
+    assert "prompt" in response.json()["error"]
+
+
+def test_내용은_문자열만_받고_기록에_남긴다():
+    assert client.post("/api/purchase", json={"prompt": "요약해 줘", "budget": "0.5", "content": 3}).status_code == 400
+    record = client.post("/api/purchase", json={"prompt": "이 글 싸게 요약해 줘", "budget": "0.5", "content": "요약할 글"}).json()
+    assert record["status"] == "SETTLED"
+    assert record["content"] == "요약할 글"
 
 
 def test_화면이_쓰는_조회_API_가_기록과_알림을_돌려준다():
-    record = client.post("/api/purchase", json={"prompt": "조회 확인", "budget": "0.5", "priority": "intelligence"}).json()
+    record = client.post("/api/purchase", json={"prompt": "조회 확인, 정확하게", "budget": "0.5"}).json()
     assert client.get(f"/api/purchases/{record['id']}").json()["id"] == record["id"]
     assert client.get("/api/purchases/없는-id").status_code == 404
     assert record["id"] in [item["id"] for item in client.get("/api/purchases").json()]
@@ -65,7 +73,7 @@ def _stream(body: dict) -> list[dict]:
 
 
 def test_스트림은_비교_모델_흥정_대화_기록_순서로_보낸다():
-    events = _stream({"prompt": "스트림 확인", "budget": "0.5", "priority": "price"})
+    events = _stream({"prompt": "스트림 확인, 싸게", "budget": "0.5"})
     assert events[0]["type"] == "plan"
     assert events[-1]["type"] == "done"
 
@@ -78,7 +86,7 @@ def test_스트림은_비교_모델_흥정_대화_기록_순서로_보낸다():
 
 
 def test_스트림은_판매자_최저가를_보내지_않는다():
-    response = client.post("/api/purchase/stream", json={"prompt": "최저가 확인", "budget": "0.5", "priority": "price"})
+    response = client.post("/api/purchase/stream", json={"prompt": "최저가 확인", "budget": "0.5"})
     assert "floorRatio" not in response.text
     assert "floorUnits" not in response.text
 

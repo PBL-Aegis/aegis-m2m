@@ -33,6 +33,18 @@ def test_Gemma_가_고른_우선순위와_모델_이름을_돌려준다(monkeypa
     assert body["messages"][1] == {"role": "user", "content": "최대한 싸게 요약해 줘"}
 
 
+def test_지시와_내용을_이어_한_번에_읽힌다(monkeypatch):
+    calls = []
+
+    def post(url, body, timeout):
+        calls.append(body)
+        return ollama_reply('{"priority":"intelligence"}')
+
+    monkeypatch.setattr(priority_llm, "http_post", post)
+    infer_priority("정확하게 요약해 줘", "요약할 글")
+    assert calls[0]["messages"][1]["content"] == "정확하게 요약해 줘\n\n요약할 글"
+
+
 def test_네_값_밖의_답은_받지_않는다(monkeypatch):
     monkeypatch.setattr(priority_llm, "http_post", lambda url, body, timeout: ollama_reply('{"priority":"cheapest"}'))
     with pytest.raises(PriorityInferenceError):

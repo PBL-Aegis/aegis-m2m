@@ -7,7 +7,7 @@ from agent_m2m.purchase import run_purchase
 from agent_m2m.rules import limit
 from tests.helpers import increase_chain_time
 
-INPUT = {"prompt": "이 글 요약해 줘", "budgetUnits": 50_000, "priority": "price"}
+INPUT = {"prompt": "이 글 싸게 요약해 줘", "budgetUnits": 50_000}
 
 
 @pytest.fixture(autouse=True)

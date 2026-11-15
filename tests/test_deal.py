@@ -11,7 +11,7 @@ from agent_m2m.payment import payment_config, request_id_hash, web3_for
 from agent_m2m.provider import DeliveryError, verify_deal
 from agent_m2m.purchase import run_purchase
 
-INPUT = {"prompt": "이 글 요약해 줘", "budgetUnits": 10_000_000, "priority": "price"}
+INPUT = {"prompt": "이 글 싸게 요약해 줘", "budgetUnits": 10_000_000}
 ARTIFACT = Path(__file__).resolve().parent.parent / "contracts" / "out" / "AegisToken.sol" / "AegisToken.json"
 
 

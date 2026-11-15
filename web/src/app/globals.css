@@ -570,7 +570,6 @@ tr.winner td { background: var(--violet-soft); }
 
 /* --- 입력창 --- */
 .composer { position: relative; z-index: 2; flex: none; padding: 8px 16px 16px; }
-.menuBackdrop { position: fixed; inset: 0; padding: 0; border: 0; background: transparent; cursor: default; }
 .composerCard {
   position: relative;
   max-width: 848px;
@@ -596,6 +595,18 @@ tr.winner td { background: var(--violet-soft); }
 }
 .composerCard textarea:focus { outline: none; }
 .composerCard textarea::placeholder { color: var(--faint); opacity: 1; }
+.composerCard textarea.contentInput { border-top: 1px solid var(--line); padding-top: 8px; font-size: 14px; }
+.contentToggle {
+  padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px;
+  background: transparent; font: inherit; font-size: 13px; color: var(--muted); cursor: pointer;
+}
+.contentToggle[aria-pressed="true"] { border-color: var(--violet); color: var(--violet); }
+.contentToggle:disabled { cursor: default; color: var(--faint); }
+.bubbleContent {
+  display: block; margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--line);
+  font-size: 13px; opacity: 0.8; white-space: pre-wrap; max-height: 8em; overflow: hidden;
+}
+.requestContent { margin: 4px 0 0; font-size: 14px; color: var(--muted); white-space: pre-wrap; max-height: 10em; overflow: auto; }
 .composerBar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
 .budgetPill {
   height: 40px;
@@ -626,51 +637,6 @@ tr.winner td { background: var(--violet-soft); }
 .budgetPill input::-webkit-outer-spin-button,
 .budgetPill input::-webkit-inner-spin-button { appearance: none; margin: 0; }
 .composerActions { margin-left: auto; display: flex; align-items: center; gap: 6px; }
-.priorityPicker { position: relative; }
-.priorityButton {
-  height: 40px;
-  padding: 0 10px 0 14px;
-  border: 0;
-  border-radius: 20px;
-  background: transparent;
-  font-size: 14px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  white-space: nowrap;
-}
-.priorityButton[aria-expanded="true"] { background: var(--paper); }
-.priorityButton:disabled { cursor: default; color: var(--faint); }
-.priorityMenu {
-  position: absolute;
-  right: 0;
-  bottom: 48px;
-  width: 240px;
-  padding: 8px;
-  border: 1px solid var(--line);
-  border-radius: 20px;
-  background: var(--card);
-  box-shadow: 0 8px 28px rgb(26 32 48 / 12%);
-  display: flex;
-  flex-direction: column;
-}
-.priorityMenu > span { padding: 8px 12px; font-size: 13px; color: var(--faint); }
-.priorityMenu button {
-  min-height: 44px;
-  padding: 0 12px;
-  border: 0;
-  border-radius: 12px;
-  background: transparent;
-  font-size: 15px;
-  text-align: left;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-.priorityMenu button:hover { background: var(--paper); }
 .sendButton {
   flex: none;
   width: 44px;

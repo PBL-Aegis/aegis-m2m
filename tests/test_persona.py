@@ -151,7 +151,7 @@ def test_목표로_설명할_수_없게_비싸게_샀으면_손해다():
 def test_API_는_페르소나_목록을_주고_없는_페르소나는_받지_않는다():
     client = TestClient(app)
     assert [item["id"] for item in client.get("/api/personas").json()] == ["thrifty", "quality"]
-    response = client.post("/api/purchase", json={"prompt": "요약", "budget": "1", "priority": "price", "persona": "greedy"})
+    response = client.post("/api/purchase", json={"prompt": "요약", "budget": "1", "persona": "greedy"})
     assert response.status_code == 400
     assert "persona" in response.json()["error"]
 

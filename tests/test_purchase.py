@@ -6,7 +6,7 @@ from agent_m2m import audit, purchase, store
 from agent_m2m.provider import DeliveryError
 from agent_m2m.purchase import run_purchase
 
-INPUT = {"prompt": "이 글 요약해 줘", "budgetUnits": 50_000, "priority": "price"}
+INPUT = {"prompt": "이 글 싸게 요약해 줘", "budgetUnits": 50_000}
 TX_HASH = re.compile(r"^0x[0-9a-f]{64}$")
 
 
