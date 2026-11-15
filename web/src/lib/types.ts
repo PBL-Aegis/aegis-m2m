@@ -197,6 +197,20 @@ export interface Evaluation {
   verdict: "good" | "partial" | "bad";
   headline: string;
   lines: string[];
+  /** 같은 요청을 최저가형으로 다시 계산한 값과의 비교. lines 의 "최저가 근거" 줄과 같은 숫자다. 이 칸이 생기기 전 기록에는 없다. */
+  lowestPrice?: LowestPrice;
+}
+
+export interface LowestPrice {
+  /** 다시 계산한 페르소나 이름(최저가형). */
+  persona: string;
+  key: string;
+  displayName: string;
+  priceUnits: number;
+  paidUnits: number;
+  gapUnits: number;
+  /** gapUnits / priceUnits. */
+  gapRatio: number;
 }
 
 /** 구매 에이전트와 판매 에이전트의 흥정 결과. 판매자의 최저가는 담기지 않는다. */
