@@ -68,7 +68,7 @@ export function CandidateTables({ record }: { record: PurchaseRecord }) {
 
       {decision.candidates.every((candidate) => candidate.eci !== undefined) ? (
         <>
-          <h2>점수 근거 · 세 출처</h2>
+          <h2>점수 근거 · 두 출처</h2>
           <p className="muted">
             성능은 Epoch Capabilities Index(여러 벤치마크를 난이도까지 고려해 합친 지수), 가격은 OpenRouter 판매 단가,
             속도는 Artificial Analysis가 잰 출력 속도(1초에 내보내는 토큰 수)를 생각 단계별로 평균낸 값입니다. 세 점수 모두

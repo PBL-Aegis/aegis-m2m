@@ -3,106 +3,12 @@
 /** 요청이 무엇을 중요하게 보는지. speed 는 옛 기록에만 있고 새 요청에서는 받지 않는다. */
 export type Priority = "default" | "price" | "speed" | "intelligence";
 
-export const PRIORITIES: readonly Priority[] = [
-  "default",
-  "price",
-  "intelligence",
-];
-
 /** 가격·성능에 몇 점씩 줄지. 합은 항상 100. time 은 속도를 보던 옛 기록에만 있다. */
 export interface Weights {
   price: number;
   time?: number;
   intelligence: number;
 }
-
-/** 우선순위마다 고정된 배점표. 코드 밖에서 바꿀 수 없다. */
-export const PRIORITY_WEIGHTS: Record<Priority, Weights> = {
-  default: { price: 50, intelligence: 50 },
-  price: { price: 90, intelligence: 10 },
-  speed: { price: 10, time: 80, intelligence: 10 },
-  intelligence: { price: 10, intelligence: 90 },
-};
-
-/**
- * 팔고 있는 모델 하나. data/catalog.json 은 scripts/capture-benchmark.mjs 가 세 출처를 짝지어 만든다.
- * 수신자 주소는 회사별 판매자 주소(data/sellers.json)다.
- */
-export interface CatalogEntry {
-  /** OpenRouter 모델 id. 예: anthropic/claude-opus-5.5 */
-  key: string;
-  providerId: string;
-  providerModelId: string;
-  displayName: string;
-  /** Epoch ECI 표의 모델 이름. */
-  epochModel: string;
-  openRouterId: string;
-  /** 속도를 가져온 Artificial Analysis 항목들. 같은 모델의 생각 단계별 항목이다. */
-  aaSlugs: string[];
-  recipient: string;
-  /** OpenRouter 가 알려 준 기능: reasoning, tools, vision */
-  capabilities: string[];
-}
-
-export interface Catalog {
-  catalogVersion: string;
-  /** 짝짓기 규칙. */
-  matching?: string;
-  entries: CatalogEntry[];
-  /** 짝을 찾지 못해 팔지 않는 모델과 그 이유. */
-  excluded?: { name: string; reason: string }[];
-}
-
-/** 벤치마크 표의 한 줄. 숫자는 문자열로 둔다(소수점 오차를 만들지 않기 위해). */
-export interface BenchmarkModel {
-  key: string;
-  epochModel: string;
-  /** Epoch 가 이 모델의 ECI 를 낸 기준 날짜. */
-  epochDate?: string;
-  /** Epoch Capabilities Index 와 95% 신뢰구간. */
-  eci: string;
-  eciCiLow: string;
-  eciCiHigh: string;
-  /** OpenRouter 판매 단가(1M 토큰당 달러). */
-  inputPricePerMillion: string;
-  outputPricePerMillion: string;
-  openRouterId: string;
-}
-
-export interface BenchmarkSnapshot {
-  snapshotId: string;
-  capturedAt: string;
-  source: string;
-  sources?: { epoch: string; openRouter: string };
-  note: string;
-  models: BenchmarkModel[];
-}
-
-/** 사용자가 보낸 요청. */
-export interface PurchaseRequest {
-  /** 요청을 보낸 프로그램이 붙인 요청 번호. 같은 요청을 다시 보내면 같은 번호가 온다. */
-  requestId: string;
-  /** 요청한 사용자. 사용자 확인 방식은 아직 정하지 않았다. */
-  userId: string | null;
-  /** 사용자의 지시. 우선순위는 이 지시와 내용을 로컬 Gemma 가 읽고 정한다. */
-  prompt: string;
-  /** 처리할 내용(요약할 글 등). */
-  content?: string;
-  budgetUnits: number;
-  priority: Priority;
-  maxOutputTokens?: number;
-  requiredCapabilities?: string[];
-}
-
-/**
- * API 로 들어온 요청. 우선순위 칸은 받지 않고 로컬 Gemma 가 지시와 내용을 읽고 정한다.
- * 요청 번호가 비어 있으면 서버가 새로 만들고, 사용자가 비어 있으면 null 로 둔다.
- */
-export type PurchaseInput = Omit<PurchaseRequest, "priority" | "requestId" | "userId"> & {
-  requestId?: string;
-  userId?: string;
-};
-
 
 /** 필터에서 떨어진 후보와 그 이유. */
 export interface RejectedCandidate {
@@ -177,7 +83,7 @@ export interface PersonaRef {
   hash?: string;
 }
 
-/** settleDeal 로 체인에 남기는 합의. 금액은 units, 해시와 주소는 0x 문자열이다. */
+/** 운영자가 openDeal 로 체인에 여는 합의. 금액은 units, 해시와 주소는 0x 문자열이다. */
 export interface Deal {
   requestId: string;
   buyer: string;

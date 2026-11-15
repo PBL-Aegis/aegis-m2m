@@ -28,7 +28,6 @@ from web3 import Web3
 from web3.utils.address import get_create_address
 
 from agent_m2m.deal import deal_tuple
-from agent_m2m.domain import PaymentResult
 
 AEGIS_ABI: list[dict[str, Any]] = [
     {
@@ -165,8 +164,8 @@ NETWORK = f"eip155:{LOCAL_CHAIN_ID}"
 # 토큰의 EIP712("AEGIS", "1") 과 같아야 서명이 맞는다. x402 정산 서버가 name()·version() 으로 확인한다.
 TOKEN_DOMAIN_NAME = "AEGIS"
 TOKEN_DOMAIN_VERSION = "1"
-# 체인의 감사 단계·결과 번호. AegisToken 의 STAGE_*·RESULT_* 와 같다.
-STAGE_BEFORE_SEND, STAGE_AFTER_SEND = 1, 2
+# 체인의 감사 단계·결과 번호. AegisToken 의 STAGE_BEFORE_SEND·RESULT_* 와 같다. 송금 뒤 단계 번호는 컨트랙트가 넣는다.
+STAGE_BEFORE_SEND = 1
 AUDIT_RESULT_CODE = {"pass": 1, "alert": 2, "block": 3}
 # 가스 추정치에 더하는 여유(비율). 추정치를 그대로 쓰면 상태가 조금 달라질 때 OutOfGas 로 송금 뒤 실패가 난다.
 GAS_MARGIN = 0.25
@@ -195,10 +194,6 @@ def anvil_account(index: int) -> LocalAccount:
     """anvil 공개 테스트 계정. 0번은 운영자(토큰 배포·발급·합의 열기·감사 기록), 1번은 구매자, 2번부터 판매자,
     LOCAL_FACILITATOR_INDEX 번은 x402 정산 서버다."""
     return Account.from_mnemonic(ANVIL_MNEMONIC, account_path=f"m/44'/60'/0'/0/{index}")
-
-
-def local_accounts() -> dict[str, LocalAccount]:
-    return {"owner": anvil_account(0), "buyer": anvil_account(1), "facilitator": anvil_account(LOCAL_FACILITATOR_INDEX)}
 
 
 def local_token_address() -> str:

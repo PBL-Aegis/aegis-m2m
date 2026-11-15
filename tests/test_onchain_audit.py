@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 from web3 import Web3
 
-from agent_m2m import audit, payment, provider, purchase, store, x402_payment
+from agent_m2m import audit, payment, purchase, store, x402_payment
 from agent_m2m.deal import content_hash
 from agent_m2m.payment import buyer_balance, payment_config, web3_for
 from agent_m2m.provider import DeliveryError, verify_audit
