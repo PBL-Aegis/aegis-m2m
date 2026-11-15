@@ -2,7 +2,7 @@ import re
 
 import pytest
 
-from agent_m2m import audit, purchase, store
+from agent_m2m import audit, provider, purchase, store
 from agent_m2m.provider import DeliveryError
 from agent_m2m.purchase import run_purchase
 
@@ -59,7 +59,7 @@ def test_송금_뒤_확인에서_실패하면_거래번호를_지우지_않고_�
     def fail(*args):
         raise DeliveryError("확인 실패")
 
-    monkeypatch.setattr(purchase, "verify_payment", fail)
+    monkeypatch.setattr(provider, "verify_payment", fail)
     record = run_purchase(INPUT)
     saved = store.get_purchase(record["id"])
     assert saved["status"] == "FAILED"

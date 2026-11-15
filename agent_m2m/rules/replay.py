@@ -1,6 +1,6 @@
 """
-반복 구매 막기. 같은 요청 번호의 재결제는 체인이 막는다. settleDeal 은 같은 요청 번호의 합의를 한 번만 받고
-(DealAlreadySettled), 서명 nonce 도 한 번만 쓰인다. 짧은 시간 결제 횟수는 contracts/src/rules/ReplayRule.sol 이 막는다.
+반복 구매 막기. 같은 요청 번호의 재결제는 체인이 막는다. 결제된 요청 번호의 합의는 다시 열 수 없고
+(DealAlreadySettled), 서명 nonce(합의 해시)도 한 번만 쓰인다. 짧은 시간 결제 횟수는 contracts/src/rules/ReplayRule.sol 이 막는다.
 서버는 요청 번호를 따로 기억하지 않는다. 같은 번호를 다시 보내면 새로 흥정하고, 체인에서 막혀 송금 전 실패로 남는다.
 
   duplicate-purchase  에이전트 반복 루프. 한 사용자가 같은 문장으로 같은 모델을 창(기본 60초) 안에 기본 3번째 사려 하면,

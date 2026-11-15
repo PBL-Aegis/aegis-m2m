@@ -330,7 +330,7 @@ def test_결제가_실패하면_차단으로_표시하지_않는다(monkeypatch)
     def fail(*args):
         raise RuntimeError("체인 응답 없음")
 
-    monkeypatch.setattr(purchase, "settle_deal", fail)
+    monkeypatch.setattr(purchase, "_pay_with_x402", fail)
     record = run_purchase({**INPUT, "requestId": "req-pay-failed"})
     assert record["status"] == "FAILED"
     assert "blockedRule" not in record

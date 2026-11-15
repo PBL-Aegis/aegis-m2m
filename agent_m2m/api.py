@@ -36,6 +36,7 @@ from agent_m2m.negotiation import NegotiationError
 from agent_m2m.payment import buyer_balance, payment_config
 from agent_m2m.persona import DEFAULT_PERSONA, load_persona, persona_ids
 from agent_m2m.priority_llm import PriorityInferenceError
+from agent_m2m.provider import deliver
 from agent_m2m.purchase import run_purchase
 from agent_m2m.selection import SelectionError
 
@@ -209,6 +210,13 @@ def get_personas() -> list[dict[str, Any]]:
     """기본 페르소나가 맨 앞이다."""
     ordered = sorted(persona_ids(), key=lambda persona_id: persona_id != DEFAULT_PERSONA)
     return [{key: persona[key] for key in ("id", "name", "goal")} for persona in map(load_persona, ordered)]
+
+
+@app.get("/api/provider/purchases/{purchase_id}")
+def provider_purchase(purchase_id: str, request: Request) -> JSONResponse:
+    """판매창구. 결제 없이 오면 402 와 x402 결제 조건, 서명을 담아 오면 정산·확인 뒤 결과(provider.deliver)."""
+    status, headers, body = deliver(purchase_id, str(request.url), request.headers)
+    return JSONResponse(body, status_code=status, headers=headers)
 
 
 @app.get("/api/mode")

@@ -316,10 +316,33 @@ export interface PaymentResult {
   chainId: number;
   /** 체인에 넘긴 요청 번호(keccak256). 이 칸이 생기기 전 기록에는 없다. */
   requestIdHash?: string;
-  /** settleDeal 로 체인에 저장한 합의의 해시. 흥정한 구매에만 있다. */
+  /** 체인에 저장한 합의의 해시. x402 서명의 nonce 이기도 하다. 흥정한 구매에만 있다. */
   dealHash?: string;
+  /** 결제 방식. x402 로 바뀐 뒤의 기록에만 있다. */
+  protocol?: "x402";
+  /** x402 네트워크 이름(예: eip155:31337). */
+  network?: string;
+  /** x402 정산 거래를 보낸 정산 서버 지갑. */
+  facilitator?: string;
   /** 체인에 보냈을 때(local·live)만 채워진다. */
   blockNumber?: string;
+}
+
+/** 감사 보고서. 원문은 DB 에 있고 결과·걸린 규칙·해시는 체인에 남는다. */
+export interface AuditReport {
+  stage: "before-send" | "after-send";
+  result: "pass" | "alert" | "block";
+  checked: string[];
+  findings: { rule: string; outcome: "alert" | "block"; message: string }[];
+}
+
+export interface AuditEntry {
+  report: AuditReport;
+  /** 보고서 원문의 해시. 체인에 남은 값과 같아야 한다. */
+  hash: string;
+  /** 체인에 올린 거래. 올리지 못했으면 null 이고 chainError 에 사유가 있다. */
+  txHash: string | null;
+  chainError?: string;
 }
 
 /** PROCESSING 은 결제 직전에 저장되고, 끝나면 SETTLED 나 FAILED 로 바뀐다. */
@@ -339,6 +362,8 @@ export interface PurchaseRecord {
   prompt: string;
   /** 처리할 내용. 이 칸이 생기기 전 기록과 내용 없이 보낸 요청에는 없다. */
   content?: string | null;
+  /** 송금 직전·뒤 감사 보고서. 체인에 감사를 남기기 전 기록에는 없다. */
+  audit?: { beforeSend?: AuditEntry; afterSend?: AuditEntry };
   status: PurchaseStatus;
   decision: Decision;
   payment: PaymentResult | null;

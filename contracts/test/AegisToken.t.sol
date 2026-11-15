@@ -65,56 +65,61 @@ contract AegisTokenTest is AegisTest {
         assertEq(token.balanceOf(buyer), 0);
     }
 
+    function test_versionMatchesSigningDomain() public view {
+        assertEq(token.version(), "1");
+        assertEq(token.name(), "AEGIS");
+    }
+
     function test_authorizationPaysFromSignerAndEmitsPaid() public {
         vm.prank(owner);
         token.mint(buyer, 400_000);
-        bytes32 requestId = keccak256("req-1");
+        AegisToken.Deal memory deal = _deal(buyer, seller, 400_000, keccak256("req-1"));
+        _open(token, deal);
+        bytes32 dealHash = _hashDeal(deal);
+        Signature memory sig = _signDeal(token, buyerKey, deal);
         vm.expectEmit(address(token));
-        emit AegisToken.AuthorizationUsed(buyer, requestId);
+        emit AegisToken.AuthorizationUsed(buyer, dealHash);
         vm.expectEmit(address(token));
-        emit AegisToken.Paid(requestId, buyer, seller, 400_000);
-        _pay(token, buyerKey, seller, 400_000, requestId);
+        emit AegisToken.Paid(deal.requestId, buyer, seller, 400_000);
+        _submit(token, deal, sig);
         assertEq(token.balanceOf(seller), 400_000);
         assertEq(token.balanceOf(buyer), 0);
-        assertTrue(token.authorizationState(buyer, requestId));
+        assertTrue(token.authorizationState(buyer, dealHash));
     }
 
     function test_authorizationCannotBeReused() public {
         vm.prank(owner);
         token.mint(buyer, 1_000);
-        bytes32 requestId = keccak256("req-again");
-        uint256 validBefore = block.timestamp + 600;
-        (uint8 v, bytes32 r, bytes32 s) = _sign(token, buyerKey, buyer, seller, 100, 0, validBefore, requestId);
-        vm.prank(relayer);
-        token.transferWithAuthorization(buyer, seller, 100, 0, validBefore, requestId, v, r, s);
-        vm.prank(relayer);
-        vm.expectRevert(abi.encodeWithSelector(AegisToken.AuthorizationAlreadyUsed.selector, buyer, requestId));
-        token.transferWithAuthorization(buyer, seller, 100, 0, validBefore, requestId, v, r, s);
+        AegisToken.Deal memory deal = _deal(buyer, seller, 100, keccak256("req-again"));
+        _open(token, deal);
+        Signature memory sig = _signDeal(token, buyerKey, deal);
+        _submit(token, deal, sig);
+        vm.expectRevert(abi.encodeWithSelector(AegisToken.AuthorizationAlreadyUsed.selector, buyer, _hashDeal(deal)));
+        _submit(token, deal, sig);
         assertEq(token.balanceOf(seller), 100);
     }
 
     function test_authorizationRejectsChangedRecipient() public {
         vm.prank(owner);
         token.mint(buyer, 1_000);
-        bytes32 requestId = keccak256("req-swap");
-        uint256 validBefore = block.timestamp + 600;
-        (uint8 v, bytes32 r, bytes32 s) = _sign(token, buyerKey, buyer, seller, 100, 0, validBefore, requestId);
-        vm.prank(relayer);
+        AegisToken.Deal memory deal = _deal(buyer, seller, 100, keccak256("req-swap"));
+        _open(token, deal);
+        Signature memory sig = _signDeal(token, buyerKey, deal);
+        vm.prank(facilitator);
         vm.expectRevert(AegisToken.InvalidAuthorization.selector);
-        token.transferWithAuthorization(buyer, relayer, 100, 0, validBefore, requestId, v, r, s);
+        token.transferWithAuthorization(buyer, facilitator, 100, 0, sig.validBefore, _hashDeal(deal), sig.v, sig.r, sig.s);
         assertEq(token.balanceOf(buyer), 1_000);
     }
 
     function test_authorizationExpires() public {
         vm.prank(owner);
         token.mint(buyer, 1_000);
-        bytes32 requestId = keccak256("req-late");
-        uint256 validBefore = block.timestamp + 600;
-        (uint8 v, bytes32 r, bytes32 s) = _sign(token, buyerKey, buyer, seller, 100, 0, validBefore, requestId);
-        vm.warp(validBefore);
-        vm.prank(relayer);
-        vm.expectRevert(abi.encodeWithSelector(AegisToken.AuthorizationExpired.selector, validBefore));
-        token.transferWithAuthorization(buyer, seller, 100, 0, validBefore, requestId, v, r, s);
+        AegisToken.Deal memory deal = _deal(buyer, seller, 100, keccak256("req-late"));
+        _open(token, deal);
+        Signature memory sig = _signDeal(token, buyerKey, deal);
+        vm.warp(sig.validBefore);
+        vm.expectRevert(abi.encodeWithSelector(AegisToken.AuthorizationExpired.selector, sig.validBefore));
+        _submit(token, deal, sig);
     }
 
     function test_ruleBlocksPayment() public {
@@ -122,9 +127,8 @@ contract AegisTokenTest is AegisTest {
         vm.prank(owner);
         ruled.mint(buyer, 1_000);
         bytes32 requestId = keccak256("req-big");
-        vm.expectRevert(abi.encodeWithSelector(MaxHundredRule.OverHundred.selector, 101));
-        _pay(ruled, buyerKey, seller, 101, requestId);
+        _payReverting(ruled, buyerKey, seller, 101, requestId, abi.encodeWithSelector(MaxHundredRule.OverHundred.selector, 101));
         assertEq(ruled.balanceOf(seller), 0);
-        assertFalse(ruled.authorizationState(buyer, requestId));
+        assertEq(ruled.dealStatus(requestId), ruled.DEAL_OPEN());
     }
 }

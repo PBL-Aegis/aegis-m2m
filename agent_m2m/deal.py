@@ -1,12 +1,12 @@
 """
 체인에 남길 합의. 흥정이 끝나면 산 곳과의 합의를 이 모양으로 만들어 결정 기록(decision.deal)에 넣고,
-결제(payment.settle_deal)는 이 합의대로 AegisToken.settleDeal 을 부른다.
+운영자가 이 합의를 체인에 열고(payment.open_deal), 구매자는 x402 로 이 합의대로 결제한다(x402_payment.py).
 
 대화 원문과 결정 근거는 MongoDB 에 두고, 체인에는 그 해시만 남긴다.
 해시는 정해진 방식(키 정렬, 공백 없는 JSON)으로 만들어서, 나중에 DB 의 기록으로 다시 계산하면 같은 값이 나와야 한다.
 DB 를 고쳤다면 체인의 해시와 맞지 않아 드러난다(provider.verify_deal).
 
-합의 해시(dealHash)는 컨트랙트의 hashDeal 과 같은 방식으로 계산한다. 구매자는 이 해시를 ERC-3009 서명의 nonce 로 쓴다.
+합의 해시(dealHash)는 컨트랙트의 hashDeal 과 같은 방식으로 계산한다. 구매자는 이 해시를 ERC-3009(x402) 서명의 nonce 로 쓰고, 토큰은 이 nonce 로 열린 합의를 찾는다.
 """
 
 import json

@@ -7,9 +7,9 @@ import {PaymentRules} from "./PaymentRules.sol";
 
 /// @title 연타 막기
 /// @notice 한 지갑(from)이 창(기본 60초) 안에 결제를 rateLimit(기본 5)건 넘게 하지 못한다.
-/// 거래를 보내는 msg.sender 는 중개자라서, 구매자는 from 으로 센다.
+/// 거래를 보내는 msg.sender 는 x402 정산 서버라서, 구매자는 from 으로 센다.
 /// 창은 첫 결제 때 열리고, rateWindow 가 지난 뒤의 첫 결제에서 새로 열린다.
-/// 같은 요청 번호의 재결제는 AegisToken 이 ERC-3009 nonce 로 막는다(AuthorizationAlreadyUsed).
+/// 같은 요청 번호의 재결제는 AegisToken 이 합의 상태로 막는다(결제된 합의는 다시 열 수 없음, DealAlreadySettled).
 /// 서버의 agent_m2m/rules/replay.py 는 같은 결과의 중복 구매를 막는다. 같은 요청 번호는 서버가 따로 막지 않는다.
 /// 숫자는 운영자만 바꿀 수 있다.
 abstract contract ReplayRule is Ownable, PaymentRules {
