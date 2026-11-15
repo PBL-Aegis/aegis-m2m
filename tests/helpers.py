@@ -18,3 +18,13 @@ def increase_chain_time(seconds: int) -> None:
     """체인 시계를 앞으로 돌린다. "60초 지나면 다시 결제", "하루 지나면 한도 초기화" 같은 테스트에 쓴다."""
     chain_rpc("evm_increaseTime", [seconds])
     chain_rpc("evm_mine")
+
+
+# 요청에는 우선순위 칸이 없다. Gemma(테스트에서는 conftest.py 의 honest_gemma)가 지시의 말로 정한다.
+PRIORITY_WORD = {"price": "싸게", "intelligence": "정확하게", "default": ""}
+
+
+def with_priority(prompt: str, priority: str) -> str:
+    """지시 끝에 우선순위를 정하는 말을 붙인다. default 는 붙이지 않는다."""
+    word = PRIORITY_WORD[priority]
+    return f"{prompt} {word}" if word else prompt

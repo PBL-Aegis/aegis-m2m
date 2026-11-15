@@ -16,6 +16,7 @@ from agent_m2m.rules import holdout
 from agent_m2m.selection import decide
 from agent_m2m.seller import find_seller
 from agent_m2m.shopping import compared_models
+from tests.helpers import with_priority
 
 LARGE_BUDGET = 10_000_000
 HOLDOUT_RULES = {holdout.RULE, holdout.STALL_RULE, holdout.SELLER_RULE}
@@ -56,7 +57,7 @@ def asks(priority: str) -> list[int]:
 
 
 def buy(prompt: str, user: str, budget: int, priority: str = "default", **extra) -> dict:
-    return run_purchase({"prompt": prompt, "userId": user, "budgetUnits": budget, "priority": priority, **extra})
+    return run_purchase({"prompt": with_priority(prompt, priority), "userId": user, "budgetUnits": budget, **extra})
 
 
 def alerts_of(record: dict) -> list[dict]:
