@@ -2,7 +2,7 @@ import re
 
 import pytest
 
-from agent_m2m import audit, provider, purchase, store
+from agent_m2m import audit, provider, store
 from agent_m2m.provider import DeliveryError
 from agent_m2m.purchase import run_purchase
 

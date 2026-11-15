@@ -2,7 +2,7 @@
 우선순위 추론. 로컬 Gemma(Ollama)가 요청의 지시와 내용을 함께 읽고 세 값 중 하나를 고른다.
 
 LLM이 정하는 것은 우선순위 한 칸뿐이다. 모델 선택·금액·결제는 지금처럼 고정 규칙이 한다.
-답은 Ollama 의 JSON 스키마(enum)로 네 값 중 하나만 나오게 묶는다.
+답은 Ollama 의 JSON 스키마(enum)로 세 값 중 하나만 나오게 묶는다.
 PBL-aegis 의 LocalQwenPriorityClassifier 를 옮겼다. 루프백 주소의 Ollama 만 부른다.
 
 내용 속 지시를 걸러내는 장치는 일부러 두지 않았다. 숨긴 지시에 속은 판단은 송금 직전 감사(rules/intent_swap.py, 시나리오 3)가 잡는다.

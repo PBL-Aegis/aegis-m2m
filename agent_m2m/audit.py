@@ -38,7 +38,7 @@ class AuditBlockedError(Exception):
 
 @dataclass
 class RequestContext:
-    """요청 직후의 문맥. request 의 priority 는 아직 비어 있을 수 있다."""
+    """요청 직후의 문맥. 우선순위는 아직 정하지 않았다(request 에 priority 가 없다)."""
 
     purchase_id: str
     request: dict[str, Any]
@@ -155,13 +155,6 @@ def blocked_error(report: dict[str, Any]) -> AuditBlockedError | None:
     """보고서에 막은 규칙이 있으면 그 예외."""
     block = next((finding for finding in report["findings"] if finding["outcome"] == "block"), None)
     return None if block is None else AuditBlockedError(block["rule"], block["message"])
-
-
-def run_before_payment(purchase_id: str, request: dict[str, Any], decision: Decision, checks: list[AuditCheck] | None = None) -> None:
-    """송금 직전 감사. 막은 규칙이 있으면 AuditBlockedError."""
-    error = blocked_error(audit_before_payment(purchase_id, request, decision, checks))
-    if error is not None:
-        raise error
 
 
 def run_after_payment(

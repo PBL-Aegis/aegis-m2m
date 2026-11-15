@@ -12,9 +12,9 @@ HTTP API. 화면(web/)과 다른 에이전트가 이 주소들만 부른다.
   GET  /api/mode                     결제 모드(항상 local)
   GET  /api/personas                 구매 에이전트 페르소나 목록(id·이름·목표)
 
-POST /api/purchase 의 입력은 여기서 모양만 검사한다(문자열인지, 금액 형식인지, 네 우선순위 중 하나인지).
+POST /api/purchase 의 입력은 여기서 모양만 검사한다(문자열인지, 금액 형식인지).
 예산(budget)은 사람이 적는 값이라 AEGIS 로 받고(예: "0.5"), 여기서 최소 단위(units)로 바꾼다.
-우선순위는 빼도 된다. 빼면 로컬 Gemma 가 요청 문장을 보고 정한다.
+우선순위(priority)는 받지 않는다(보내면 400). 로컬 Gemma 가 지시(prompt)와 내용(content)을 읽고 정한다.
 페르소나(persona)도 빼도 된다. 빼면 최저가형(thrifty)으로 흥정한다. 쓸 수 있는 값은 personas/ 의 파일 이름이다.
 requestId·userId 도 빼도 된다. requestId 를 빼면 서버가 새로 만든다.
 """

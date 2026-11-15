@@ -21,6 +21,7 @@ from agent_m2m import store, x402_payment
 from agent_m2m.deal import content_hash, hash_deal, transcript_hash
 from agent_m2m.domain import PaymentResult
 from agent_m2m.payment import (
+    AUDIT_RESULT_CODE,
     LOCAL_FACILITATOR_INDEX,
     STAGE_BEFORE_SEND,
     anvil_account,
@@ -136,7 +137,7 @@ def verify_audit(audit: dict[str, Any] | None, request_hash: str) -> None:
     on_chain = chain_audit(request_hash, STAGE_BEFORE_SEND)
     if on_chain["hash"].lower() != before["hash"].lower():
         raise DeliveryError("DB 의 감사 보고서가 체인에 남은 감사 해시와 다릅니다")
-    if on_chain["result"] == 3:
+    if on_chain["result"] == AUDIT_RESULT_CODE["block"]:
         raise DeliveryError("체인에 남은 송금 직전 감사 결과가 막음입니다")
 
 

@@ -1,8 +1,8 @@
 """
 두 출처(Epoch·OpenRouter)를 떠서 판매 목록과 시작값을 새로 만든다. 수집·짝짓기 로직은
-agent_m2m/benchmark_sources.py 에 있고, 앱도 구매 때 같은 로직으로 숫자를 갱신한다.
+agent_m2m/benchmark_sources.py 에 있다. 앱은 구매 때 숫자를 새로 받지 않고 커밋된 data/ 파일만 읽는다.
 
-  uv run python scripts/capture_benchmark.py          data/catalog.json · data/benchmark.json · data/sellers.json 갱신
+  uv run python scripts/capture_benchmark.py          data/catalog.json · data/benchmark.json 갱신 (data/sellers.json 은 고치지 않음)
   uv run python scripts/capture_benchmark.py --list   저장하지 않고 짝지어진 모델과 뺀 모델만 보여 줌
 
 판매 목록이 바뀌는 곳은 여기뿐이다. 결과를 확인하고 커밋한다.

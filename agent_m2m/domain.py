@@ -8,7 +8,7 @@
 from datetime import datetime, timezone
 from typing import Any
 
-# 요청이 무엇을 중요하게 보는지. 이 네 값이 가중치 한 줄을 고른다.
+# 요청이 무엇을 중요하게 보는지. 이 세 값이 가중치 한 줄과 비교 모델을 고른다.
 PRIORITIES: tuple[str, ...] = ("default", "price", "intelligence")
 
 # 우선순위마다 고정된 배점표(가격·성능, 합 100). 코드 밖에서 바꿀 수 없다.
