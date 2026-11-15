@@ -23,7 +23,9 @@ from agent_m2m.strategy import price_step
 ASKS = [4_001, 12_960, 100_000, 400_000, 1_234_567]
 LARGE_BUDGET = 10_000_000
 RATIO = 0.8
-INPUT = {"prompt": "이 글 요약해 줘", "budgetUnits": LARGE_BUDGET, "priority": "price"}
+INPUT = {"prompt": "이 글 싸게 요약해 줘", "budgetUnits": LARGE_BUDGET}
+# 우선순위는 지시에 넣은 말로 고른다(conftest.py 의 honest_gemma).
+PRIORITY_PROMPT = {"price": "이 글 싸게 요약해 줘", "intelligence": "이 글 정확하게 요약해 줘", "default": "이 글 요약해 줘"}
 
 
 @pytest.fixture(autouse=True)
@@ -244,7 +246,7 @@ def test_판매자_값을_하나도_못_받으면_멈춘다(monkeypatch):
 
 def test_산_곳의_판매_에이전트_최저가_아래로_내려가지_않는다():
     for priority in ("price", "intelligence", "default"):
-        record = run_purchase({**INPUT, "priority": priority})
+        record = run_purchase({**INPUT, "prompt": PRIORITY_PROMPT[priority]})
         winner = record["decision"]["winner"]
         seller = find_seller(winner["providerId"])
         assert record["decision"]["negotiation"]["sellerName"] == seller["name"]
@@ -306,7 +308,7 @@ def test_예산이_너무_낮아도_결제하고_예산_초과_경고를_남긴�
 
 
 def test_API_는_예산이_낮아도_구매_기록을_돌려준다():
-    response = TestClient(app).post("/api/purchase", json={"prompt": "예산 확인", "budget": "0.000001", "priority": "price"})
+    response = TestClient(app).post("/api/purchase", json={"prompt": "예산 확인, 싸게", "budget": "0.000001"})
     assert response.status_code == 200
     assert response.json()["status"] == "SETTLED"
 

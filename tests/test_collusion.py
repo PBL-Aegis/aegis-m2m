@@ -11,7 +11,7 @@ from agent_m2m import audit, benchmark, seller as seller_module, shopping, store
 from agent_m2m.purchase import run_purchase
 from agent_m2m.rules import collusion
 from agent_m2m.selection import decide
-from tests.helpers import increase_chain_time
+from tests.helpers import increase_chain_time, with_priority
 
 BUDGET_UNITS = 400_000
 
@@ -63,9 +63,8 @@ def buy(name: str, index: int, priority: str = "default", persona: str = "thrift
     increase_chain_time(61)
     return run_purchase(
         {
-            "prompt": f"이 글 정리해 줘 {name} {index}",
+            "prompt": with_priority(f"이 글 정리해 줘 {name} {index}", priority),
             "budgetUnits": BUDGET_UNITS,
-            "priority": priority,
             "persona": persona,
             "userId": f"collusion-{name}",
             "requestId": f"collusion-{name}-{index}",

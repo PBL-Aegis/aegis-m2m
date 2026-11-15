@@ -42,9 +42,10 @@ export default async function PurchaseDetailPage({ params }: { params: Promise<{
       <div className="detailHead">
         <span className={`badge ${status.tone}`}>{status.label}</span>
         <h1>“{record.prompt}”</h1>
+        {record.content && <p className="requestContent">{record.content}</p>}
         <span className="muted">
           {shortTime(record.createdAt)} · 우선순위 {PRIORITY_LABEL[decision.priority]}
-          {decision.prioritySource === "local-llm" && ` (${decision.priorityModel}이(가) 판단)`}
+          {decision.priorityModel !== undefined && ` (${decision.priorityModel}이(가) 판단)`}
           {decision.persona !== undefined && ` · ${decision.persona.name}`}
         </span>
       </div>

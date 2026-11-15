@@ -32,9 +32,9 @@ def run_purchase(
     on_event: Callable[[dict[str, Any]], None] = lambda event: None,
 ) -> PurchaseRecord:
     """
-    purchase_input: prompt·budgetUnits, 선택으로 priority·persona·requestId·userId·maxOutputTokens·requiredCapabilities.
+    purchase_input: prompt(지시)·budgetUnits, 선택으로 content(처리할 내용)·persona·requestId·userId·maxOutputTokens·requiredCapabilities.
     페르소나가 없으면 기본 페르소나(최저가형)로 흥정한다.
-    우선순위가 없으면 로컬 Gemma 가 요청 문장을 보고 정한다. 요청 번호가 없으면 새로 만들고, 사용자가 없으면 None.
+    우선순위는 언제나 로컬 Gemma 가 지시와 내용을 읽고 정한다. 요청 번호가 없으면 새로 만들고, 사용자가 없으면 None.
     흥정 진행은 on_event 로 바로 알린다(shopping.py).
     """
     purchase_id = str(uuid.uuid4())
@@ -52,15 +52,14 @@ def run_purchase(
     if previous is not None:
         return previous
 
-    # 우선순위가 없으면 로컬 Gemma 가 요청 문장을 보고 정한다. 실패하면 결제 전에 멈춘다.
-    inferred = infer_priority(incoming["prompt"]) if incoming.get("priority") is None else None
-    request = {**incoming, "priority": inferred["priority"] if inferred else incoming["priority"]}
+    # 우선순위는 로컬 Gemma 가 지시와 내용을 읽고 정한다. 실패하면 결제 전에 멈춘다.
+    # 내용에 숨긴 지시에 속았는지는 송금 직전 감사(rules/intent_swap.py)가 지시만 다시 읽어 대조한다.
+    inferred = infer_priority(incoming["prompt"], incoming.get("content") or "")
+    request = {**incoming, "priority": inferred["priority"]}
 
     # 1) 호가 계산 — 고정된 단가로 후보마다 금액을 낸다. 여기서 실패하면 결제는 시작조차 하지 않는다.
     decision = decide(request, load_snapshot())
-    decision["prioritySource"] = "request" if inferred is None else "local-llm"
-    if inferred is not None:
-        decision["priorityModel"] = inferred["model"]
+    decision["priorityModel"] = inferred["model"]
 
     # 흥정 — 모두 결렬되면 기록 없이 멈춘다. 합의가를 winner 금액에 넣어 뒤의 감사·결제·확인이 모두 이 값을 본다.
     persona = load_persona(request.get("persona") or DEFAULT_PERSONA)
@@ -75,6 +74,7 @@ def run_purchase(
         "userId": request["userId"],
         "createdAt": now_iso(),
         "prompt": request["prompt"],
+        "content": request.get("content"),
         "status": "PROCESSING",
         "decision": decision,
         "payment": None,

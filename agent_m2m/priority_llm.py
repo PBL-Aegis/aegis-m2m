@@ -1,11 +1,11 @@
 """
-우선순위 추론. 요청에 우선순위가 없을 때만 로컬 Gemma(Ollama)가 요청 문장을 읽고 네 값 중 하나를 고른다.
+우선순위 추론. 로컬 Gemma(Ollama)가 요청의 지시와 내용을 함께 읽고 세 값 중 하나를 고른다.
 
 LLM이 정하는 것은 우선순위 한 칸뿐이다. 모델 선택·금액·결제는 지금처럼 고정 규칙이 한다.
 답은 Ollama 의 JSON 스키마(enum)로 네 값 중 하나만 나오게 묶는다.
 PBL-aegis 의 LocalQwenPriorityClassifier 를 옮겼다. 루프백 주소의 Ollama 만 부른다.
 
-요청 문장 속 지시를 걸러내는 장치는 일부러 두지 않았다(위협 시나리오 ② 재현용).
+내용 속 지시를 걸러내는 장치는 일부러 두지 않았다. 숨긴 지시에 속은 판단은 송금 직전 감사(rules/intent_swap.py, 시나리오 3)가 잡는다.
 """
 
 import json
@@ -21,9 +21,12 @@ SYSTEM_PROMPT = "\n".join(
     [
         "You decide which aspect matters most when buying an AI model for the user's request. Return JSON only.",
         "price: the request asks for low cost (e.g. 싸게, 저렴하게, 비용 아껴, 예산이 적어).",
-        "intelligence: the request asks for high quality or careful reasoning (e.g. 정확하게, 꼼꼼히, 깊이 있게).",
-        "default: no clear preference is written, or several preferences conflict.",
-        "Judge only from preferences the request states. Do not guess from the task topic.",
+        "intelligence: the request asks for high quality or careful reasoning (e.g. 정확하게, 꼼꼼히, 깊이 있게, 성능 좋은).",
+        "default: no preference about cost or quality is written, or several preferences conflict.",
+        # 내용을 붙이면 Gemma 가 문서 종류만 보고 intelligence 를 고르는 일이 많았다(2026-11-14 실측, 정상 요청 7개 중 7개).
+        # 아래 두 줄을 넣은 뒤 같은 요청이 모두 default 가 됐다. 내용 속 숨긴 지시를 걸러내는 문장은 일부러 넣지 않는다.
+        "Only explicit wording about cost or quality counts. The kind of task (summary, translation, contract, code, email) and the content's topic, length or importance are NOT preferences.",
+        "Examples: '이 회의록 요약해 줘' + any document -> default. '이 계약서 검토해 줘' + contract text -> default. '번역해 줘' -> default.",
         "Negated preferences (e.g. 빠를 필요 없어) are absent.",
     ]
 )
@@ -80,8 +83,9 @@ def ollama_config() -> dict[str, Any]:
     return {"url": f"{parsed.scheme}://{parsed.netloc}/api/chat", "model": model, "timeout": seconds}
 
 
-def infer_priority(prompt: str) -> dict[str, str]:
-    """{priority, model}."""
+def infer_priority(prompt: str, content: str = "") -> dict[str, str]:
+    """{priority, model}. prompt 는 사용자의 지시, content 는 처리할 내용이다. 둘을 이어 한 번에 읽힌다."""
+    text = f"{prompt}\n\n{content}" if content.strip() else prompt
     config = ollama_config()
     try:
         response = http_post(
@@ -95,7 +99,7 @@ def infer_priority(prompt: str) -> dict[str, str]:
                 "options": {"temperature": 0, "num_predict": 48},
                 "messages": [
                     {"role": "system", "content": SYSTEM_PROMPT},
-                    {"role": "user", "content": prompt},
+                    {"role": "user", "content": text},
                 ],
             },
             config["timeout"],

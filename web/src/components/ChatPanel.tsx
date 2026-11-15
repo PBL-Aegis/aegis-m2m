@@ -19,15 +19,6 @@ import type { NegotiationTurn, PersonaRef, Priority, PurchaseRecord, PurchaseStr
 /** 흥정 말풍선 하나를 보여주는 간격. 서버는 흥정을 순식간에 끝내므로 읽을 시간을 여기서 준다. */
 const TURN_DELAY_MS = 650;
 
-/** "기본"은 고르는 값이 아니다. 비워 두면 요청 문장을 읽어 우선순위를 정한다. */
-const AUTO = "";
-
-const PRIORITY_CHOICES = [
-  { value: AUTO, label: "요청 문장으로 판단" },
-  { value: "price", label: "싸게" },
-  { value: "intelligence", label: "똑똑하게" },
-];
-
 const PLAN_OPENING: Partial<Record<Priority, string>> = {
   default: "기본으로 살게요.",
   price: "싸게 살게요.",
@@ -41,6 +32,7 @@ interface Block extends StreamModel {
 interface Turn {
   id: number;
   prompt: string;
+  content: string;
   priority: Priority | null;
   personaName: string | null;
   blocks: Block[];
@@ -112,10 +104,10 @@ function PurchaseResult({ record, anchor }: { record: PurchaseRecord; anchor: (e
 export function ChatPanel() {
   const [prompt, setPrompt] = useState("");
   const [budget, setBudget] = useState("0.3");
-  const [priority, setPriority] = useState<string>(AUTO);
+  const [content, setContent] = useState("");
+  const [contentOpen, setContentOpen] = useState(false);
   const [personas, setPersonas] = useState<PersonaRef[]>([]);
   const [persona, setPersona] = useState<string | null>(null);
-  const [menuOpen, setMenuOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [turns, setTurns] = useState<Turn[]>([]);
 
@@ -195,10 +187,12 @@ export function ChatPanel() {
     event.preventDefault();
     const text = prompt.trim();
     if (text === "" || busy || parseAegis(budget) === null) return;
+    const attached = contentOpen ? content.trim() : "";
 
     const id = Date.now();
-    setTurns((prev) => [...prev, { id, prompt: text, priority: null, personaName: null, blocks: [], record: null, error: null }]);
+    setTurns((prev) => [...prev, { id, prompt: text, content: attached, priority: null, personaName: null, blocks: [], record: null, error: null }]);
     setPrompt("");
+    setContent("");
     setBusy(true);
 
     // 받은 순서대로 쌓아 두고 하나씩 푼다. 이미 끝난 흥정에 붙는 말(취소 등)은 기다리지 않는다.
@@ -234,7 +228,7 @@ export function ChatPanel() {
         body: JSON.stringify({
           prompt: text,
           budget: budget.trim(),
-          ...(priority === AUTO ? {} : { priority }),
+          ...(attached === "" ? {} : { content: attached }),
           ...(persona === null ? {} : { persona }),
         }),
       });
@@ -277,7 +271,6 @@ export function ChatPanel() {
       </div>
 
       <form className="composer" onSubmit={onSubmit}>
-        {menuOpen && <button type="button" className="menuBackdrop" aria-label="우선순위 메뉴 닫기" onClick={() => setMenuOpen(false)} />}
         <div className="composerCard">
           <textarea
             aria-label="요청 내용"
@@ -294,6 +287,17 @@ export function ChatPanel() {
             rows={2}
             disabled={busy}
           />
+          {contentOpen && (
+            <textarea
+              className="contentInput"
+              aria-label="처리할 내용"
+              value={content}
+              onChange={(event) => setContent(event.target.value)}
+              placeholder="요약·번역할 글을 붙여 넣으세요"
+              rows={4}
+              disabled={busy}
+            />
+          )}
           <div className="composerBar">
             <label className="budgetPill">
               예산
@@ -324,52 +328,15 @@ export function ChatPanel() {
                   ))}
                 </div>
               )}
-              <div className="priorityPicker">
-                <button
-                  type="button"
-                  className="priorityButton"
-                  aria-haspopup="menu"
-                  aria-expanded={menuOpen}
-                  disabled={busy}
-                  onClick={() => setMenuOpen(!menuOpen)}
-                >
-                  {PRIORITY_CHOICES.find((choice) => choice.value === priority)?.label}
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5f6878" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <path d="m6 9 6 6 6-6" />
-                  </svg>
-                </button>
-                {menuOpen && (
-                  <div
-                    className="priorityMenu"
-                    role="menu"
-                    aria-label="우선순위 선택"
-                    onKeyDown={(event) => {
-                      if (event.key === "Escape") setMenuOpen(false);
-                    }}
-                  >
-                    <span>우선순위 선택</span>
-                    {PRIORITY_CHOICES.map((choice) => (
-                      <button
-                        key={choice.value}
-                        type="button"
-                        role="menuitemradio"
-                        aria-checked={choice.value === priority}
-                        onClick={() => {
-                          setPriority(choice.value);
-                          setMenuOpen(false);
-                        }}
-                      >
-                        {choice.label}
-                        {choice.value === priority && (
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6b3fd4" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                            <path d="m5 12 5 5L20 7" />
-                          </svg>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <button
+                type="button"
+                className="contentToggle"
+                aria-pressed={contentOpen}
+                disabled={busy}
+                onClick={() => setContentOpen(!contentOpen)}
+              >
+                내용 붙이기
+              </button>
               <button type="submit" className="sendButton" aria-label="보내기" disabled={busy || prompt.trim() === "" || parseAegis(budget) === null}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M12 19V5M6 11l6-6 6 6" />
@@ -396,7 +363,10 @@ function TurnView({ turn, anchor }: { turn: Turn; anchor: (element: HTMLElement 
 
   return (
     <>
-      <div className="bubble user">{turn.prompt}</div>
+      <div className="bubble user">
+        {turn.prompt}
+        {turn.content !== "" && <span className="bubbleContent">{turn.content}</span>}
+      </div>
 
       <div className="msg">
         <BuyerAvatar />

@@ -108,7 +108,7 @@ def _compare(left: dict[str, Any], right: dict[str, Any]) -> int:
 
 
 def decide(request: dict[str, Any], source: dict[str, Any] | None = None) -> Decision:
-    """request: prompt·budgetUnits·priority, 선택으로 maxOutputTokens·requiredCapabilities."""
+    """request: prompt·budgetUnits·priority, 선택으로 content·maxOutputTokens·requiredCapabilities."""
     max_output_tokens = request.get("maxOutputTokens")
     if max_output_tokens is None:
         max_output_tokens = DEFAULT_MAX_OUTPUT_TOKENS
@@ -123,7 +123,7 @@ def decide(request: dict[str, Any], source: dict[str, Any] | None = None) -> Dec
     source = source or load_snapshot()
     snapshot = source["snapshot"]
     paired = pair_entries(catalog, snapshot)
-    input_tokens = estimate_input_tokens(request["prompt"])
+    input_tokens = estimate_input_tokens(f"{request['prompt']}\n\n{request.get('content') or ''}".strip())
     required = [item.strip().lower() for item in request.get("requiredCapabilities") or []]
 
     # 1) 금액 계산

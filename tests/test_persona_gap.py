@@ -10,6 +10,7 @@ from agent_m2m.purchase import run_purchase
 from agent_m2m.rules import persona_gap
 from agent_m2m.selection import decide
 from agent_m2m.shopping import shop
+from tests.helpers import with_priority
 
 BUDGET = 400_000
 PROMPT = "이 글 정리해 줘"
@@ -42,7 +43,7 @@ def no_rules():
 
 def request(name: str, persona: str | None = None, priority: str = "price", budget: int = BUDGET) -> dict:
     # 호가는 문장 길이로 정해지므로 문장은 모두 같게 둔다. 사용자와 요청 번호만 다르게 한다.
-    body = {"prompt": PROMPT, "budgetUnits": budget, "priority": priority, "userId": f"gap-{name}", "requestId": f"gap-{name}"}
+    body = {"prompt": with_priority(PROMPT, priority), "budgetUnits": budget, "userId": f"gap-{name}", "requestId": f"gap-{name}"}
     if persona is not None:
         body["persona"] = persona
     return body
@@ -58,7 +59,7 @@ def paid(record: dict) -> int:
 
 def context(persona_id: str, priority: str = "price", budget: int = BUDGET) -> tuple[AuditContext, list[tuple[str, str]]]:
     """체인 없이 송금 직전 문맥만 만든다. 결제 흐름(run_purchase)과 같은 순서로 결정을 채운다."""
-    req = {"prompt": PROMPT, "budgetUnits": budget, "priority": priority}
+    req = {"prompt": with_priority(PROMPT, priority), "budgetUnits": budget, "priority": priority}
     decision = decide(req, load_snapshot())
     decision.update(shop(decision["candidates"], priority, budget, persona=load_persona(persona_id)))
     alerts: list[tuple[str, str]] = []

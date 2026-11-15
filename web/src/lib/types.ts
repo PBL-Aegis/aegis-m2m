@@ -84,7 +84,10 @@ export interface PurchaseRequest {
   requestId: string;
   /** 요청한 사용자. 사용자 확인 방식은 아직 정하지 않았다. */
   userId: string | null;
+  /** 사용자의 지시. 우선순위는 이 지시와 내용을 로컬 Gemma 가 읽고 정한다. */
   prompt: string;
+  /** 처리할 내용(요약할 글 등). */
+  content?: string;
   budgetUnits: number;
   priority: Priority;
   maxOutputTokens?: number;
@@ -92,17 +95,14 @@ export interface PurchaseRequest {
 }
 
 /**
- * API 로 들어온 요청. 우선순위가 비어 있으면 로컬 Qwen 이 요청 문장을 보고 채운다.
+ * API 로 들어온 요청. 우선순위 칸은 받지 않고 로컬 Gemma 가 지시와 내용을 읽고 정한다.
  * 요청 번호가 비어 있으면 서버가 새로 만들고, 사용자가 비어 있으면 null 로 둔다.
  */
 export type PurchaseInput = Omit<PurchaseRequest, "priority" | "requestId" | "userId"> & {
-  priority?: Priority;
   requestId?: string;
   userId?: string;
 };
 
-/** 결정에 쓰인 우선순위가 어디서 왔는지. */
-export type PrioritySource = "request" | "local-llm";
 
 /** 필터에서 떨어진 후보와 그 이유. */
 export interface RejectedCandidate {
@@ -242,9 +242,7 @@ export interface Decision {
   snapshotRefreshError?: string;
   catalogVersion: string;
   priority: Priority;
-  /** 우선순위를 요청이 정했는지 LLM이 추론했는지. 이 칸이 생기기 전 기록에는 없다. */
-  prioritySource?: PrioritySource;
-  /** LLM이 추론했을 때 쓴 모델 이름. */
+  /** 우선순위를 정한 로컬 LLM 모델 이름. 사용자가 우선순위를 직접 고르던 때의 기록에는 없다. */
   priorityModel?: string;
   weights: Weights;
   estimatedInputTokens: number;
@@ -325,6 +323,8 @@ export interface PurchaseRecord {
   /** 상태가 마지막으로 바뀐 시각. 이 칸이 생기기 전 기록에는 없다. */
   updatedAt?: string;
   prompt: string;
+  /** 처리할 내용. 이 칸이 생기기 전 기록과 내용 없이 보낸 요청에는 없다. */
+  content?: string | null;
   status: PurchaseStatus;
   decision: Decision;
   payment: PaymentResult | null;

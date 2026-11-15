@@ -67,6 +67,19 @@ def local_chain():
 
 
 @pytest.fixture(autouse=True)
+def honest_gemma():
+    """우선순위 추론은 실제 Ollama 를 부르지 않는다. 지시만 읽고 정하는, 속지 않는 Gemma 로 둔다.
+    그래서 테스트는 지시에 '싸게'·'정확하게' 같은 말을 넣어 우선순위를 고른다. 속는 경우는 test_intent_swap.py 가 바꿔 끼운다.
+    테스트가 monkeypatch.undo() 를 불러도 풀리지 않게 따로 된 MonkeyPatch 를 쓴다."""
+    from agent_m2m import purchase
+    from agent_m2m.intent import read_intent
+
+    with pytest.MonkeyPatch.context() as patch:
+        patch.setattr(purchase, "infer_priority", lambda prompt, content="": {"priority": read_intent(prompt)["priority"], "model": "gemma-test"})
+        yield
+
+
+@pytest.fixture(autouse=True)
 def no_dialogue_model(monkeypatch):
     """흥정 대사는 실제 Ollama 를 부르지 않는다. 실패로 처리돼 기본 문장을 쓴다."""
     from agent_m2m import dialogue

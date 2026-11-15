@@ -13,14 +13,13 @@ client = TestClient(app)
 
 def purchase_input(name: str) -> dict:
     """테스트마다 다른 문장을 써서 같은 문장 규칙이 다른 테스트로 번지지 않게 한다."""
-    return {"prompt": f"이 글 요약해 줘 {name}", "budgetUnits": 50_000, "priority": "price"}
+    return {"prompt": f"이 글 싸게 요약해 줘 {name}", "budgetUnits": 50_000}
 
 
 def api_body(name: str) -> dict:
     return {
-        "prompt": f"이 글 요약해 줘 {name}",
+        "prompt": f"이 글 싸게 요약해 줘 {name}",
         "budget": "0.05",
-        "priority": "price",
         "requestId": f"replay-{name}",
         "userId": f"replay-user-{name}",
     }
@@ -55,10 +54,10 @@ def fail_after_send(monkeypatch) -> None:
 # 같은 결과 중복 구매 (에이전트 반복 루프)
 
 
-def buy_times(count: int, name: str, user_id: str, priority: str = "price") -> list[str | None]:
+def buy_times(count: int, name: str, user_id: str) -> list[str | None]:
     """요청 번호를 바꿔 가며 같은 문장으로 산다. 막힌 건은 규칙 이름, 아니면 None."""
     records = [
-        run_purchase({**purchase_input(name), "priority": priority, "requestId": f"{name}-{user_id}-{priority}-{index}", "userId": user_id})
+        run_purchase({**purchase_input(name), "requestId": f"{name}-{user_id}-{index}", "userId": user_id})
         for index in range(count)
     ]
     return [record.get("blockedRule") for record in records]
