@@ -9,7 +9,6 @@ HTTP API. 화면(web/)과 다른 에이전트가 이 주소들만 부른다.
   GET  /api/alerts                   최근 알림과, 그중 구매 기록이 있는 구매 번호
   GET  /api/alerts/summary           차단·경고 개수
   GET  /api/wallet                   구매 에이전트 지갑 잔액
-  GET  /api/mode                     결제 모드(항상 local)
   GET  /api/personas                 구매 에이전트 페르소나 목록(id·이름·목표)
 
 POST /api/purchase 의 입력은 여기서 모양만 검사한다(문자열인지, 금액 형식인지).
@@ -33,7 +32,7 @@ from agent_m2m import store
 from agent_m2m.audit import AuditBlockedError
 from agent_m2m.format import parse_aegis
 from agent_m2m.negotiation import NegotiationError
-from agent_m2m.payment import buyer_balance, payment_config
+from agent_m2m.payment import buyer_balance
 from agent_m2m.persona import DEFAULT_PERSONA, load_persona, persona_ids
 from agent_m2m.priority_llm import PriorityInferenceError
 from agent_m2m.provider import deliver
@@ -218,7 +217,3 @@ def provider_purchase(purchase_id: str, request: Request) -> JSONResponse:
     status, headers, body = deliver(purchase_id, str(request.url), request.headers)
     return JSONResponse(body, status_code=status, headers=headers)
 
-
-@app.get("/api/mode")
-def get_mode() -> dict[str, str]:
-    return {"mode": payment_config()["mode"]}

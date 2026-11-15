@@ -3,11 +3,10 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { SiteNav } from "@/components/SiteNav";
-import { paymentMode } from "@/lib/api";
 
 import "./globals.css";
 
-// 결제 모드는 요청 시점의 환경변수로 정해지므로 빌드 때 고정하지 않는다.
+// 화면은 요청 때마다 서버 기록을 새로 읽으므로 빌드 때 고정하지 않는다.
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
@@ -16,7 +15,6 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
-  const mode = await paymentMode();
   return (
     <html lang="ko">
       <head>
@@ -31,12 +29,6 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
             <Link className="brand" href="/">agent-M2M</Link>
             <div className="right">
               <SiteNav />
-              <span
-                className={`mode${mode === "live" ? " live" : ""}`}
-                title={mode === "live" ? "실제 AEGIS 토큰이 전송됩니다" : "이 컴퓨터의 로컬 체인으로 전송합니다"}
-              >
-                {mode === "live" ? "Live" : "Local"}
-              </span>
             </div>
           </div>
         </header>

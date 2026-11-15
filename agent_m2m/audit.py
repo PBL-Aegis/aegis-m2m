@@ -48,7 +48,7 @@ class RequestContext:
 
 @dataclass
 class AuditContext:
-    """송금 직전·결제 후의 문맥. decision 에 고른 모델·금액·점수가 있다."""
+    """송금 직전·결제 후의 문맥. decision 에 고른 모델·금액·흥정이 있다."""
 
     purchase_id: str
     request: dict[str, Any]

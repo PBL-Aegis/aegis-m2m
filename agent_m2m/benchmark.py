@@ -6,23 +6,15 @@
 "그때 본 숫자"가 무엇이었는지 확인할 수 있다.
 
 구매 때는 data/benchmark.json 에 고정한 값을 쓴다. 모델을 바꿀 때만 scripts/capture_benchmark.py 로 다시 뜬다.
-load_fresh_snapshot 은 두 출처(Epoch·OpenRouter)에서 새로 받아 MongoDB 에 쌓는 함수로, 지금 구매 흐름에서는 부르지 않는다.
 """
 
 import hashlib
 import json
 import os
-import threading
-import time
 from pathlib import Path
 from typing import Any
 
-from agent_m2m import store
-from agent_m2m.benchmark_sources import build_snapshot, fetch_epoch, fetch_openrouter
 from agent_m2m.config import ROOT
-from agent_m2m.domain import parse_iso_ms
-
-MAX_AGE_MS = 60 * 60 * 1000
 
 
 def _data_dir() -> Path:
@@ -51,12 +43,6 @@ def load_snapshot() -> dict[str, Any]:
     return {"snapshot": snapshot, "hash": digest}
 
 
-def snapshot_hash(snapshot: dict[str, Any]) -> str:
-    """data/benchmark.json 과 같은 모양으로 직렬화한 내용의 지문. 파일에서 읽은 해시와 맞아떨어진다."""
-    raw = json.dumps(snapshot, indent=2, ensure_ascii=False) + "\n"
-    return f"sha256:{hashlib.sha256(raw.encode()).hexdigest()}"
-
-
 def load_catalog() -> dict[str, Any]:
     return _read_json("catalog.json")[0]
 
@@ -70,40 +56,3 @@ def pair_entries(catalog: dict[str, Any], snapshot: dict[str, Any]) -> list[tupl
             raise RuntimeError(f"벤치마크 표에 {entry['key']} 의 숫자가 없습니다")
         pairs.append((entry, metrics))
     return pairs
-
-
-# 동시에 여러 구매가 들어와도 외부 호출은 한 번만 한다.
-_refreshing = threading.Lock()
-
-
-def _refresh() -> dict[str, Any]:
-    epoch_rows = fetch_epoch()
-    openrouter_models = fetch_openrouter()
-    snapshot = build_snapshot(load_catalog(), epoch_rows, openrouter_models)
-    digest = snapshot_hash(snapshot)
-    store.save_snapshot(digest, snapshot)
-    return {"snapshot": snapshot, "hash": digest}
-
-
-def _is_fresh(current: dict[str, Any], now_ms: float) -> bool:
-    return now_ms - parse_iso_ms(current["snapshot"]["capturedAt"]) < MAX_AGE_MS
-
-
-def load_fresh_snapshot(now_ms: float | None = None) -> dict[str, Any]:
-    """
-    {snapshot, hash, refreshError}. refreshError 는 새로 받으려다 실패했을 때만 채워지고,
-    이때 snapshot 은 마지막으로 받은 값이다.
-    """
-    now_ms = time.time() * 1000 if now_ms is None else now_ms
-    current = store.latest_snapshot() or load_snapshot()
-    if _is_fresh(current, now_ms):
-        return {**current, "refreshError": None}
-    with _refreshing:
-        # 기다리는 동안 다른 요청이 새로 받아 두었으면 그 값을 쓴다.
-        latest = store.latest_snapshot()
-        if latest is not None and _is_fresh(latest, now_ms):
-            return {**latest, "refreshError": None}
-        try:
-            return {**_refresh(), "refreshError": None}
-        except Exception as error:  # noqa: BLE001 — 어떤 실패든 마지막 값으로 계속한다.
-            return {**current, "refreshError": str(error) or "알 수 없는 오류"}

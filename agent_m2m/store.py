@@ -1,5 +1,5 @@
 """
-기록. 구매 한 건에 대해 요청·후보·점수·탈락 사유·금액·거래번호·결과를 남긴다.
+기록. 구매 한 건에 대해 요청·후보·탈락 사유·금액·거래번호·결과를 남긴다.
 
 MongoDB 컬렉션 하나(purchases)에 저장한다. API 는 DB에 직접 붙지 않고 이 모듈의 함수만 쓴다.
 구매 기록은 결제 직전에 PROCESSING 으로 저장하고, 끝나면 그 문서의 상태와 결과만 고친다.
@@ -8,9 +8,6 @@ MongoDB 컬렉션 하나(purchases)에 저장한다. API 는 DB에 직접 붙지
 문서를 JSON 문자열로 뭉쳐 넣지 않고 그대로 넣는 이유는, 나중에 "같은 수신자에게 반복 결제",
 "시간대별 묶기" 같은 질의를 DB에서 바로 돌리기 위해서다. 구매 번호를 `_id` 로 쓰므로
 같은 번호를 두 번 저장하려 하면 DB가 거부한다.
-
-벤치마크 자동 갱신(benchmark.load_fresh_snapshot)이 받은 스냅샷은 snapshots 컬렉션에 해시를 `_id` 로 쌓는다.
-지금 구매 흐름은 자동 갱신을 부르지 않아 이 컬렉션은 쌓이지 않는다.
 
 감사 규칙이 남긴 알림은 alerts 컬렉션에 덧붙인다.
 감사 규칙이 자기 컬렉션이 필요하면 database() 로 같은 DB 를 받아 쓴다.
@@ -26,7 +23,6 @@ from pymongo.database import Database
 from agent_m2m.domain import AuditAlert, PurchaseRecord, now_iso
 
 PURCHASES = "purchases"
-SNAPSHOTS = "snapshots"
 ALERTS = "alerts"
 
 _client: MongoClient | None = None
@@ -46,7 +42,6 @@ def database() -> Database:
             _client = MongoClient(os.environ.get("MONGODB_URI", "mongodb://127.0.0.1:27017"))
             db = _client[_db_name()]
             db[PURCHASES].create_index([("createdAt", DESCENDING)])
-            db[SNAPSHOTS].create_index([("capturedAt", DESCENDING)])
             db[ALERTS].create_index([("createdAt", DESCENDING)])
             _db = db
         return _db
@@ -120,21 +115,6 @@ def get_purchase(purchase_id: str) -> PurchaseRecord | None:
 def purchase_exists(purchase_id: str) -> bool:
     """같은 구매 번호로 결제가 두 번 일어나지 않게 하는 확인."""
     return database()[PURCHASES].count_documents({"_id": purchase_id}, limit=1) > 0
-
-
-def save_snapshot(snapshot_hash: str, snapshot: dict[str, Any]) -> None:
-    """같은 해시가 이미 있으면 그대로 둔다(덧붙이기만)."""
-    database()[SNAPSHOTS].update_one(
-        {"_id": snapshot_hash},
-        {"$setOnInsert": {"capturedAt": snapshot["capturedAt"], "snapshot": snapshot}},
-        upsert=True,
-    )
-
-
-def latest_snapshot() -> dict[str, Any] | None:
-    """가장 최근에 받아 온 스냅샷 {snapshot, hash}. 아직 한 번도 받지 않았으면 None."""
-    document = database()[SNAPSHOTS].find_one({}, sort=[("capturedAt", DESCENDING)])
-    return None if document is None else {"snapshot": document["snapshot"], "hash": document["_id"]}
 
 
 def drop_test_database() -> None:

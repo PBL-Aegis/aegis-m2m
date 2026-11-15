@@ -3,7 +3,7 @@
  */
 
 import { aegisText } from "@/lib/format";
-import type { Evaluation, Negotiation, NegotiationTurn, PaymentMode, PurchaseRecord } from "@/lib/types";
+import type { Evaluation, Negotiation, NegotiationTurn, PurchaseRecord } from "@/lib/types";
 
 export type Tone = "live" | "win" | "ok" | "warn" | "risk" | "mute";
 
@@ -118,11 +118,6 @@ export const VERDICT_VIEW: Record<Evaluation["verdict"], StatusView> = {
   partial: { label: "일부 이득", tone: "warn" },
   bad: { label: "손해", tone: "risk" },
 };
-
-/** 돈이 오간 체인. local 은 이 컴퓨터의 anvil, live 는 Base Sepolia 다. */
-export function chainLabel(mode: PaymentMode): string {
-  return mode === "live" ? "Base Sepolia" : "로컬 체인";
-}
 
 /** 긴 해시를 앞뒤만 남겨 줄인다. */
 export function shortHash(hash: string): string {

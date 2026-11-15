@@ -18,7 +18,7 @@ from web3 import Web3
 DEAL_TYPEHASH = Web3.keccak(
     text="Deal(bytes32 requestId,address buyer,address seller,bytes32 modelKey,uint256 askUnits,uint256 agreedUnits,bytes32 transcriptHash,bytes32 decisionHash)"
 )
-# 결정 근거로 해시에 넣는 칸. 후보 점수, 흥정한 곳 전부, 페르소나, 평가다.
+# 결정 근거로 해시에 넣는 칸. 후보 호가, 흥정한 곳 전부, 페르소나, 평가다.
 DECISION_FIELDS = ("snapshotHash", "priority", "candidates", "quotes", "persona", "evaluation")
 
 

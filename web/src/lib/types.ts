@@ -3,13 +3,6 @@
 /** 요청이 무엇을 중요하게 보는지. speed 는 옛 기록에만 있고 새 요청에서는 받지 않는다. */
 export type Priority = "default" | "price" | "speed" | "intelligence";
 
-/** 가격·성능에 몇 점씩 줄지. 합은 항상 100. time 은 속도를 보던 옛 기록에만 있다. */
-export interface Weights {
-  price: number;
-  time?: number;
-  intelligence: number;
-}
-
 /** 필터에서 떨어진 후보와 그 이유. */
 export interface RejectedCandidate {
   key: string;
@@ -18,40 +11,18 @@ export interface RejectedCandidate {
   reasons: string[];
 }
 
-/** 점수까지 매겨진 후보. */
-export interface ScoredCandidate {
+/** 필요 기능을 통과해 흥정에 넘어간 후보와 그 호가. */
+export interface Candidate {
   key: string;
   displayName: string;
   providerId: string;
   providerModelId: string;
   recipient: string;
   amountUnits: number;
-  /** 옛 기록(속도를 보던 때)에만 있다. 출력 속도(토큰/초). */
-  outputTokensPerSecond?: number;
-  /** 옛 기록(끝까지 걸린 시간으로 속도를 매기던 때)에만 있다. */
-  completionMs?: number;
   /** Epoch ECI 와 95% 신뢰구간. 이 칸들이 생기기 전 기록에는 없다. */
   eci?: number;
   eciCiLow?: number;
   eciCiHigh?: number;
-  /** 옛 기록에만 있다. 속도를 가져온 AA 항목 이름들. */
-  aaModelNames?: string[];
-  /** 옛 기록에만 있다. 속도를 가져온 AA 항목 하나. */
-  aaModelName?: string;
-  /** 옛 기록(AA 지능 지수 + LMArena)에만 있는 칸. */
-  intelligenceIndex?: number;
-  arenaModel?: string;
-  arenaRating?: number;
-  effortPairing?: string;
-  aaScore?: number;
-  arenaScore?: number;
-  priceScore: number;
-  /** 옛 기록에만 있다. */
-  timeScore?: number;
-  /** 성능 점수. 새 기록은 ECI 를 후보 중 최저 0점·최고 100점으로 편 값이다. 가중치의 "성능" 칸에 들어간다. */
-  intelligenceScore: number;
-  totalScore: number;
-  rank: number;
 }
 
 /** 구매 에이전트가 이 값을 부르거나 받거나 거절한 이유. 페르소나 규칙과 그때의 숫자다. */
@@ -158,46 +129,17 @@ export interface Decision {
   snapshotHash: string;
   /** 이 결정이 본 숫자를 받아 온 시각. 이 칸이 생기기 전 기록에는 없다. */
   snapshotCapturedAt?: string;
-  /** 새 값을 받으려다 실패해 마지막 값으로 고른 경우 그 사유. */
-  snapshotRefreshError?: string;
   catalogVersion: string;
   priority: Priority;
   /** 우선순위를 정한 로컬 LLM 모델 이름. 사용자가 우선순위를 직접 고르던 때의 기록에는 없다. */
   priorityModel?: string;
-  weights: Weights;
   estimatedInputTokens: number;
   maxOutputTokens: number;
   budgetUnits: number;
-  references: {
-    minAmountUnits: number;
-    /** 가격·속도를 로그로 펴기 시작한 뒤의 기록에만 있다. */
-    maxAmountUnits?: number;
-    /** 출력 속도로 바꾼 뒤의 기록에만 있다. */
-    minOutputTokensPerSecond?: number;
-    maxOutputTokensPerSecond?: number;
-    /** 옛 기록에만 있다. */
-    minCompletionMs?: number;
-    maxCompletionMs?: number;
-    minEci?: number;
-    maxEci?: number;
-    /** 옛 기록에만 있다. */
-    maxIntelligenceIndex?: number;
-    maxArenaRating?: number;
-  };
-  /** 점수를 만든 출처와 계산 방법. 옛 기록은 aa·arena 칸을 쓴다. */
-  performanceSources?: {
-    performance?: string;
-    price?: string;
-    speed?: string;
-    aa?: string;
-    arena?: string;
-    arenaPublishDate?: string | null;
-    combine: string;
-  };
-  candidates: ScoredCandidate[];
+  candidates: Candidate[];
   rejected: RejectedCandidate[];
   /** amountUnits 는 합의가, listAmountUnits 는 호가다. 흥정이 생기기 전 기록에는 listAmountUnits 가 없다. */
-  winner: ScoredCandidate & { listAmountUnits?: number };
+  winner: Candidate & { listAmountUnits?: number };
   /** 산 곳과의 흥정. 이 칸이 생기기 전 기록에는 없다. */
   negotiation?: Negotiation;
   /** 후보로 남아 흥정한 곳 전부. 이 칸이 생기기 전 기록에는 없다. */
@@ -209,8 +151,8 @@ export interface Decision {
   evaluation?: Evaluation;
 }
 
-/** local 은 이 컴퓨터의 anvil(자동 테스트 포함), live 는 Base Sepolia. 예전 기록에는 체인 없이 흐름만 잇던 "mock" 이 남아 있을 수 있다. */
-export type PaymentMode = "local" | "live";
+/** local 은 이 컴퓨터의 anvil(자동 테스트 포함). 예전 기록에는 체인 없이 흐름만 잇던 "mock" 이 남아 있을 수 있다. */
+export type PaymentMode = "local";
 
 export interface PaymentResult {
   mode: PaymentMode;

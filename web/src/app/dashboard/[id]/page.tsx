@@ -4,12 +4,11 @@ import { notFound } from "next/navigation";
 import { AlertList, alertTone, STAGE_LABEL } from "@/components/AlertList";
 import { CopyButton } from "@/components/CopyButton";
 import { EvaluationCard } from "@/components/EvaluationCard";
-import { CandidateTables } from "@/components/DecisionView";
 import { NegotiationBlock } from "@/components/Negotiation";
 import { getPurchase, listAlertsForPurchase } from "@/lib/api";
 import { aegisText } from "@/lib/format";
 import { PRIORITY_LABEL } from "@/lib/priority-label";
-import { chainLabel, failureText, priceDate, purchaseReason, purchaseStatus, purchaseTitle, quotesOf, quoteStatus, shortHash, shortTime } from "@/lib/purchase-view";
+import { failureText, priceDate, purchaseReason, purchaseStatus, purchaseTitle, quotesOf, quoteStatus, shortHash, shortTime } from "@/lib/purchase-view";
 import type { AuditAlert, AuditEntry, AuditStage } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -95,7 +94,6 @@ export default async function PurchaseDetailPage({ params }: { params: Promise<{
             )}
           </section>
 
-          <CandidateTables record={record} />
         </div>
 
         <aside className="side">
@@ -119,7 +117,7 @@ export default async function PurchaseDetailPage({ params }: { params: Promise<{
               </div>
               <div>
                 <dt>체인</dt>
-                <dd>{payment === null ? "-" : chainLabel(payment.mode)}</dd>
+                <dd>{payment === null ? "-" : "로컬 체인"}</dd>
               </div>
               {payment?.dealHash !== undefined && (
                 <div>

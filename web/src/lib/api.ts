@@ -3,7 +3,7 @@
  * 구매 요청(POST /api/purchase)은 브라우저가 보내고, next.config.ts 가 같은 서버로 넘긴다.
  */
 
-import type { AuditAlert, PaymentMode, PurchaseRecord } from "@/lib/types";
+import type { AuditAlert, PurchaseRecord } from "@/lib/types";
 
 const API_URL = process.env.AGENT_M2M_API_URL ?? "http://127.0.0.1:8000";
 
@@ -40,8 +40,4 @@ export function countAlerts(): Promise<{ blocked: number; warnings: number }> {
 
 export function buyerBalance(): Promise<{ units: number | null; status: string }> {
   return get("/api/wallet");
-}
-
-export async function paymentMode(): Promise<PaymentMode> {
-  return (await get<{ mode: PaymentMode }>("/api/mode")).mode;
 }
