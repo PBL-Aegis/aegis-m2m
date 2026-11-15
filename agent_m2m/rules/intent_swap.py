@@ -28,7 +28,7 @@ def check_intent_swap(ctx: AuditContext) -> None:
 
     winner = ctx.decision["winner"]
     words = ", ".join(f"'{word}'" for word in intent["words"])
-    said = f"지시에 {words}가 있어" if intent["words"] else "지시에 등급을 정하는 말이 없어"
+    said = f"지시에 {words} 같은 말이 있어" if intent["words"] else "지시에 등급을 정하는 말이 없어"
     suspects = suspect_sentences(ctx.request.get("content") or "")
     found = " 내용 안에 지시처럼 보이는 문장: " + " / ".join(f"“{sentence}”" for sentence in suspects) + "." if suspects else ""
     raise AuditBlockedError(

@@ -1,72 +1,54 @@
-from concurrent.futures import ThreadPoolExecutor
-
 import pytest
-from web3 import Web3
 
+from agent_m2m import audit
 from agent_m2m.payment import (
-    AEGIS_ABI,
+    LOCAL_FACILITATOR_INDEX,
     PaymentError,
-    LOCAL_RELAYER_INDEX,
     anvil_account,
     buyer_balance,
-    pay,
     payment_config,
-    request_id_hash,
     web3_for,
 )
+from agent_m2m.purchase import run_purchase
 
-# 결제는 pytest 가 띄운 테스트 전용 로컬 체인(tests/conftest.py)에 진짜로 보낸다.
-RECIPIENT = "0xF00E8e0ecEF3B405250242F932849edB409497a0"
-
-
-def test_pay_를_체인에_보내_구매자_잔액이_줄고_요청_번호가_담긴_Paid_영수증이_남는다():
-    before = buyer_balance()["units"]
-    result = pay(12_960, RECIPIENT, "test-1", "req-1")
-    assert result["mode"] == "local"
-    assert len(result["txHash"]) == 66 and result["txHash"].startswith("0x")
-    assert result["blockNumber"] is not None
-    assert result["requestIdHash"] == request_id_hash("req-1")
-    assert buyer_balance()["units"] == before - 12_960
-
-    receipt = web3_for(payment_config()).eth.get_transaction_receipt(result["txHash"])
-    assert receipt["status"] == 1
-    assert len(receipt["logs"]) > 0
-    assert any(item["type"] == "event" and item["name"] == "Paid" for item in AEGIS_ABI)
+# 결제는 pytest 가 띄운 테스트 전용 로컬 체인(tests/conftest.py)에 진짜로 보낸다(x402 왕복 포함).
+INPUT = {"prompt": "이 글 싸게 요약해 줘", "budgetUnits": 10_000_000}
 
 
-def test_구매자는_서명만_하고_거래와_가스비는_중개자가_낸다():
+@pytest.fixture(autouse=True)
+def empty_rules():
+    """결제 경로만 시험하므로, 등록된 실제 감사 규칙을 잠시 비운다."""
+    lists = (audit.ON_REQUEST_CHECKS, audit.BEFORE_PAYMENT_CHECKS, audit.AFTER_PAYMENT_CHECKS)
+    saved = [checks.copy() for checks in lists]
+    for checks in lists:
+        checks.clear()
+    yield
+    for checks, original in zip(lists, saved):
+        checks[:] = original
+
+
+def test_구매자는_서명만_하고_정산_거래와_가스비는_x402_정산_서버가_낸다():
     config = payment_config()
     w3 = web3_for(config)
-    buyer, relayer = config["buyerAddress"], anvil_account(LOCAL_RELAYER_INDEX).address
-    buyer_eth, relayer_eth = w3.eth.get_balance(buyer), w3.eth.get_balance(relayer)
+    buyer, facilitator = config["buyerAddress"], anvil_account(LOCAL_FACILITATOR_INDEX).address
+    buyer_eth, facilitator_eth = w3.eth.get_balance(buyer), w3.eth.get_balance(facilitator)
+    before = buyer_balance()["units"]
 
-    result = pay(12_960, RECIPIENT, "test-gasless", "req-gasless")
+    record = run_purchase({**INPUT, "requestId": "req-gasless"})
 
-    transaction = w3.eth.get_transaction(result["txHash"])
-    assert transaction["from"] == relayer == result["relayer"]
-    assert result["from"] == buyer
+    payment = record["payment"]
+    assert record["status"] == "SETTLED"
+    assert payment["protocol"] == "x402" and payment["network"] == "eip155:31337"
+    transaction = w3.eth.get_transaction(payment["txHash"])
+    assert transaction["from"] == facilitator == payment["facilitator"]
+    assert payment["from"] == buyer
     assert w3.eth.get_balance(buyer) == buyer_eth
-    assert w3.eth.get_balance(relayer) < relayer_eth
-    token = w3.eth.contract(address=config["tokenAddress"], abi=AEGIS_ABI)
-    assert token.functions.authorizationState(buyer, request_id_hash("req-gasless")).call() is True
+    assert w3.eth.get_balance(facilitator) < facilitator_eth
+    assert buyer_balance()["units"] == before - payment["amountUnits"]
 
 
-def test_중개자는_운영자와_다른_지갑이다():
-    assert anvil_account(LOCAL_RELAYER_INDEX).address != anvil_account(0).address
-
-
-def test_같은_요청_번호의_서명은_체인이_한_번만_받는다():
-    pay(1_000, RECIPIENT, "once-1", "req-once")
-    already_used = Web3.to_hex(Web3.keccak(text="AuthorizationAlreadyUsed(address,bytes32)")[:4])
-    with pytest.raises(Exception, match=already_used):
-        pay(1_000, RECIPIENT, "once-2", "req-once")
-    assert buyer_balance()["units"] == 1_000_000_000 - 1_000
-
-
-def test_같은_지갑으로_동시에_여러_건_보내도_거래_순번이_겹치지_않고_모두_들어간다():
-    with ThreadPoolExecutor(max_workers=5) as pool:
-        results = list(pool.map(lambda index: pay(1_000, RECIPIENT, f"burst-{index}", f"burst-{index}"), range(5)))
-    assert len({result["txHash"] for result in results}) == 5
+def test_정산_서버와_운영자는_다른_지갑이다():
+    assert anvil_account(LOCAL_FACILITATOR_INDEX).address != anvil_account(0).address
 
 
 def test_로컬_체인은_anvil_첫_배포_주소와_공개_테스트_구매자를_쓴다():
@@ -85,8 +67,8 @@ def test_로컬_체인_주소가_이_컴퓨터가_아니면_거절한다(monkeyp
 
 
 def test_앞_테스트에서_쓴_금액은_다음_테스트에_남지_않는다_1_쓰기():
-    pay(500_000, RECIPIENT, "spend", "spend")
-    assert buyer_balance()["units"] == 999_500_000
+    run_purchase({**INPUT, "requestId": "spend"})
+    assert buyer_balance()["units"] < 1_000_000_000
 
 
 def test_앞_테스트에서_쓴_금액은_다음_테스트에_남지_않는다_2_확인():

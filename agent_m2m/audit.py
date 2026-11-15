@@ -11,6 +11,10 @@
 규칙이 막으면 여기서 "차단" 알림을 자동으로 남긴다. 그래서 막힌 거래는 규칙이 따로 알리지 않아도
 대시보드의 이상 거래에 뜬다.
 체인에서 다시 막는 검사는 여기가 아니라 contracts/src/rules/ 에 둔다.
+
+송금 직전·결제 후 감사는 감사 보고서(report)를 만든다. 어떤 규칙을 돌렸고, 어떤 규칙이 알리거나 막았는지와 그 문장이다.
+보고서 원문은 구매 기록(DB)에 두고, 결과(통과·알림·막음)·걸린 규칙 이름·보고서 해시(report_summary)는 체인에 남긴다
+(payment.open_deal, payment.record_after_audit). 그래서 나중에 DB 의 감사 기록을 고치면 체인의 해시와 맞지 않아 드러난다.
 체인에서는 구매자 지갑 하나를 사용자 한 명으로 본다.
 
 요청은 여러 개가 동시에 처리된다(스레드). 규칙이 공유 상태를 바꾸면 "확인"과 "기록"을 MongoDB 명령 하나로 같이 한다.
@@ -22,6 +26,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from agent_m2m import store
+from agent_m2m.deal import content_hash
 from agent_m2m.domain import Decision, PurchaseRecord, now_iso
 
 
@@ -102,10 +107,61 @@ def run_on_request(purchase_id: str, request: dict[str, Any], checks: list[Reque
     return None
 
 
-def run_before_payment(purchase_id: str, request: dict[str, Any], decision: Decision, checks: list[AuditCheck] | None = None) -> None:
-    ctx = AuditContext(purchase_id, request, decision, _alerting(purchase_id, request, "before-payment"))
+def _check_name(check: Callable[..., Any]) -> str:
+    return f"{check.__module__.rsplit('.', 1)[-1]}.{check.__name__}"
+
+
+def _report(stage: str, checked: list[str], findings: list[dict[str, Any]]) -> dict[str, Any]:
+    """감사 보고서. result 는 막은 규칙이 있으면 block, 알림만 있으면 alert, 아니면 pass."""
+    if any(finding["outcome"] == "block" for finding in findings):
+        result = "block"
+    elif findings:
+        result = "alert"
+    else:
+        result = "pass"
+    return {"stage": stage, "result": result, "checked": checked, "findings": findings}
+
+
+def report_summary(report: dict[str, Any]) -> dict[str, Any]:
+    """체인에 남길 요약. {result, rules(걸린 규칙 이름, 처음 나온 순서), hash(보고서 원문의 해시)}."""
+    rules = list(dict.fromkeys(finding["rule"] for finding in report["findings"]))
+    return {"result": report["result"], "rules": rules, "hash": content_hash(report)}
+
+
+def audit_before_payment(
+    purchase_id: str, request: dict[str, Any], decision: Decision, checks: list[AuditCheck] | None = None
+) -> dict[str, Any]:
+    """송금 직전 감사. 막아도 예외를 던지지 않고 보고서를 돌려준다. 막은 규칙이 나오면 그 뒤 규칙은 돌리지 않는다."""
+    checked: list[str] = []
+    findings: list[dict[str, Any]] = []
+
+    def alert(rule: str, message: str) -> None:
+        _save_stage_alert(purchase_id, request, "before-payment", False, rule, message)
+        findings.append({"rule": rule, "outcome": "alert", "message": message})
+
+    ctx = AuditContext(purchase_id, request, decision, alert)
     for check in BEFORE_PAYMENT_CHECKS if checks is None else checks:
-        _record_block(purchase_id, request, "before-payment", lambda: check(ctx))
+        checked.append(_check_name(check))
+        try:
+            check(ctx)
+        except AuditBlockedError as error:
+            _save_stage_alert(purchase_id, request, "before-payment", True, error.rule, str(error))
+            findings.append({"rule": error.rule, "outcome": "block", "message": str(error)})
+            break
+    return _report("before-send", checked, findings)
+
+
+def blocked_error(report: dict[str, Any]) -> AuditBlockedError | None:
+    """보고서에 막은 규칙이 있으면 그 예외."""
+    block = next((finding for finding in report["findings"] if finding["outcome"] == "block"), None)
+    return None if block is None else AuditBlockedError(block["rule"], block["message"])
+
+
+def run_before_payment(purchase_id: str, request: dict[str, Any], decision: Decision, checks: list[AuditCheck] | None = None) -> None:
+    """송금 직전 감사. 막은 규칙이 있으면 AuditBlockedError."""
+    error = blocked_error(audit_before_payment(purchase_id, request, decision, checks))
+    if error is not None:
+        raise error
 
 
 def run_after_payment(
@@ -114,11 +170,20 @@ def run_after_payment(
     decision: Decision,
     record: PurchaseRecord,
     checks: list[AfterPaymentCheck] | None = None,
-) -> None:
-    """결과가 이미 기록된 뒤라 여기서 실패해도 결과를 바꾸지 않는다. 실패는 알림으로 남기고 다음 규칙을 돈다."""
-    ctx = AuditContext(purchase_id, request, decision, _alerting(purchase_id, request, "after-payment"))
+) -> dict[str, Any]:
+    """결과가 이미 기록된 뒤라 여기서 실패해도 결과를 바꾸지 않는다. 실패는 알림으로 남기고 다음 규칙을 돈다. 보고서를 돌려준다."""
+    checked: list[str] = []
+    findings: list[dict[str, Any]] = []
+
+    def alert(rule: str, message: str) -> None:
+        _save_stage_alert(purchase_id, request, "after-payment", False, rule, message)
+        findings.append({"rule": rule, "outcome": "alert", "message": message})
+
+    ctx = AuditContext(purchase_id, request, decision, alert)
     for check in AFTER_PAYMENT_CHECKS if checks is None else checks:
+        checked.append(_check_name(check))
         try:
             check(ctx, record)
         except Exception as error:  # noqa: BLE001
             ctx.alert("after-payment", f"결제 후 규칙이 실패했습니다: {error or '알 수 없는 오류'}")
+    return _report("after-send", checked, findings)

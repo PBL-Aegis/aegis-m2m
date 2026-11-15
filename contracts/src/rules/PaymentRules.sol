@@ -4,7 +4,7 @@ pragma solidity ^0.8.24;
 /// @title 결제 규칙의 공통 바탕
 /// @notice 감사 규칙은 이 컨트랙트를 상속해 _checkPayment 를 덮어쓴다.
 /// 덮어쓸 때는 먼저 super._checkPayment(...) 를 불러 다른 규칙도 돌게 하고, 막을 때는 revert 한다.
-/// 구매자는 from 으로 구분한다. 결제는 ERC-3009 라서 거래를 보내는 msg.sender 는 구매자가 아니라 중개자다.
+/// 구매자는 from 으로 구분한다. 결제는 x402(ERC-3009) 라서 거래를 보내는 msg.sender 는 구매자가 아니라 x402 정산 서버다.
 abstract contract PaymentRules {
     function _checkPayment(address from, address to, uint256 amount, bytes32 requestId) internal virtual {}
 }

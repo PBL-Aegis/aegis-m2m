@@ -10,6 +10,7 @@ dependencies = [
   "web3>=7.6",
   "httpx>=0.28",
   "python-dotenv>=1.0",
+  "x402[evm,fastapi,httpx]==2.26.0",
 ]
 
 [dependency-groups]

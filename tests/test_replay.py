@@ -1,7 +1,7 @@
 
 from fastapi.testclient import TestClient
 
-from agent_m2m import audit, purchase, store
+from agent_m2m import audit, provider, purchase, store
 from agent_m2m.api import app
 from agent_m2m.payment import buyer_balance
 from agent_m2m.provider import DeliveryError
@@ -48,7 +48,7 @@ def fail_after_send(monkeypatch) -> None:
     def fail(*args):
         raise DeliveryError("판매창구 확인 실패")
 
-    monkeypatch.setattr(purchase, "verify_payment", fail)
+    monkeypatch.setattr(provider, "verify_payment", fail)
 
 
 # 같은 결과 중복 구매 (에이전트 반복 루프)

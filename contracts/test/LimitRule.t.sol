@@ -111,16 +111,16 @@ contract LimitRuleTest is AegisTest {
         assertEq(h.dailyUsed(buyer, block.timestamp / 1 days), amount);
     }
 
-    /// 한도는 구매자 지갑(from)별로 센다. 모든 결제의 msg.sender 는 중개자 한 명이다.
-    function test_limitIsPerWalletNotPerRelayer() public {
+    /// 한도는 구매자 지갑(from)별로 센다. 모든 결제의 msg.sender 는 x402 정산 서버 한 명이다.
+    function test_limitIsPerWalletNotPerFacilitator() public {
         uint256 amount = _amount();
         uint256 passCount = _passCount();
 
         for (uint256 i = 0; i < passCount; i++) {
-            vm.prank(relayer); // 보내는 쪽은 늘 중개자
+            vm.prank(facilitator); // 보내는 쪽은 늘 x402 정산 서버
             h.check(buyer, seller, amount, _id());
         }
-        vm.prank(relayer);
+        vm.prank(facilitator);
         h.check(buyer2, seller, amount, _id()); // 다른 지갑은 영향이 없다
         assertEq(h.dailyUsed(buyer2, block.timestamp / 1 days), amount);
     }
@@ -171,7 +171,6 @@ contract LimitRuleTest is AegisTest {
         token.mint(buyer, tooBig);
         bytes32 id = _id();
 
-        vm.expectRevert(abi.encodeWithSelector(LimitRule.OverPaymentLimit.selector, tooBig));
-        _pay(token, buyerKey, seller, tooBig, id);
+        _payReverting(token, buyerKey, seller, tooBig, id, abi.encodeWithSelector(LimitRule.OverPaymentLimit.selector, tooBig));
     }
 }

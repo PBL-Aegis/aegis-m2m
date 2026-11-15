@@ -67,6 +67,22 @@ def local_chain():
 
 
 @pytest.fixture(autouse=True)
+def provider_in_process():
+    """구매 흐름의 x402 왕복(판매창구 요청)을 서버를 띄우지 않고 이 프로세스의 앱으로 보낸다. 오가는 HTTP 요청·응답은 같다.
+    x402 정산 서버(SDK)는 정산 지갑의 다음 거래 순번을 기억하는데, 테스트마다 체인을 되돌리므로(chain_snapshot) 새로 만든다."""
+    from fastapi.testclient import TestClient
+
+    from agent_m2m import purchase, x402_payment
+    from agent_m2m.api import app
+
+    x402_payment._resource_server.cache_clear()
+
+    with pytest.MonkeyPatch.context() as patch:
+        patch.setattr(purchase, "provider_client", lambda: TestClient(app))
+        yield
+
+
+@pytest.fixture(autouse=True)
 def honest_gemma():
     """우선순위 추론은 실제 Ollama 를 부르지 않는다. 지시만 읽고 정하는, 속지 않는 Gemma 로 둔다.
     그래서 테스트는 지시에 '싸게'·'정확하게' 같은 말을 넣어 우선순위를 고른다. 속는 경우는 test_intent_swap.py 가 바꿔 끼운다.

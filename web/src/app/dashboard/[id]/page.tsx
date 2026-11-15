@@ -10,11 +10,19 @@ import { getPurchase, listAlertsForPurchase } from "@/lib/api";
 import { aegisText } from "@/lib/format";
 import { PRIORITY_LABEL } from "@/lib/priority-label";
 import { chainLabel, failureText, priceDate, purchaseReason, purchaseStatus, purchaseTitle, quotesOf, quoteStatus, shortHash, shortTime } from "@/lib/purchase-view";
-import type { AuditAlert, AuditStage } from "@/lib/types";
+import type { AuditAlert, AuditEntry, AuditStage } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
 const STAGES: AuditStage[] = ["on-request", "before-payment", "after-payment"];
+
+const AUDIT_RESULT_LABEL = { pass: "통과", alert: "알림", block: "막음" } as const;
+
+/** 체인에 남은 감사 결과. 올리지 못했으면 그렇게 적는다. */
+function auditText(entry: AuditEntry): string {
+  const label = AUDIT_RESULT_LABEL[entry.report.result];
+  return entry.txHash === null ? `${label} · 체인 기록 실패` : `${label} · ${shortHash(entry.hash)}`;
+}
 
 function stageBadge(stage: AuditStage, alerts: AuditAlert[], processing: boolean) {
   const found = alerts.filter((alert) => alert.stage === stage);
@@ -117,6 +125,24 @@ export default async function PurchaseDetailPage({ params }: { params: Promise<{
                 <div>
                   <dt>체인 합의</dt>
                   <dd title={payment.dealHash}>{shortHash(payment.dealHash)}</dd>
+                </div>
+              )}
+              {payment?.protocol !== undefined && (
+                <div>
+                  <dt>결제 방식</dt>
+                  <dd>x402</dd>
+                </div>
+              )}
+              {record.audit?.beforeSend !== undefined && (
+                <div>
+                  <dt>체인 감사(송금 전)</dt>
+                  <dd title={record.audit.beforeSend.hash}>{auditText(record.audit.beforeSend)}</dd>
+                </div>
+              )}
+              {record.audit?.afterSend !== undefined && (
+                <div>
+                  <dt>체인 감사(송금 뒤)</dt>
+                  <dd title={record.audit.afterSend.hash}>{auditText(record.audit.afterSend)}</dd>
                 </div>
               )}
               {decision.snapshotCapturedAt !== undefined && (
