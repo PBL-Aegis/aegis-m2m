@@ -33,7 +33,7 @@ contract AegisToken is ERC20, EIP712, Ownable, PaymentRules, LimitRule, ReplayRu
         uint256 askUnits; // 판매자 첫 호가
         uint256 agreedUnits; // 합의가. 실제 송금액
         bytes32 transcriptHash; // 흥정 대화 기록의 해시
-        bytes32 decisionHash; // 후보·점수 등 결정 근거의 해시
+        bytes32 decisionHash; // 후보·흥정 등 결정 근거의 해시
     }
 
     /// @notice 합의 내용의 해시를 만드는 형식. 구매자는 이 해시를 ERC-3009 서명의 nonce 로 쓴다.

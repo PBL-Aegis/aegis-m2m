@@ -14,10 +14,6 @@ def sample(purchase_id: str) -> dict:
         "recipient": "0xF00E8e0ecEF3B405250242F932849edB409497a0",
         "amountUnits": 12960,
         "eci": 140,
-        "priceScore": 100,
-        "intelligenceScore": 75.181159,
-        "totalScore": 79.518633,
-        "rank": 1,
     }
     return {
         "id": purchase_id,
@@ -29,11 +25,9 @@ def sample(purchase_id: str) -> dict:
             "snapshotHash": "sha256:test",
             "catalogVersion": "agent-m2m-v1",
             "priority": "default",
-            "weights": {"price": 50, "intelligence": 50},
             "estimatedInputTokens": 400,
             "maxOutputTokens": 8000,
             "budgetUnits": 50000,
-            "references": {"minAmountUnits": 12960},
             "candidates": [winner],
             "rejected": [],
             "winner": winner,

@@ -1,6 +1,6 @@
 """
 두 출처에서 값을 떠서 판매 목록(catalog)과 스냅샷을 만든다.
-scripts/capture_benchmark.py 가 쓴다. benchmark.py 의 자동 갱신(load_fresh_snapshot)도 쓰지만, 그 갱신은 지금 구매 흐름에서 부르지 않는다.
+scripts/capture_benchmark.py 가 쓴다.
 
   Epoch AI       — 성능. Epoch Capabilities Index(ECI)와 95% 신뢰구간. 여러 벤치마크를 난이도까지
                    고려해 통계적으로 합친 지수다. 키 없이 받는다.
@@ -12,8 +12,8 @@ scripts/capture_benchmark.py 가 쓴다. benchmark.py 의 자동 갱신(load_fre
   - ECI 가 MIN_ECI 보다 낮은 모델은 팔지 않는다(판매 최소 품질 기준). 운영 판단으로 정한 값이다.
 뺀 모델은 이유와 함께 catalog["excluded"] 에 남긴다.
 
-판매 목록은 capture 스크립트를 돌려 사람이 확인하고 커밋할 때만 바뀐다. 자동 갱신(지금은 쓰지 않음)은 목록에 있는
-모델의 숫자만 새로 받고, 한 출처라도 값이 없으면 스냅샷을 만들지 않고 멈춘다.
+판매 목록은 capture 스크립트를 돌려 사람이 확인하고 커밋할 때만 바뀐다.
+한 출처라도 값이 없으면 스냅샷을 만들지 않고 멈춘다.
 """
 
 import csv

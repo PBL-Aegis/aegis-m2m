@@ -1,30 +1,17 @@
 """
-모델을 고르는 계산. 이 파일에는 LLM이 없다. 같은 입력이면 항상 같은 답이 나온다.
+흥정에 넘길 후보와 호가를 만드는 계산. 이 파일에는 LLM이 없다. 같은 입력이면 항상 같은 답이 나온다.
 
-순서가 중요하다.
-  1) 후보마다 이번 요청의 금액을 계산한다
-  2) 조건에 안 맞는 후보를 먼저 떨어뜨린다 (하드 필터)
-  3) 살아남은 후보끼리만 점수를 낸다
-  4) 총점과 고정된 동점 규칙으로 1등을 정한다
-필터를 점수보다 먼저 거는 이유는, 못 쓸 후보가 점수의 기준선을 흔들지 않게 하기 위해서다.
-
-두 점수는 각각 한 출처에서 오고, 모두 후보 중 가장 나쁜 값 0점·가장 좋은 값 100점으로 편다.
-  가격 점수 = (log 최고 금액 − log 내 금액) ÷ (log 최고 − log 최저) × 100   (OpenRouter 판매 단가)
-  성능 점수 = (내 ECI − 최저 ECI) ÷ (최고 − 최저) × 100                    (Epoch ECI)
-가격은 후보끼리 몇 배~수십 배 차이 나서 로그로 편다. 그러면 2배 싼 것은 어느 가격대에서든 같은
-만큼 점수가 오르고, 아주 싼 모델 하나가 나머지를 0점 가까이로 누르거나(비율 방식) 아주 비싼 모델 하나에
-나머지가 끌려가는(직선 방식) 일이 줄어든다.
-ECI 는 여러 벤치마크를 난이도까지 고려해 합친 지수라 0 이 "능력 없음"이 아니고 차이 자체가 의미를
-가지므로 그대로 편다. 후보가 하나뿐이거나 값이 모두 같으면 100점이다.
+  1) 후보마다 이번 요청의 금액(호가)을 계산한다
+  2) 필요 기능이 없는 후보를 떨어뜨린다. 떨어진 후보도 이유와 함께 남긴다
+어느 모델을 살지는 여기서 정하지 않는다. 우선순위별 비교 모델과 흥정 결과로 정한다(shopping.py).
 """
 
-import functools
 import math
 import re
 from typing import Any
 
 from agent_m2m.benchmark import load_catalog, load_snapshot, pair_entries
-from agent_m2m.domain import PRIORITY_WEIGHTS, Decision
+from agent_m2m.domain import Decision
 
 DEFAULT_MAX_OUTPUT_TOKENS = 8_000
 
@@ -65,23 +52,6 @@ def estimate_input_tokens(prompt: str) -> int:
     return max(1, math.ceil(len(prompt.encode("utf-8")) / 4))
 
 
-def eci_score(eci: float, min_eci: float, max_eci: float) -> float:
-    """ECI 를 후보 중 최저 0점·최고 100점으로 편다."""
-    return 100 if max_eci == min_eci else (eci - min_eci) / (max_eci - min_eci) * 100
-
-
-def log_lower_is_better_score(value: float, minimum: float, maximum: float) -> float:
-    """작을수록 좋은 값(금액)을 로그로 바꿔 후보 중 최대 0점·최소 100점으로 편다."""
-    if maximum == minimum:
-        return 100
-    return (math.log(maximum) - math.log(value)) / (math.log(maximum) - math.log(minimum)) * 100
-
-
-def _round(value: float) -> float:
-    """소수점 6자리 반올림(.5 는 위로)."""
-    return math.floor(value * 1e6 + 0.5) / 1e6
-
-
 def _number(value: object) -> float:
     """숫자 칸을 읽는다. 비었거나 숫자가 아니면 nan."""
     if isinstance(value, bool) or value is None:
@@ -94,17 +64,6 @@ def _number(value: object) -> float:
 
 def _is_positive_int(value: object, allow_zero: bool = False) -> bool:
     return isinstance(value, int) and not isinstance(value, bool) and (value >= 0 if allow_zero else value > 0)
-
-
-def _compare(left: dict[str, Any], right: dict[str, Any]) -> int:
-    """총점이 같으면 금액, Provider 이름, 모델 id 순. 무작위는 없다."""
-    if left["totalScore"] != right["totalScore"]:
-        return -1 if left["totalScore"] > right["totalScore"] else 1
-    if left["amountUnits"] != right["amountUnits"]:
-        return -1 if left["amountUnits"] < right["amountUnits"] else 1
-    if left["providerId"] != right["providerId"]:
-        return -1 if left["providerId"] < right["providerId"] else 1
-    return -1 if left["providerModelId"] < right["providerModelId"] else 1
 
 
 def decide(request: dict[str, Any], source: dict[str, Any] | None = None) -> Decision:
@@ -134,8 +93,8 @@ def decide(request: dict[str, Any], source: dict[str, Any] | None = None) -> Dec
             raise SelectionError(f"{entry['key']}: 계산된 금액이 0이라 결제할 수 없습니다")
         eci = _number(metrics.get("eci"))
         if not math.isfinite(eci):
-            # 한 출처라도 비면 기본값으로 메우지 않고 멈춘다. 빈칸을 채우면 점수가 조작된다.
-            raise SelectionError(f"{entry['key']}: Epoch ECI 가 없어 성능 점수를 만들 수 없습니다")
+            # 비면 기본값으로 메우지 않고 멈춘다. 흥정과 감사가 모두 이 값으로 성능을 비교한다.
+            raise SelectionError(f"{entry['key']}: Epoch ECI 가 없어 성능을 비교할 수 없습니다")
         priced.append(
             {
                 "entry": entry,
@@ -167,64 +126,29 @@ def decide(request: dict[str, Any], source: dict[str, Any] | None = None) -> Dec
     if not eligible:
         raise SelectionError("조건을 통과한 후보가 하나도 없습니다")
 
-    # 3) 점수 — 기준값은 살아남은 후보에서만 뽑는다
-    min_amount = min(item["amountUnits"] for item in eligible)
-    max_amount = max(item["amountUnits"] for item in eligible)
-    min_eci = min(item["eci"] for item in eligible)
-    max_eci = max(item["eci"] for item in eligible)
-    weights = PRIORITY_WEIGHTS[request["priority"]]
-
-    scored = []
-    for candidate in eligible:
-        entry = candidate["entry"]
-        price_score = _round(log_lower_is_better_score(candidate["amountUnits"], min_amount, max_amount))
-        intelligence_score = _round(eci_score(candidate["eci"], min_eci, max_eci))
-        total_score = _round((price_score * weights["price"] + intelligence_score * weights["intelligence"]) / 100)
-        scored.append(
-            {
-                "key": entry["key"],
-                "displayName": entry["displayName"],
-                "providerId": entry["providerId"],
-                "providerModelId": entry["providerModelId"],
-                "recipient": entry["recipient"],
-                "amountUnits": candidate["amountUnits"],
-                "eci": candidate["eci"],
-                "eciCiLow": candidate["eciCiLow"],
-                "eciCiHigh": candidate["eciCiHigh"],
-                "priceScore": price_score,
-                "intelligenceScore": intelligence_score,
-                "totalScore": total_score,
-                "rank": 0,
-            }
-        )
-
-    # 4) 순위
-    scored.sort(key=functools.cmp_to_key(_compare))
-    for index, candidate in enumerate(scored):
-        candidate["rank"] = index + 1
-
+    candidates = [
+        {
+            "key": candidate["entry"]["key"],
+            "displayName": candidate["entry"]["displayName"],
+            "providerId": candidate["entry"]["providerId"],
+            "providerModelId": candidate["entry"]["providerModelId"],
+            "recipient": candidate["entry"]["recipient"],
+            "amountUnits": candidate["amountUnits"],
+            "eci": candidate["eci"],
+            "eciCiLow": candidate["eciCiLow"],
+            "eciCiHigh": candidate["eciCiHigh"],
+        }
+        for candidate in eligible
+    ]
     return {
         "snapshotId": snapshot["snapshotId"],
         "snapshotHash": source["hash"],
         "snapshotCapturedAt": snapshot["capturedAt"],
         "catalogVersion": catalog["catalogVersion"],
         "priority": request["priority"],
-        "weights": weights,
         "estimatedInputTokens": input_tokens,
         "maxOutputTokens": max_output_tokens,
         "budgetUnits": request["budgetUnits"],
-        "references": {
-            "minAmountUnits": min_amount,
-            "maxAmountUnits": max_amount,
-            "minEci": min_eci,
-            "maxEci": max_eci,
-        },
-        "performanceSources": {
-            "performance": "Epoch Capabilities Index (95% 신뢰구간)",
-            "price": "OpenRouter 판매 단가",
-            "combine": "가격은 로그로, 성능(ECI)은 그대로 후보 중 가장 나쁜 값 0점·가장 좋은 값 100점으로 폄",
-        },
-        "candidates": scored,
+        "candidates": candidates,
         "rejected": rejected,
-        "winner": scored[0],
     }

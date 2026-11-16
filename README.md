@@ -9,7 +9,7 @@ AI 구매 에이전트가 판매 에이전트들과 흥정해 가장 싼 곳에�
 요청 → 감사(요청 직후) → 호가 계산 → 흥정 → 합의 만들기 → 기록(처리 중) → 감사(송금 직전) → 체인에 합의·감사 결과 → x402 결제 → 확인 → 결과 → 기록(성공·실패) → 감사(결제 후) → 체인에 감사 결과
 
 1. **요청**: 지시(`prompt`), 처리할 내용(`content`, 선택), 예산(AEGIS), 필요 기능, 요청 번호(`requestId`), 사용자(`userId`). 요청 번호를 비우면 서버가 만듭니다. 우선순위(싸게·똑똑하게·기본)는 요청에서 받지 않고, 로컬 Gemma가 지시와 내용을 함께 읽고 정합니다(`agent_m2m/priority_llm.py`). 에이전트끼리의 요청은 문장으로 오기 때문입니다. Gemma가 응답하지 않으면 결제 전에 멈춥니다(503).
-2. **호가 계산**: 고정된 단가(`data/benchmark.json`)로 모델마다 금액을 계산하고 필요 기능으로 거릅니다(`agent_m2m/selection.py`). 함께 계산되는 점수는 구매 결정에 쓰지 않습니다.
+2. **호가 계산**: 고정된 단가(`data/benchmark.json`)로 모델마다 금액을 계산하고 필요 기능으로 거릅니다(`agent_m2m/selection.py`).
 3. **흥정**: 판매 에이전트는 `data/sellers.json` 의 두 회사(Anthropic·OpenAI)이고 파는 모델 6개를 여기서 고정합니다. 우선순위별 비교 모델도 이 파일의 `priorityModels` 표로 정합니다. 싸게는 Haiku 5.5·GPT-6 Luna, 기본은 Sonnet 5.5·GPT-6.1 Terra, 똑똑하게는 Opus 5.5·GPT-6.1 Sol입니다. 표의 모델과 각각 흥정한 뒤 구매 에이전트의 페르소나 기준으로 한 곳에서 사고, 나머지 합의는 이유를 남기고 취소합니다(`agent_m2m/shopping.py`, `negotiation.py`, `seller.py`, `strategy.py`). 구매자는 예산과 호가 중 낮은 값을 넘겨 부르지 않고, 판매자는 최저가(호가 × 회사별 `floorRatio`) 아래로 내리지 않습니다. `floorRatio` 는 판매자의 비공개 설정으로 보는 데모용 값입니다. 양쪽은 번갈아 근거 카드(`agent_m2m/cards.py`)를 내며 다가갑니다. 코드가 호가와 ECI를 비교해 사실인 카드만 냅니다. 판매자는 구매자가 아직 안 쓴 카드에 값 차이의 75%, 이미 쓴 카드에 50%, 카드가 없으면 25%를 양보합니다(시연용 값). 구매자의 첫 제안과 양보 비율, 어디서 살지는 **페르소나**가 정합니다. 페르소나는 `personas/*.md` 파일 하나이고(`agent_m2m/persona.py`), 요청의 `persona` 로 고르며 비우면 최저가형입니다. 최저가형(`thrifty`)은 호가의 70%에서 시작해 판매자 카드에 50%·30%·15%만 올려 주고 가장 싼 곳에서 삽니다. 품질형(`quality`)은 85%에서 시작해 75%·50%·25%를 올려 주고, 가장 싼 합의가보다 20% 이내로 비싼 곳 중 ECI가 가장 높은 곳에서 삽니다. 판매자는 구매자 값과의 차이에 비례해 내리므로 품질형은 같은 모델도 최저가형보다 비싸게 사며, 평가가 그 차이를 설명합니다. 구매자의 말마다 `reason` 에 페르소나 기준의 이유(왜 이 값인지)를 남기고, 흥정이 끝나면 `decision.evaluation` 에 페르소나 관점의 이득·일부 이득·손해 판정과 이유를 코드가 씁니다(`agent_m2m/evaluation.py`). 다른 곳보다 비싸게 샀으면 그 이유가 반드시 한 줄 들어갑니다. 판매자의 말에는 최저가가 드러나지 않도록 이유를 남기지 않습니다. 로컬 Gemma는 카드 내용을 대화 문장으로 쓰기만 하며(`agent_m2m/dialogue.py`) 상대 메시지와 최저가를 받지 않습니다. 실패하면 기본 문장을 쓰고 값은 그대로입니다. 구매자는 최대 5번 제안하고, 그때까지 맞지 않으면 판매자의 마지막 값이 최대가 이하일 때 받고 넘으면 결렬입니다. 합의가가 `decision.winner.amountUnits` 가 되어 뒤의 감사·결제·확인이 모두 이 값을 봅니다. 호가는 `listAmountUnits` 에 남습니다. 비교 모델이 모두 결렬되면 판매자가 마지막에 부른 값이 가장 낮은 곳을 그 값에 삽니다. 예산을 넘는 구매이므로 기록에 `overBudget` 을 남깁니다. 예산 초과를 막는 일은 감사 규칙이 맡습니다: 기본 설정에서는 `holdout` 이 송금 직전에 막고, `AUDIT_HOLDOUT_TOLERANCE_RATIO` 로 허용 폭을 주면 그 안의 초과는 `over-budget` 경고만 남깁니다.
 4. **합의 만들기·기록(처리 중)**: 산 곳과의 합의(`decision.deal`)를 만듭니다. 요청 번호·구매자·판매자·모델·호가·합의가와 함께, 흥정 대화와 결정 근거(후보·흥정한 곳·페르소나·평가)는 해시만 담습니다(`agent_m2m/deal.py`). 그다음 결제 직전에 `PROCESSING` 상태로 MongoDB에 먼저 남깁니다.
 5. **감사**: `agent_m2m/rules/` 에 등록한 규칙을 세 자리에서 돌립니다. 막으면 "차단", 알리기만 하면 "경고" 알림이 대시보드의 이상 거래에 뜹니다. 송금 직전·결제 후 감사는 감사 보고서(돌린 규칙, 걸린 규칙과 문장)를 만들어 구매 기록의 `audit.beforeSend`·`audit.afterSend` 에 둡니다(`agent_m2m/audit.py`).
@@ -108,7 +108,7 @@ curl -s -X POST localhost:8000/api/purchase -H 'content-type: application/json' 
 
 채팅 화면은 같은 입력을 `POST /api/purchase/stream` 으로 보냅니다. 비교 모델(`plan`)과 흥정 대화(`turn`)를 진행되는 대로 한 줄에 JSON 하나씩 보내고, 마지막에 구매 기록(`done`)이나 오류(`error`)를 보냅니다.
 
-화면이 쓰는 조회 API: `GET /api/purchases`, `/api/purchases/{id}`, `/api/purchases/{id}/alerts`, `/api/alerts`, `/api/alerts/summary`, `/api/wallet`, `/api/mode`, `/api/personas`. 서버를 켠 뒤 `http://127.0.0.1:8000/docs` 에서 모두 볼 수 있습니다.
+화면이 쓰는 조회 API: `GET /api/purchases`, `/api/purchases/{id}`, `/api/purchases/{id}/alerts`, `/api/alerts`, `/api/alerts/summary`, `/api/wallet`, `/api/personas`. 서버를 켠 뒤 `http://127.0.0.1:8000/docs` 에서 모두 볼 수 있습니다.
 
 ## 감사 규칙 추가하기
 
@@ -148,7 +148,7 @@ BEFORE_PAYMENT_CHECKS.append(check_max_amount)
 | 자리 | 언제 | 쓸 수 있는 값 | 막으면 |
 | --- | --- | --- | --- |
 | `ON_REQUEST_CHECKS` | 요청 직후, 모델을 고르기 전 | `ctx.request`(요청 번호·사용자·문장) | 기록 없이 409. 이전 기록을 `return` 하면 새로 처리하지 않고 그 기록을 응답 |
-| `BEFORE_PAYMENT_CHECKS` | 모델을 고르고 처리 중 기록을 남긴 뒤, 송금 직전 | `ctx.request`, `ctx.decision`(고른 모델·금액·점수) | 송금하지 않고 `FAILED`·`before-send` 로 기록 |
+| `BEFORE_PAYMENT_CHECKS` | 모델을 고르고 처리 중 기록을 남긴 뒤, 송금 직전 | `ctx.request`, `ctx.decision`(고른 모델·금액·흥정) | 송금하지 않고 `FAILED`·`before-send` 로 기록 |
 | `AFTER_PAYMENT_CHECKS` | 결과가 기록된 뒤 | 위 값 + 두 번째 인자 `record`(최종 상태) | 막을 수 없음. 오류는 알림으로 남고 결과는 그대로 |
 
 - 기록(`ctx.request`, `ctx.decision`, `record`)은 dict 이고 키는 camelCase 입니다(예: `ctx.request["requestId"]`, `record["failureStage"]`). 화면·DB·API 가 같은 이름을 씁니다.
@@ -255,15 +255,9 @@ contract AegisToken is ERC20, EIP712, Ownable, PaymentRules, MaxAmountRule {
 
 ## 벤치마크와 판매 모델
 
-판매 모델(`data/catalog.json`)과 점수의 시작값(`data/benchmark.json`)은 두 출처에서 떠온 실제 값입니다. 성능은 [Epoch AI](https://epoch.ai/benchmarks) ECI, 가격은 [OpenRouter](https://openrouter.ai/api/v1/models) 판매 단가입니다. 두 점수 모두 후보 중 가장 나쁜 값 0점·가장 좋은 값 100점이고, 가격은 로그로 폅니다. 계산식과 짝짓기 규칙은 `agent_m2m/selection.py`, `agent_m2m/benchmark_sources.py` 맨 위에 있습니다.
+판매 모델(`data/catalog.json`)과 성능·단가(`data/benchmark.json`)는 두 출처에서 떠온 실제 값입니다. 성능은 [Epoch AI](https://epoch.ai/benchmarks) ECI, 가격은 [OpenRouter](https://openrouter.ai/api/v1/models) 판매 단가입니다. 짝짓기 규칙은 `agent_m2m/benchmark_sources.py` 맨 위에 있습니다.
 
-| 우선순위 | 가격 | 성능 |
-|---|---|---|
-| 싸게 (`price`) | 90 | 10 |
-| 똑똑하게 (`intelligence`) | 10 | 90 |
-| 기본 (`default`) | 50 | 50 |
-
-위 점수와 비중은 비교 모델 표를 정할 때 참고한 값이고, 구매 결정에는 쓰지 않습니다. 구매 때는 외부 사이트에 접속하지 않고 `data/benchmark.json` 에 고정한 단가만 씁니다(떠 온 날짜: 2026-11-03). 모델을 바꿀 때만 아래 명령으로 다시 뜨고 `data/sellers.json` 의 표를 함께 고칩니다.
+구매 때는 외부 사이트에 접속하지 않고 `data/benchmark.json` 에 고정한 단가만 씁니다(떠 온 날짜: 2026-11-03). 모델을 바꿀 때만 아래 명령으로 다시 뜨고 `data/sellers.json` 의 표를 함께 고칩니다.
 
 ```bash
 uv run python scripts/capture_benchmark.py --list   # 저장하지 않고 짝지어진 모델과 뺀 모델만 보기
@@ -278,7 +272,6 @@ uv run python scripts/capture_benchmark.py          # data/catalog.json · bench
 | --- | --- |
 | `purchases` | 구매 기록(요청, 결정 근거, 결제, 결과, 상태) |
 | `alerts` | 이상 거래 알림(차단·경고) |
-| `snapshots` | 벤치마크 자동 갱신이 받은 숫자. 지금 구매 흐름은 자동 갱신을 부르지 않아 쌓이지 않음 |
 | `replay_purchases` | 사용자·문장·모델별 구매 횟수(창이 지나면 자동 삭제) |
 | `replay_holds` | 구매 한 건이 더한 횟수(송금 전 실패 때 되돌림, 자동 삭제) |
 | `limit_daily` | 지갑별 하루 사용액(한도 규칙) |

@@ -62,7 +62,6 @@ def test_화면이_쓰는_조회_API_가_기록과_알림을_돌려준다():
     assert record["id"] in [item["id"] for item in client.get("/api/purchases").json()]
     assert client.get("/api/alerts").json() == {"alerts": [], "linkedPurchaseIds": []}
     assert client.get("/api/alerts/summary").json() == {"blocked": 0, "warnings": 0}
-    assert client.get("/api/mode").json() == {"mode": "local"}
     assert isinstance(client.get("/api/wallet").json()["units"], int)
 
 

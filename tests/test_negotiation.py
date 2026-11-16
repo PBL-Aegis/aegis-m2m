@@ -5,7 +5,7 @@ import httpx
 import pytest
 from fastapi.testclient import TestClient
 
-from agent_m2m import audit, benchmark, dialogue, purchase, seller as seller_module, shopping, store
+from agent_m2m import audit, dialogue, purchase, seller as seller_module, shopping, store
 from agent_m2m.api import app
 from agent_m2m.cards import BETTER, CHEAPER, NO_CARD, RIVAL_BETTER, RIVAL_CHEAPER, buyer_cards, seller_cards
 from agent_m2m.dialogue import LineWriter
@@ -254,12 +254,6 @@ def test_산_곳의_판매_에이전트_최저가_아래로_내려가지_않는�
         assert record["payment"]["to"].lower() == winner["recipient"].lower()
 
 
-def test_구매_때_벤치마크를_새로_받지_않는다(monkeypatch):
-    def fail(*args):
-        raise AssertionError("외부 벤치마크를 불렀습니다")
-
-    monkeypatch.setattr(benchmark, "_refresh", fail)
-    assert run_purchase(INPUT)["status"] == "SETTLED"
 
 
 def test_판매_에이전트가_없는_회사거나_비율이_틀리면_받지_않는다(monkeypatch):
@@ -279,7 +273,8 @@ def test_합의가로_결제하고_확인까지_통과한다():
     assert winner["amountUnits"] < winner["listAmountUnits"]
     assert record["payment"]["amountUnits"] == winner["amountUnits"]
     assert buyer_balance()["units"] == before - winner["amountUnits"]
-    assert record["decision"]["candidates"][0]["amountUnits"] == winner["listAmountUnits"]
+    listed = next(item for item in record["decision"]["candidates"] if item["key"] == winner["key"])
+    assert listed["amountUnits"] == winner["listAmountUnits"]
 
 
 def test_요청_번호는_그대로_서명의_일회용_번호로_쓰인다():
