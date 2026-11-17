@@ -23,6 +23,22 @@ function auditText(entry: AuditEntry): string {
   return entry.txHash === null ? `${label} · 체인 기록 실패` : `${label} · ${shortHash(entry.hash)}`;
 }
 
+/** 호가 대비 아낀 정도. 예: "호가 0.004003에서 20% 아낌". */
+function savingText(listUnits: number, paidUnits: number): string {
+  if (paidUnits >= listUnits) return `호가 ${aegisText(listUnits)} 그대로`;
+  const percent = Math.round(((listUnits - paidUnits) / listUnits) * 100);
+  return `호가 ${aegisText(listUnits)}에서 ${percent}% 아낌`;
+}
+
+/** 송금 전·뒤 감사 결과를 한 줄로. 막음이 있으면 막음, 알림이 있으면 알림이다. */
+function auditSummary(audit: { beforeSend?: AuditEntry; afterSend?: AuditEntry }): string {
+  const entries = [audit.beforeSend, audit.afterSend].filter((entry): entry is AuditEntry => entry !== undefined);
+  const results = entries.map((entry) => entry.report.result);
+  if (results.includes("block")) return "막음";
+  if (results.includes("alert")) return "알림";
+  return audit.afterSend !== undefined ? "송금 전후 모두 통과" : "송금 전 통과";
+}
+
 function stageBadge(stage: AuditStage, alerts: AuditAlert[], processing: boolean) {
   const found = alerts.filter((alert) => alert.stage === stage);
   if (found.some((alert) => alert.blocked)) return <span className="badge risk">차단</span>;
@@ -101,72 +117,78 @@ export default async function PurchaseDetailPage({ params }: { params: Promise<{
             <dl className="facts">
               {decision.winner.listAmountUnits !== undefined && (
                 <div>
-                  <dt>호가</dt>
-                  <dd>{aegisText(decision.winner.listAmountUnits)}</dd>
+                  <dt>흥정</dt>
+                  <dd>{savingText(decision.winner.listAmountUnits, decision.winner.amountUnits)}</dd>
                 </div>
               )}
               <div>
-                <dt>예산</dt>
-                <dd>{aegisText(decision.budgetUnits)}</dd>
-              </div>
-              <div>
-                <dt>받은 곳</dt>
+                <dt>산 곳</dt>
                 <dd>{payment === null ? "-" : decision.negotiation?.sellerName ?? shortHash(payment.to)}</dd>
               </div>
-              <div>
-                <dt>체인</dt>
-                <dd>{payment === null ? "-" : "로컬 체인"}</dd>
-              </div>
-              {payment?.dealHash !== undefined && (
-                <div>
-                  <dt>체인 합의</dt>
-                  <dd title={payment.dealHash}>{shortHash(payment.dealHash)}</dd>
-                </div>
-              )}
-              {payment?.protocol !== undefined && (
-                <div>
-                  <dt>결제 방식</dt>
-                  <dd>x402</dd>
-                </div>
-              )}
               {record.audit?.beforeSend !== undefined && (
                 <div>
-                  <dt>체인 감사(송금 전)</dt>
-                  <dd title={record.audit.beforeSend.hash}>{auditText(record.audit.beforeSend)}</dd>
+                  <dt>감사</dt>
+                  <dd>{auditSummary(record.audit)}</dd>
                 </div>
               )}
-              {record.audit?.afterSend !== undefined && (
-                <div>
-                  <dt>체인 감사(송금 뒤)</dt>
-                  <dd title={record.audit.afterSend.hash}>{auditText(record.audit.afterSend)}</dd>
-                </div>
-              )}
-              {decision.snapshotCapturedAt !== undefined && (
-                <div>
-                  <dt>가격 기준일</dt>
-                  <dd>{priceDate(decision.snapshotCapturedAt)}</dd>
-                </div>
-              )}
-              <div className="centered">
-                <dt>거래번호</dt>
-                {payment === null ? (
-                  <dd>-</dd>
-                ) : (
-                  <dd className="copyable">
-                    <code>{shortHash(payment.txHash)}</code>
-                    <CopyButton value={payment.txHash} label="거래번호 복사" />
-                  </dd>
-                )}
-              </div>
             </dl>
             <details className="moreFacts">
               <summary>
-                자세히
+                자세히(블록체인 기록)
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5f6878" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="m6 9 6 6 6-6" />
                 </svg>
               </summary>
               <dl className="facts">
+                {payment?.dealHash !== undefined && (
+                  <div>
+                    <dt>체인 합의</dt>
+                    <dd title={payment.dealHash}>{shortHash(payment.dealHash)}</dd>
+                  </div>
+                )}
+                {record.audit?.beforeSend !== undefined && (
+                  <div>
+                    <dt>체인 감사(송금 전)</dt>
+                    <dd title={record.audit.beforeSend.hash}>{auditText(record.audit.beforeSend)}</dd>
+                  </div>
+                )}
+                {record.audit?.afterSend !== undefined && (
+                  <div>
+                    <dt>체인 감사(송금 뒤)</dt>
+                    <dd title={record.audit.afterSend.hash}>{auditText(record.audit.afterSend)}</dd>
+                  </div>
+                )}
+                <div className="centered">
+                  <dt>거래번호</dt>
+                  {payment === null ? (
+                    <dd>-</dd>
+                  ) : (
+                    <dd className="copyable">
+                      <code>{shortHash(payment.txHash)}</code>
+                      <CopyButton value={payment.txHash} label="거래번호 복사" />
+                    </dd>
+                  )}
+                </div>
+                <div>
+                  <dt>체인</dt>
+                  <dd>{payment === null ? "-" : "로컬 체인"}</dd>
+                </div>
+                {payment?.protocol !== undefined && (
+                  <div>
+                    <dt>결제 방식</dt>
+                    <dd>x402</dd>
+                  </div>
+                )}
+                {decision.snapshotCapturedAt !== undefined && (
+                  <div>
+                    <dt>가격 기준일</dt>
+                    <dd>{priceDate(decision.snapshotCapturedAt)}</dd>
+                  </div>
+                )}
+                <div>
+                  <dt>예산</dt>
+                  <dd>{aegisText(decision.budgetUnits)}</dd>
+                </div>
                 <div className="stacked">
                   <dt>구매 번호</dt>
                   <dd className="hash">{record.id}</dd>
