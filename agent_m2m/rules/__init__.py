@@ -4,6 +4,7 @@
 규칙 파일은 불러올 때 audit.py 의 ON_REQUEST_CHECKS · BEFORE_PAYMENT_CHECKS · AFTER_PAYMENT_CHECKS 중
 맞는 곳에 자기 함수를 append 한다. 불러온 순서가 곧 도는 순서다.
 purchase.py 가 이 패키지를 한 번 불러오므로, 새 규칙은 아래에 import 한 줄만 더하면 된다.
+over_budget 만은 purchase.py 가 이 패키지 뒤에 따로 불러온다(holdout 뒤에 돌아야 해서).
 예: from agent_m2m.rules import limit  # noqa: F401
 예외: over_budget 은 holdout 보다 뒤에 돌아야 해서 purchase.py 가 이 패키지 다음에 따로 불러온다.
 """
