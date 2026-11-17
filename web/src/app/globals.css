@@ -445,6 +445,8 @@ td small { display: block; margin-top: 2px; font-size: 12px; color: var(--faint)
 .dealName { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .dealName strong { font-size: 15px; font-weight: 600; }
 .dealName span { font-size: 12px; color: var(--faint); }
+/* 판매자 이름·호가 줄은 꺾지 않는다. 좁으면 말줄임. */
+.dealName strong, .dealName span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .dealTitle svg { flex: none; transition: transform 0.15s; }
 /* 흥정 결과만 칩으로 보여 준다. 다른 상태는 글자만 쓴다. */
 .dealTitle .badge { padding: 4px 10px; border-radius: 12px; background: var(--paper); }

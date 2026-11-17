@@ -45,10 +45,10 @@ export function dealStatus(turns: NegotiationTurn[]): StatusView {
 
 export function quoteStatus(quote: Negotiation, record: PurchaseRecord): StatusView {
   if (quote.status === "agreed") {
-    const price = aegisText(quote.agreedUnits ?? 0);
-    if (record.blockedRule !== undefined) return { label: `차단 ${price}`, tone: "risk" };
-    if (record.status === "FAILED") return { label: `합의 ${price}`, tone: "risk" };
-    return quote.overBudget ? { label: "예산 초과 구매", tone: "warn" } : { label: `구매 ${price}`, tone: "win" };
+    // 금액은 카드 아래 "구매 …" 줄에 있다. 배지에 또 넣으면 폭을 차지해 판매자 이름이 꺾인다.
+    if (record.blockedRule !== undefined) return { label: "차단", tone: "risk" };
+    if (record.status === "FAILED") return { label: "합의", tone: "risk" };
+    return quote.overBudget ? { label: "예산 초과 구매", tone: "warn" } : { label: "구매", tone: "win" };
   }
   if (quote.status === "cancelled") return { label: "취소", tone: "mute" };
   if (quote.status === "blocked") return { label: "중단", tone: "risk" };
