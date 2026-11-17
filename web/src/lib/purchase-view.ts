@@ -55,11 +55,6 @@ export function quoteStatus(quote: Negotiation, record: PurchaseRecord): StatusV
   return { label: "결렬", tone: "mute" };
 }
 
-function lastSellerPrice(quote: Negotiation): number {
-  const prices = quote.transcript.filter((turn) => turn.from === "seller").map((turn) => turn.priceUnits);
-  return prices[prices.length - 1] ?? quote.askUnits;
-}
-
 export function purchaseTitle(record: PurchaseRecord): string {
   const name = record.decision.winner.displayName;
   if (record.blockedRule !== undefined) return "결제를 막았어요";
@@ -73,44 +68,6 @@ export function failureText(record: PurchaseRecord): string | null {
   if (record.blockedRule !== undefined) return `감사 규칙이 송금 직전에 막아서 돈은 나가지 않았어요. ${record.failureReason}`;
   const stage = record.failureStage === "after-send" ? "송금 뒤에 실패했어요. 돈이 나갔을 수 있어요." : "송금 전에 실패했어요.";
   return `${stage} ${record.failureReason}`;
-}
-
-/** 왜 이곳에서 샀는지. 흥정이 생기기 전 기록에는 없고, 페르소나 평가가 있는 기록은 평가(EvaluationCard)가 대신 말한다. */
-export function purchaseReason(record: PurchaseRecord): string | null {
-  const { decision } = record;
-  const chosen = decision.negotiation;
-  if (chosen === undefined || decision.evaluation !== undefined) return null;
-
-  const { winner, budgetUnits } = decision;
-  const name = winner.displayName;
-  const paid = winner.amountUnits;
-  const others = quotesOf(record).filter((quote) => quote.key !== chosen.key);
-
-  if (chosen.overBudget) {
-    const lasts = quotesOf(record)
-      .map((quote) => `${quote.displayName} ${aegisText(lastSellerPrice(quote))}`)
-      .join(", ");
-    const pick = others.length > 0 ? `더 낮은 ${name}` : name;
-    return `예산 ${aegisText(budgetUnits)}까지 내려오지 않아 흥정이 결렬됐어요. 판매자가 마지막에 부른 값이 ${lasts}라서 ${pick}로 샀어요. 예산을 ${aegisText(paid - budgetUnits)} 넘었어요.`;
-  }
-
-  const cancelled = others.find((quote) => quote.status === "cancelled");
-  const failed = others.find((quote) => quote.status !== "cancelled");
-  const sentences: string[] = [];
-  if (cancelled !== undefined && cancelled.agreedUnits === paid) {
-    sentences.push(`두 곳 모두 ${aegisText(paid)}에 합의했어요. 값이 같아 성능(ECI)이 더 높은 ${name}(${chosen.eci}, ${cancelled.displayName} ${cancelled.eci})로 골랐어요.`);
-  } else if (cancelled !== undefined) {
-    sentences.push(`두 곳 모두 합의했는데, ${name} 쪽이 ${aegisText(paid)}로 ${cancelled.displayName}(${aegisText(cancelled.agreedUnits ?? 0)})보다 쌌어요.`);
-  } else if (failed !== undefined) {
-    sentences.push(`${failed.displayName} 쪽은 결렬됐고 ${name} 쪽과 ${aegisText(paid)}에 합의했어요.`);
-  } else {
-    sentences.push(`${name} 쪽과 ${aegisText(paid)}에 합의했어요.`);
-  }
-  if (winner.listAmountUnits !== undefined && winner.listAmountUnits > paid) {
-    sentences.push(`호가보다 ${aegisText(winner.listAmountUnits - paid)} 깎았어요.`);
-  }
-  if (cancelled !== undefined) sentences.push(`${cancelled.sellerName}와의 합의는 취소했어요.`);
-  return sentences.join(" ");
 }
 
 export const VERDICT_VIEW: Record<Evaluation["verdict"], StatusView> = {

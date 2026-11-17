@@ -8,7 +8,7 @@ import { NegotiationBlock } from "@/components/Negotiation";
 import { getPurchase, listAlertsForPurchase } from "@/lib/api";
 import { aegisText } from "@/lib/format";
 import { PRIORITY_LABEL } from "@/lib/priority-label";
-import { failureText, priceDate, purchaseReason, purchaseStatus, purchaseTitle, quotesOf, quoteStatus, shortHash, shortTime } from "@/lib/purchase-view";
+import { failureText, priceDate, purchaseStatus, purchaseTitle, quotesOf, quoteStatus, shortHash, shortTime } from "@/lib/purchase-view";
 import type { AuditAlert, AuditEntry, AuditStage } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -38,7 +38,6 @@ export default async function PurchaseDetailPage({ params }: { params: Promise<{
 
   const { decision, payment } = record;
   const status = purchaseStatus(record);
-  const reason = purchaseReason(record);
   const failure = failureText(record);
   const quotes = quotesOf(record);
 
@@ -61,7 +60,6 @@ export default async function PurchaseDetailPage({ params }: { params: Promise<{
         <div className="wide">
           <section className="panel">
             <h2>{purchaseTitle(record)}</h2>
-            {reason !== null && <p>{reason}</p>}
             {failure !== null && <p>{failure}</p>}
             {decision.evaluation !== undefined && <EvaluationCard evaluation={decision.evaluation} />}
           </section>

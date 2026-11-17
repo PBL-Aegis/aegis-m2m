@@ -13,7 +13,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { EvaluationCard } from "@/components/EvaluationCard";
 import { BuyerAvatar, NegotiationBlock } from "@/components/Negotiation";
 import { aegisText, parseAegis } from "@/lib/format";
-import { dealStatus, endsDeal, failureText, isOverBudget, purchaseReason, purchaseTitle, quotesOf, quoteStatus } from "@/lib/purchase-view";
+import { dealStatus, endsDeal, failureText, isOverBudget, purchaseTitle, quotesOf, quoteStatus } from "@/lib/purchase-view";
 import type { NegotiationTurn, PersonaRef, Priority, PurchaseRecord, PurchaseStreamEvent, StreamModel } from "@/lib/types";
 
 /** 흥정 말풍선 하나를 보여주는 간격. 서버는 흥정을 순식간에 끝내므로 읽을 시간을 여기서 준다. */
@@ -54,7 +54,6 @@ function sleep(ms: number): Promise<void> {
 
 function PurchaseResult({ record, anchor }: { record: PurchaseRecord; anchor: (element: HTMLElement | null) => void }) {
   const { winner, budgetUnits, evaluation } = record.decision;
-  const reason = purchaseReason(record);
   const failure = failureText(record);
   const blocked = record.blockedRule !== undefined;
   return (
@@ -63,7 +62,6 @@ function PurchaseResult({ record, anchor }: { record: PurchaseRecord; anchor: (e
       <article className="final" ref={anchor}>
         <div className="finalHead">
           <h2>{purchaseTitle(record)}</h2>
-          {reason !== null && <p>{reason}</p>}
           {failure !== null && <p>{failure}</p>}
         </div>
         {evaluation !== undefined && <EvaluationCard evaluation={evaluation} />}
