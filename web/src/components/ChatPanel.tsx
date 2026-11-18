@@ -13,7 +13,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { EvaluationCard } from "@/components/EvaluationCard";
 import { BuyerAvatar, NegotiationBlock } from "@/components/Negotiation";
 import { aegisText, parseAegis } from "@/lib/format";
-import { auditFindings, dealStatus, endsDeal, failureText, purchaseTitle, quotesOf, quoteStatus, ruleName } from "@/lib/purchase-view";
+import { auditFindings, dealStatus, endsDeal, failureText, purchaseTitle, quotesOf, quoteStatus, ruleName, shortReason } from "@/lib/purchase-view";
 import type { NegotiationTurn, PersonaRef, Priority, PurchaseRecord, PurchaseStreamEvent, StreamModel } from "@/lib/types";
 
 /** 흥정 말풍선 하나를 보여주는 간격. 서버는 흥정을 순식간에 끝내므로 읽을 시간을 여기서 준다. */
@@ -55,29 +55,32 @@ function sleep(ms: number): Promise<void> {
 function PurchaseResult({ record, anchor }: { record: PurchaseRecord; anchor: (element: HTMLElement | null) => void }) {
   const { winner, budgetUnits, evaluation } = record.decision;
   const blocked = record.blockedRule !== undefined;
-  // 막은 이유는 아래 띠에 규칙 이름과 함께 크게 보이므로, 머리글에는 돈이 나가지 않았다는 말만 둔다.
-  const failure = blocked ? "감사 규칙이 송금 직전에 막아서 돈은 나가지 않았어요." : failureText(record);
+  const failure = failureText(record);
   const findings = auditFindings(record);
   return (
     <div className="msg top">
       <BuyerAvatar />
       <article className="final" ref={anchor}>
-        <div className="finalHead">
-          <h2>{purchaseTitle(record)}</h2>
-          {failure !== null && <p>{failure}</p>}
-        </div>
+        {/* 감사가 막거나 알린 것을 카드 맨 위에 둔다. 막았으면 띠가 곧 제목이라 아래 제목을 다시 쓰지 않는다. */}
         {findings.length > 0 && (
-          <div className="auditBand">
-            {findings.map((finding, index) => (
-              <div className={`auditItem${finding.outcome === "block" ? " risk" : ""}`} key={index}>
-                <span className="auditTag">{finding.outcome === "block" ? "막음" : "알림"}</span>
-                <div>
+          <div className={`auditBand${blocked ? " risk" : ""}`}>
+            <h2>{blocked ? "결제를 막았어요, 돈은 나가지 않았어요" : "구매는 했지만 확인이 필요해요"}</h2>
+            <ul>
+              {findings.map((finding, index) => (
+                <li key={index} title={finding.message}>
+                  {blocked && finding.outcome !== "block" && <span className="auditTag">알림</span>}
                   <strong>{ruleName(finding.rule)}</strong>
-                  <p>{finding.message}</p>
-                </div>
-              </div>
-            ))}
+                  <span>{shortReason(finding)}</span>
+                </li>
+              ))}
+            </ul>
             <Link className="textLink" href="/dashboard/alerts">이상 거래에서 보기 →</Link>
+          </div>
+        )}
+        {!blocked && (
+          <div className="finalHead">
+            <h2>{purchaseTitle(record)}</h2>
+            {failure !== null && <p>{failure}</p>}
           </div>
         )}
         {evaluation !== undefined && <EvaluationCard evaluation={evaluation} />}

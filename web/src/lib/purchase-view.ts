@@ -87,6 +87,31 @@ export function auditFindings(record: PurchaseRecord): AuditReport["findings"] {
   return [...findings.filter((finding) => finding.outcome === "block"), ...findings.filter((finding) => finding.outcome !== "block")];
 }
 
+/** 규칙 문장을 결과 카드에 넣을 한 줄로 줄인다. 모양이 다르면 첫 문장을 쓴다. 전체 문장은 이상 거래 화면에 있다. */
+export function shortReason(finding: AuditReport["findings"][number]): string {
+  const { rule, message } = finding;
+  const match = (pattern: RegExp) => message.match(pattern);
+  if (rule === "intent-swap") {
+    const quoted = match(/지시처럼 보이는 문장: “(.+?)”/);
+    if (quoted) return `문서 속 "${quoted[1]}"`;
+  } else if (rule === "persona-gap") {
+    const percent = match(/\(([\d.]+%)\) 비쌉니다/);
+    if (percent) return `최저가형이었다면 ${percent[1]} 덜 냈어요`;
+  } else if (rule === "holdout") {
+    const percent = match(/\((\d+%)\) 더 냄/);
+    if (percent) return `판매자가 값을 버텨 예산보다 ${percent[1]} 더 내야 했어요`;
+  } else if (rule === "holdout-stall") {
+    const count = match(/마지막 (\d+)번 같은 값/);
+    if (count) return `판매자가 값을 내리지 않고 마지막 ${count[1]}번 같은 값을 불렀어요`;
+  } else if (rule === "holdout-seller-rate") {
+    const rate = match(/최근 (\d+)건 중 (\d+)건/);
+    if (rate) return `이 판매자에게서 산 최근 ${rate[1]}건 중 ${rate[2]}건이 결렬 뒤 예산 초과 구매예요`;
+  } else if (rule === "seller-collusion") {
+    return "여러 판매자가 함께 값을 덜 깎아 평소보다 비싸게 샀어요";
+  }
+  return message.split(/(?<=[.다])\s/)[0];
+}
+
 export function failureText(record: PurchaseRecord): string | null {
   if (record.failureReason === null) return null;
   if (record.blockedRule !== undefined) return `감사 규칙이 송금 직전에 막아서 돈은 나가지 않았어요. ${record.failureReason}`;

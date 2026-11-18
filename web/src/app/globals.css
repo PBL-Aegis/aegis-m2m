@@ -525,14 +525,15 @@ td small { display: block; margin-top: 2px; font-size: 12px; color: var(--faint)
   flex-direction: column;
   gap: 16px;
 }
-/* 감사가 막거나 알린 것. 결과 카드에서 가장 먼저 눈에 띄게 한다. */
-.auditBand { display: flex; flex-direction: column; gap: 8px; }
-.auditItem { display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px; border-radius: 12px; background: var(--amber-soft); }
-.auditItem.risk { background: var(--red-soft); }
-.auditTag { flex: none; padding: 4px 10px; border-radius: 12px; background: var(--amber); color: #ffffff; font-size: 13px; font-weight: 700; }
-.auditItem.risk .auditTag { background: var(--red); }
-.auditItem strong { display: block; font-size: 16px; font-weight: 700; color: var(--ink); }
-.auditItem p { margin: 4px 0 0; max-width: 72ch; font-size: 14px; line-height: 1.5; color: var(--ink-soft); }
+/* 감사가 막거나 알린 것. 결과 카드 맨 위에서 가장 먼저 눈에 띄게 한다. */
+.auditBand { padding: 16px 18px; border-radius: 12px; border-left: 6px solid var(--amber); background: var(--amber-soft); display: flex; flex-direction: column; gap: 10px; }
+.auditBand.risk { border-left-color: var(--red); background: var(--red-soft); }
+.auditBand h2 { font-size: 20px; line-height: 1.35; letter-spacing: -0.03em; color: var(--amber); }
+.auditBand.risk h2 { color: var(--red); }
+.auditBand ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.auditBand li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; font-size: 15px; line-height: 1.5; color: var(--ink-soft); }
+.auditBand li strong { font-weight: 700; color: var(--ink); }
+.auditTag { padding: 1px 8px; border-radius: 10px; background: var(--amber); color: #ffffff; font-size: 12px; font-weight: 700; }
 .finalHead { display: flex; flex-direction: column; gap: 8px; }
 .finalHead h2 { font-size: 20px; line-height: 1.35; letter-spacing: -0.03em; }
 .finalHead p { max-width: 72ch; font-size: 15px; color: var(--ink-soft); }
