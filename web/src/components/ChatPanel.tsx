@@ -133,7 +133,12 @@ export function ChatPanel() {
     if (last.record === null) {
       // 대화는 칸마다 길이가 달라서, 맨 아래가 아니라 지금 말하는 칸의 마지막 말풍선을 따라간다.
       const speaking = element.querySelector(".deal.live .dealTurns > :last-child");
-      if (speaking !== null) speaking.scrollIntoView({ block: "nearest" });
+      if (speaking !== null) {
+        // 다음 판매자로 넘어가면 위로 올라가야 한다. 마지막 줄에만 맞추면 그 위 첫 말풍선이 위에 붙은 칸 머리에 가려지므로, 칸 머리부터 보이게 올린다.
+        const safeTop = element.getBoundingClientRect().top + parseFloat(getComputedStyle(speaking).scrollMarginTop);
+        if (speaking.getBoundingClientRect().top < safeTop) speaking.closest(".deal")?.scrollIntoView({ block: "start" });
+        speaking.scrollIntoView({ block: "nearest" });
+      }
       else if (last.blocks.length === 0 || last.blocks.every((block) => block.turns.some(endsDeal))) element.scrollTop = element.scrollHeight;
     } else if (shownFinal.current !== last.id && finalCard.current !== null) {
       shownFinal.current = last.id;

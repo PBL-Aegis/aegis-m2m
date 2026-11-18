@@ -422,7 +422,7 @@ td small { display: block; margin-top: 2px; font-size: 12px; color: var(--faint)
     background: var(--divider);
   }
 }
-.deal { min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+.deal { min-width: 0; display: flex; flex-direction: column; gap: 12px; scroll-margin-top: 16px; }
 .dealTurns > * { scroll-margin: 140px 0 16px; }
 .dealHead { flex: 1; }
 .deal > .dealHead .dealBar { margin-top: auto; }
