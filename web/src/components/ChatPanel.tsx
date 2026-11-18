@@ -13,7 +13,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { EvaluationCard } from "@/components/EvaluationCard";
 import { BuyerAvatar, NegotiationBlock } from "@/components/Negotiation";
 import { aegisText, parseAegis } from "@/lib/format";
-import { dealStatus, endsDeal, failureText, isOverBudget, purchaseTitle, quotesOf, quoteStatus } from "@/lib/purchase-view";
+import { auditFindings, dealStatus, endsDeal, failureText, purchaseTitle, quotesOf, quoteStatus, ruleName, shortReason } from "@/lib/purchase-view";
 import type { NegotiationTurn, Priority, PurchaseRecord, PurchaseStreamEvent, StreamModel } from "@/lib/types";
 
 /** 흥정 말풍선 하나를 보여주는 간격. 서버는 흥정을 순식간에 끝내므로 읽을 시간을 여기서 준다. */
@@ -54,23 +54,36 @@ function sleep(ms: number): Promise<void> {
 
 function PurchaseResult({ record, anchor }: { record: PurchaseRecord; anchor: (element: HTMLElement | null) => void }) {
   const { winner, budgetUnits, evaluation } = record.decision;
-  const failure = failureText(record);
   const blocked = record.blockedRule !== undefined;
+  const failure = failureText(record);
+  const findings = auditFindings(record);
   return (
     <div className="msg top">
       <BuyerAvatar />
       <article className="final" ref={anchor}>
-        <div className="finalHead">
-          <h2>{purchaseTitle(record)}</h2>
-          {failure !== null && <p>{failure}</p>}
-        </div>
-        {evaluation !== undefined && <EvaluationCard evaluation={evaluation} />}
-        {(blocked || isOverBudget(record)) && (
-          <Link className={`warnLink${blocked ? " risk" : ""}`} href="/dashboard/alerts">
-            {blocked ? "이상 거래에 차단 기록을 남겼어요" : "이상 거래에 경고를 남겼어요"}
-            <span aria-hidden="true">→</span>
-          </Link>
+        {/* 감사가 막거나 알린 것을 카드 맨 위에 둔다. 막았으면 띠가 곧 제목이라 아래 제목을 다시 쓰지 않는다. */}
+        {findings.length > 0 && (
+          <div className={`auditBand${blocked ? " risk" : ""}`}>
+            <h2>{blocked ? "결제를 막았어요, 돈은 나가지 않았어요" : "구매는 했지만 확인이 필요해요"}</h2>
+            <ul>
+              {findings.map((finding, index) => (
+                <li key={index} title={finding.message}>
+                  {blocked && finding.outcome !== "block" && <span className="auditTag">알림</span>}
+                  <strong>{ruleName(finding.rule)}</strong>
+                  <span>{shortReason(finding)}</span>
+                </li>
+              ))}
+            </ul>
+            <Link className="textLink" href="/dashboard/alerts">이상 거래에서 보기 →</Link>
+          </div>
         )}
+        {!blocked && (
+          <div className="finalHead">
+            <h2>{purchaseTitle(record)}</h2>
+            {failure !== null && <p>{failure}</p>}
+          </div>
+        )}
+        {evaluation !== undefined && <EvaluationCard evaluation={evaluation} />}
         <dl className="prices">
           <div>
             <dt>{record.status === "FAILED" ? "합의" : "결제"}</dt>
@@ -120,7 +133,12 @@ export function ChatPanel() {
     if (last.record === null) {
       // 대화는 칸마다 길이가 달라서, 맨 아래가 아니라 지금 말하는 칸의 마지막 말풍선을 따라간다.
       const speaking = element.querySelector(".deal.live .dealTurns > :last-child");
-      if (speaking !== null) speaking.scrollIntoView({ block: "nearest" });
+      if (speaking !== null) {
+        // 다음 판매자로 넘어가면 위로 올라가야 한다. 마지막 줄에만 맞추면 그 위 첫 말풍선이 위에 붙은 칸 머리에 가려지므로, 칸 머리부터 보이게 올린다.
+        const safeTop = element.getBoundingClientRect().top + parseFloat(getComputedStyle(speaking).scrollMarginTop);
+        if (speaking.getBoundingClientRect().top < safeTop) speaking.closest(".deal")?.scrollIntoView({ block: "start" });
+        speaking.scrollIntoView({ block: "nearest" });
+      }
       else if (last.blocks.length === 0 || last.blocks.every((block) => block.turns.some(endsDeal))) element.scrollTop = element.scrollHeight;
     } else if (shownFinal.current !== last.id && finalCard.current !== null) {
       shownFinal.current = last.id;
