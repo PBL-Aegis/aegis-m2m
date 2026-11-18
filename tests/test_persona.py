@@ -7,7 +7,7 @@ from agent_m2m import persona as persona_module, shopping
 from agent_m2m.api import app
 from agent_m2m.evaluation import evaluate
 from agent_m2m.negotiation import negotiate
-from agent_m2m.persona import PersonaError, load_persona, persona_ids
+from agent_m2m.persona import PersonaError, load_persona, persona_for, persona_ids
 from agent_m2m.shopping import shop
 
 LARGE_BUDGET = 10_000_000
@@ -148,12 +148,16 @@ def test_목표로_설명할_수_없게_비싸게_샀으면_손해다():
     assert any("설명할 수 없는 값" in line for line in evaluation["lines"])
 
 
-def test_API_는_페르소나_목록을_주고_없는_페르소나는_받지_않는다():
+def test_API_는_페르소나_목록을_주고_요청의_페르소나는_받지_않는다():
     client = TestClient(app)
     assert [item["id"] for item in client.get("/api/personas").json()] == ["thrifty", "quality"]
-    response = client.post("/api/purchase", json={"prompt": "요약", "budget": "1", "persona": "greedy"})
+    response = client.post("/api/purchase", json={"prompt": "요약", "budget": "1", "persona": "quality"})
     assert response.status_code == 400
     assert "persona" in response.json()["error"]
+
+
+def test_구매_성향은_등급을_따른다():
+    assert [persona_for(priority)["id"] for priority in ("price", "default", "intelligence")] == ["thrifty", "thrifty", "quality"]
 
 
 def test_값이_같아_성능으로_골랐으면_평가에_그_이유가_적힌다():

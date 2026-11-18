@@ -20,6 +20,8 @@ from agent_m2m.config import ROOT
 
 PERSONA_DIR = ROOT / "personas"
 DEFAULT_PERSONA = "thrifty"
+# 구매 성향은 사람이 고르지 않는다. Gemma 가 정한 등급을 따른다: 싸게·기본은 최저가형, 똑똑하게는 품질형.
+PRIORITY_PERSONA = {"price": "thrifty", "default": "thrifty", "intelligence": "quality"}
 RATIO_FIELDS = ("opening_ratio", "concede_new_card", "concede_used_card", "concede_no_card")
 
 
@@ -66,6 +68,11 @@ def _parse(persona_id: str, raw: str) -> dict[str, Any]:
         "premiumLimit": numbers["premium_limit"],
         "hash": f"sha256:{hashlib.sha256(raw.encode()).hexdigest()}",
     }
+
+
+def persona_for(priority: str) -> dict[str, Any]:
+    """등급에 맞는 구매 성향."""
+    return load_persona(PRIORITY_PERSONA[priority])
 
 
 def load_persona(persona_id: str = DEFAULT_PERSONA) -> dict[str, Any]:

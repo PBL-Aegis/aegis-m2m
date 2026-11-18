@@ -5,7 +5,7 @@ from agent_m2m.audit import AuditContext
 from agent_m2m.benchmark import load_snapshot
 from agent_m2m.format import aegis_text
 from agent_m2m.payment import buyer_balance
-from agent_m2m.persona import load_persona
+from agent_m2m.persona import PRIORITY_PERSONA, load_persona
 from agent_m2m.purchase import run_purchase
 from agent_m2m.rules import persona_gap
 from agent_m2m.selection import decide
@@ -41,12 +41,15 @@ def no_rules():
         checks[:] = original
 
 
-def request(name: str, persona: str | None = None, priority: str = "price", budget: int = BUDGET) -> dict:
+def purchase_as(name: str, persona: str | None = None, priority: str = "price", budget: int = BUDGET) -> dict:
     # 호가는 문장 길이로 정해지므로 문장은 모두 같게 둔다. 사용자와 요청 번호만 다르게 한다.
     body = {"prompt": with_priority(PROMPT, priority), "budgetUnits": budget, "userId": f"gap-{name}", "requestId": f"gap-{name}"}
-    if persona is not None:
-        body["persona"] = persona
-    return body
+    if persona is None:
+        return run_purchase(body)
+    # 구매 성향은 등급을 따른다. 같은 등급에서 성향만 바꿔 보려고 이 시험 안에서만 연결을 바꾼다.
+    with pytest.MonkeyPatch.context() as patch:
+        patch.setitem(PRIORITY_PERSONA, priority, persona)
+        return run_purchase(body)
 
 
 def gap_alerts(user_id: str) -> list[dict]:
@@ -67,8 +70,8 @@ def context(persona_id: str, priority: str = "price", budget: int = BUDGET) -> t
 
 
 def test_규칙이_없으면_품질형은_최저가형보다_비싸게_사고_결제는_그대로_나간다(no_rules):
-    thrifty = run_purchase(request("plain-thrifty", "thrifty"))
-    quality = run_purchase(request("plain-quality", "quality"))
+    thrifty = purchase_as("plain-thrifty", "thrifty")
+    quality = purchase_as("plain-quality", "quality")
 
     assert thrifty["status"] == quality["status"] == "SETTLED"
     assert paid(quality) > paid(thrifty)  # 같은 요청인데 페르소나 때문에 더 냈다
@@ -76,8 +79,8 @@ def test_규칙이_없으면_품질형은_최저가형보다_비싸게_사고_�
 
 
 def test_규칙이_있으면_품질형이_더_낸_차이와_이유가_알림으로_남고_결제는_진행된다(gap_only):
-    thrifty = run_purchase(request("alert-thrifty", "thrifty"))
-    quality = run_purchase(request("alert-quality", "quality"))
+    thrifty = purchase_as("alert-thrifty", "thrifty")
+    quality = purchase_as("alert-quality", "quality")
 
     assert quality["status"] == "SETTLED"
     [alert] = gap_alerts("gap-alert-quality")
@@ -91,7 +94,7 @@ def test_규칙이_있으면_품질형이_더_낸_차이와_이유가_알림으�
 
 
 def test_다시_돌린_값은_실제로_기본_페르소나가_산_값과_같다(gap_only):
-    thrifty = run_purchase(request("same-thrifty", "thrifty"))
+    thrifty = purchase_as("same-thrifty", "thrifty")
     ctx, _ = context("quality")
     base = persona_gap.baseline(ctx)
 
@@ -100,20 +103,20 @@ def test_다시_돌린_값은_실제로_기본_페르소나가_산_값과_같다
 
 
 def test_최저가형과_페르소나를_빼먹은_요청은_알림_없이_통과한다(gap_only):
-    assert run_purchase(request("pass-thrifty", "thrifty"))["status"] == "SETTLED"
-    assert run_purchase(request("pass-default"))["status"] == "SETTLED"
+    assert purchase_as("pass-thrifty", "thrifty")["status"] == "SETTLED"
+    assert purchase_as("pass-default")["status"] == "SETTLED"
     assert gap_alerts("gap-pass-thrifty") == [] and gap_alerts("gap-pass-default") == []
 
 
 def test_차이가_설정한_비율_미만이면_알림_없이_통과한다(gap_only, monkeypatch):
     monkeypatch.setattr(persona_gap, "GAP_RATIO", 1.0)
-    assert run_purchase(request("below-ratio", "quality"))["status"] == "SETTLED"
+    assert purchase_as("below-ratio", "quality")["status"] == "SETTLED"
     assert gap_alerts("gap-below-ratio") == []
 
 
 def test_품질형이_성능_때문에_일부러_더_낸_정상_거래는_알림만_남고_막히지_않는다(gap_only):
     # 우선순위 default: 비교 모델이 둘이라 품질형은 값 한도 안에서 성능을 본다. 평가는 bad 가 아니다(설명 가능).
-    record = run_purchase(request("normal-quality", "quality", priority="default"))
+    record = purchase_as("normal-quality", "quality", priority="default")
 
     assert record["status"] == "SETTLED"
     assert record["decision"]["evaluation"]["verdict"] in ("good", "partial")
@@ -123,9 +126,9 @@ def test_품질형이_성능_때문에_일부러_더_낸_정상_거래는_알림
 
 def test_같은_모델을_더_비싸게_사도_막지_않고_차이가_알림과_최저가_근거로_남는다(gap_only):
     # 픽스처의 '싸게'에서는 두 페르소나가 같은 모델을 사고, 품질형은 양보가 빨라 더 비싸게 산다.
-    thrifty = run_purchase(request("same-model-thrifty", "thrifty"))
+    thrifty = purchase_as("same-model-thrifty", "thrifty")
     balance = buyer_balance()["units"]
-    record = run_purchase(request("same-model-quality", "quality"))
+    record = purchase_as("same-model-quality", "quality")
 
     assert record["status"] == "SETTLED"
     assert record["decision"]["winner"]["key"] == thrifty["decision"]["winner"]["key"]
@@ -142,7 +145,7 @@ def test_같은_모델을_더_비싸게_사도_막지_않고_차이가_알림과
 
 
 def test_최저가형_구매에도_다시_계산해도_같다는_최저가_근거가_남는다(gap_only):
-    record = run_purchase(request("proof-thrifty", "thrifty"))
+    record = purchase_as("proof-thrifty", "thrifty")
 
     proof = record["decision"]["evaluation"]["lowestPrice"]
     assert proof["gapUnits"] == 0 and proof["paidUnits"] == paid(record)
@@ -160,7 +163,7 @@ def test_평가가_bad_여도_막지_않고_알림만_남긴다():
 
 def test_모든_흥정이_결렬돼_둘_다_예산을_넘겨도_페르소나_탓이_아니라서_통과한다(gap_only):
     # 예산이 판매자 최저가보다 낮으면 품질형과 최저가형이 같은 값(판매자 최저가)에 산다. 이 규칙의 일이 아니다(over_budget 규칙이 알린다).
-    record = run_purchase(request("all-over-budget", "quality", budget=1_000))
+    record = purchase_as("all-over-budget", "quality", budget=1_000)
 
     assert record["decision"]["negotiation"]["overBudget"] is True
     assert record["status"] == "SETTLED"

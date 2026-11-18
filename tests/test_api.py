@@ -56,7 +56,7 @@ def test_내용은_문자열만_받고_기록에_남긴다():
 
 
 def test_화면이_쓰는_조회_API_가_기록과_알림을_돌려준다():
-    record = client.post("/api/purchase", json={"prompt": "조회 확인, 정확하게", "budget": "0.5"}).json()
+    record = client.post("/api/purchase", json={"prompt": "조회 확인", "budget": "0.5"}).json()
     assert client.get(f"/api/purchases/{record['id']}").json()["id"] == record["id"]
     assert client.get("/api/purchases/없는-id").status_code == 404
     assert record["id"] in [item["id"] for item in client.get("/api/purchases").json()]
