@@ -3,7 +3,7 @@
  */
 
 import { aegisText } from "@/lib/format";
-import type { Evaluation, Negotiation, NegotiationTurn, PurchaseRecord } from "@/lib/types";
+import type { AuditReport, Evaluation, Negotiation, NegotiationTurn, PurchaseRecord } from "@/lib/types";
 
 export type Tone = "live" | "win" | "ok" | "warn" | "risk" | "mute";
 
@@ -24,7 +24,7 @@ export function isOverBudget(record: PurchaseRecord): boolean {
 
 export function purchaseStatus(record: PurchaseRecord): StatusView {
   if (record.status === "PROCESSING") return { label: "처리 중", tone: "live" };
-  if (record.blockedRule !== undefined) return { label: "차단", tone: "risk" };
+  if (record.blockedRule !== undefined) return { label: "막음", tone: "risk" };
   if (record.status === "FAILED") return { label: "결제 실패", tone: "risk" };
   if (isOverBudget(record)) return { label: "예산 초과", tone: "warn" };
   return { label: "정산 완료", tone: "ok" };
@@ -46,7 +46,7 @@ export function dealStatus(turns: NegotiationTurn[]): StatusView {
 export function quoteStatus(quote: Negotiation, record: PurchaseRecord): StatusView {
   if (quote.status === "agreed") {
     // 금액은 카드 아래 "구매 …" 줄에 있다. 배지에 또 넣으면 폭을 차지해 판매자 이름이 꺾인다.
-    if (record.blockedRule !== undefined) return { label: "차단", tone: "risk" };
+    if (record.blockedRule !== undefined) return { label: "막음", tone: "risk" };
     if (record.status === "FAILED") return { label: "합의", tone: "risk" };
     return quote.overBudget ? { label: "예산 초과 구매", tone: "warn" } : { label: "구매", tone: "win" };
   }
@@ -63,6 +63,30 @@ export function purchaseTitle(record: PurchaseRecord): string {
 }
 
 /** 결제가 안 된 까닭. 돈이 나갔을 수 있는지를 먼저 말한다. 성공한 기록에는 없다. */
+/** 감사 규칙 이름을 화면에 보일 말로. 모르는 규칙은 이름 그대로 둔다. */
+const RULE_NAME: Record<string, string> = {
+  "intent-swap": "숨긴 지시",
+  holdout: "협상 깨기",
+  "holdout-stall": "판매자 버티기",
+  "holdout-seller-rate": "자주 버티는 판매자",
+  "persona-gap": "구매 성향 차이",
+  "seller-collusion": "담합 의심",
+  "over-budget": "예산 초과",
+  limit: "결제 한도",
+  "duplicate-purchase": "반복 구매",
+  "after-payment": "결제 후 감사 오류",
+};
+
+export function ruleName(rule: string): string {
+  return RULE_NAME[rule] ?? rule;
+}
+
+/** 송금 전후 감사에 걸린 것. 막음을 알림보다 먼저 둔다. */
+export function auditFindings(record: PurchaseRecord): AuditReport["findings"] {
+  const findings = [record.audit?.beforeSend, record.audit?.afterSend].flatMap((entry) => entry?.report.findings ?? []);
+  return [...findings.filter((finding) => finding.outcome === "block"), ...findings.filter((finding) => finding.outcome !== "block")];
+}
+
 export function failureText(record: PurchaseRecord): string | null {
   if (record.failureReason === null) return null;
   if (record.blockedRule !== undefined) return `감사 규칙이 송금 직전에 막아서 돈은 나가지 않았어요. ${record.failureReason}`;

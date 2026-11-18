@@ -13,7 +13,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { EvaluationCard } from "@/components/EvaluationCard";
 import { BuyerAvatar, NegotiationBlock } from "@/components/Negotiation";
 import { aegisText, parseAegis } from "@/lib/format";
-import { dealStatus, endsDeal, failureText, isOverBudget, purchaseTitle, quotesOf, quoteStatus } from "@/lib/purchase-view";
+import { auditFindings, dealStatus, endsDeal, failureText, purchaseTitle, quotesOf, quoteStatus, ruleName } from "@/lib/purchase-view";
 import type { NegotiationTurn, PersonaRef, Priority, PurchaseRecord, PurchaseStreamEvent, StreamModel } from "@/lib/types";
 
 /** 흥정 말풍선 하나를 보여주는 간격. 서버는 흥정을 순식간에 끝내므로 읽을 시간을 여기서 준다. */
@@ -54,8 +54,10 @@ function sleep(ms: number): Promise<void> {
 
 function PurchaseResult({ record, anchor }: { record: PurchaseRecord; anchor: (element: HTMLElement | null) => void }) {
   const { winner, budgetUnits, evaluation } = record.decision;
-  const failure = failureText(record);
   const blocked = record.blockedRule !== undefined;
+  // 막은 이유는 아래 띠에 규칙 이름과 함께 크게 보이므로, 머리글에는 돈이 나가지 않았다는 말만 둔다.
+  const failure = blocked ? "감사 규칙이 송금 직전에 막아서 돈은 나가지 않았어요." : failureText(record);
+  const findings = auditFindings(record);
   return (
     <div className="msg top">
       <BuyerAvatar />
@@ -64,13 +66,21 @@ function PurchaseResult({ record, anchor }: { record: PurchaseRecord; anchor: (e
           <h2>{purchaseTitle(record)}</h2>
           {failure !== null && <p>{failure}</p>}
         </div>
-        {evaluation !== undefined && <EvaluationCard evaluation={evaluation} />}
-        {(blocked || isOverBudget(record)) && (
-          <Link className={`warnLink${blocked ? " risk" : ""}`} href="/dashboard/alerts">
-            {blocked ? "이상 거래에 차단 기록을 남겼어요" : "이상 거래에 경고를 남겼어요"}
-            <span aria-hidden="true">→</span>
-          </Link>
+        {findings.length > 0 && (
+          <div className="auditBand">
+            {findings.map((finding, index) => (
+              <div className={`auditItem${finding.outcome === "block" ? " risk" : ""}`} key={index}>
+                <span className="auditTag">{finding.outcome === "block" ? "막음" : "알림"}</span>
+                <div>
+                  <strong>{ruleName(finding.rule)}</strong>
+                  <p>{finding.message}</p>
+                </div>
+              </div>
+            ))}
+            <Link className="textLink" href="/dashboard/alerts">이상 거래에서 보기 →</Link>
+          </div>
         )}
+        {evaluation !== undefined && <EvaluationCard evaluation={evaluation} />}
         <dl className="prices">
           <div>
             <dt>{record.status === "FAILED" ? "합의" : "결제"}</dt>

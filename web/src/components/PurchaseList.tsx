@@ -12,7 +12,7 @@ const TABS: { id: string; label: string; match: (record: PurchaseRecord) => bool
   { id: "all", label: "전체", match: () => true },
   { id: "settled", label: "정산 완료", match: (record) => record.status === "SETTLED" && !isOverBudget(record) },
   { id: "over", label: "예산 초과", match: (record) => record.status === "SETTLED" && isOverBudget(record) },
-  { id: "blocked", label: "차단", match: (record) => record.blockedRule !== undefined },
+  { id: "blocked", label: "막음", match: (record) => record.blockedRule !== undefined },
   { id: "failed", label: "결제 실패", match: (record) => record.status === "FAILED" && record.blockedRule === undefined },
 ];
 

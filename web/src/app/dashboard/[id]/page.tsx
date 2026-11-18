@@ -41,8 +41,8 @@ function auditSummary(audit: { beforeSend?: AuditEntry; afterSend?: AuditEntry }
 
 function stageBadge(stage: AuditStage, alerts: AuditAlert[], processing: boolean) {
   const found = alerts.filter((alert) => alert.stage === stage);
-  if (found.some((alert) => alert.blocked)) return <span className="badge risk">차단</span>;
-  if (found.length > 0) return <span className={`badge ${alertTone(stage)}`}>경고</span>;
+  if (found.some((alert) => alert.blocked)) return <span className="badge risk">막음</span>;
+  if (found.length > 0) return <span className={`badge ${alertTone(stage)}`}>알림</span>;
   if (processing && stage !== "on-request") return <span className="badge">대기</span>;
   return <span className="badge ok">통과</span>;
 }
