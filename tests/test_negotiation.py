@@ -331,8 +331,8 @@ def test_결제가_실패하면_차단으로_표시하지_않는다(monkeypatch)
     assert "blockedRule" not in record
 
 
-def test_요청의_페르소나로_흥정하고_결정에_페르소나와_평가를_남긴다():
-    record = run_purchase({**INPUT, "persona": "quality", "requestId": "req-quality"})
+def test_똑똑하게_요청은_품질형으로_흥정하고_결정에_페르소나와_평가를_남긴다():
+    record = run_purchase({**INPUT, "prompt": PRIORITY_PROMPT["intelligence"], "requestId": "req-quality"})
     decision = record["decision"]
     assert record["status"] == "SETTLED"
     assert decision["persona"]["id"] == "quality"

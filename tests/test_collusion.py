@@ -8,6 +8,7 @@
 import pytest
 
 from agent_m2m import audit, benchmark, seller as seller_module, shopping, store
+from agent_m2m.persona import PRIORITY_PERSONA
 from agent_m2m.purchase import run_purchase
 from agent_m2m.rules import collusion
 from agent_m2m.selection import decide
@@ -61,15 +62,17 @@ def two_sellers(monkeypatch) -> list[str]:
 
 def buy(name: str, index: int, priority: str = "default", persona: str = "thrifty") -> dict:
     increase_chain_time(61)
-    return run_purchase(
-        {
-            "prompt": with_priority(f"이 글 정리해 줘 {name} {index}", priority),
-            "budgetUnits": BUDGET_UNITS,
-            "persona": persona,
-            "userId": f"collusion-{name}",
-            "requestId": f"collusion-{name}-{index}",
-        }
-    )
+    # 구매 성향은 등급을 따른다. 같은 등급에서 성향만 바꿔 보려고 이 시험 안에서만 연결을 바꾼다.
+    with pytest.MonkeyPatch.context() as patch:
+        patch.setitem(PRIORITY_PERSONA, priority, persona)
+        return run_purchase(
+            {
+                "prompt": with_priority(f"이 글 정리해 줘 {name} {index}", priority),
+                "budgetUnits": BUDGET_UNITS,
+                "userId": f"collusion-{name}",
+                "requestId": f"collusion-{name}-{index}",
+            }
+        )
 
 
 def alerts_of(name: str, kind: str = "") -> list[dict]:

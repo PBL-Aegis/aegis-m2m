@@ -34,7 +34,7 @@ from agent_m2m.benchmark import load_snapshot
 from agent_m2m.domain import PaymentResult, PurchaseRecord, now_iso
 from agent_m2m.deal import build_deal, hash_deal
 from agent_m2m.payment import PaymentError, anvil_account, open_deal, record_after_audit, request_id_hash
-from agent_m2m.persona import DEFAULT_PERSONA, load_persona
+from agent_m2m.persona import persona_for
 from agent_m2m.priority_llm import infer_priority
 from agent_m2m.selection import decide
 from agent_m2m.shopping import shop
@@ -92,8 +92,8 @@ def run_purchase(
     on_event: Callable[[dict[str, Any]], None] = lambda event: None,
 ) -> PurchaseRecord:
     """
-    purchase_input: prompt(지시)·budgetUnits, 선택으로 content(처리할 내용)·persona·requestId·userId·maxOutputTokens·requiredCapabilities.
-    페르소나가 없으면 기본 페르소나(최저가형)로 흥정한다.
+    purchase_input: prompt(지시)·budgetUnits, 선택으로 content(처리할 내용)·requestId·userId·maxOutputTokens·requiredCapabilities.
+    구매 성향(페르소나)은 Gemma 가 정한 등급을 따른다: 싸게·기본은 최저가형, 똑똑하게는 품질형.
     우선순위는 언제나 로컬 Gemma 가 지시와 내용을 읽고 정한다. 요청 번호가 없으면 새로 만들고, 사용자가 없으면 None.
     흥정 진행은 on_event 로 바로 알린다(shopping.py).
     """
@@ -122,7 +122,8 @@ def run_purchase(
     decision["priorityModel"] = inferred["model"]
 
     # 흥정 — 모두 결렬되면 기록 없이 멈춘다. 합의가를 winner 금액에 넣어 뒤의 감사·결제·확인이 모두 이 값을 본다.
-    persona = load_persona(request.get("persona") or DEFAULT_PERSONA)
+    # 구매 성향도 사람이 고르지 않고, Gemma 가 정한 등급을 따른다(persona.py 의 PRIORITY_PERSONA).
+    persona = persona_for(request["priority"])
     decision.update(shop(decision["candidates"], request["priority"], request["budgetUnits"], on_event, persona))
     # 체인에 남길 합의. 대화와 결정 근거는 DB 에 두고 해시만 담는다(deal.py). 기록에 먼저 넣어 나중에 대조할 수 있게 한다.
     decision["deal"] = build_deal(request_id_hash(request["requestId"]), anvil_account(1).address, decision)

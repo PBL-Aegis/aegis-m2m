@@ -14,7 +14,7 @@ import { EvaluationCard } from "@/components/EvaluationCard";
 import { BuyerAvatar, NegotiationBlock } from "@/components/Negotiation";
 import { aegisText, parseAegis } from "@/lib/format";
 import { auditFindings, dealStatus, endsDeal, failureText, purchaseTitle, quotesOf, quoteStatus, ruleName, shortReason } from "@/lib/purchase-view";
-import type { NegotiationTurn, PersonaRef, Priority, PurchaseRecord, PurchaseStreamEvent, StreamModel } from "@/lib/types";
+import type { NegotiationTurn, Priority, PurchaseRecord, PurchaseStreamEvent, StreamModel } from "@/lib/types";
 
 /** 흥정 말풍선 하나를 보여주는 간격. 서버는 흥정을 순식간에 끝내므로 읽을 시간을 여기서 준다. */
 const TURN_DELAY_MS = 650;
@@ -117,25 +117,12 @@ export function ChatPanel() {
   const [budget, setBudget] = useState("0.3");
   const [content, setContent] = useState("");
   const [contentOpen, setContentOpen] = useState(false);
-  const [personas, setPersonas] = useState<PersonaRef[]>([]);
-  const [persona, setPersona] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [turns, setTurns] = useState<Turn[]>([]);
 
   const log = useRef<HTMLDivElement>(null);
   const finalCard = useRef<HTMLElement | null>(null);
   const shownFinal = useRef<number | null>(null);
-
-  // 페르소나는 서버의 personas/ 파일 목록이고 맨 앞이 기본값이다. 못 받으면 고르지 않고 보내 서버의 기본 페르소나로 흥정한다.
-  useEffect(() => {
-    fetch("/api/personas")
-      .then((response) => (response.ok ? (response.json() as Promise<PersonaRef[]>) : []))
-      .then((list) => {
-        setPersonas(list);
-        setPersona((current) => current ?? list[0]?.id ?? null);
-      })
-      .catch(() => setPersonas([]));
-  }, []);
 
   // 말풍선이 늘면 아래로 따라가고, 결과가 나오면 구매 이유의 첫 줄이 먼저 보이게 한다.
   useEffect(() => {
@@ -245,7 +232,6 @@ export function ChatPanel() {
           prompt: text,
           budget: budget.trim(),
           ...(attached === "" ? {} : { content: attached }),
-          ...(persona === null ? {} : { persona }),
         }),
       });
       if (response.ok) {
@@ -328,22 +314,6 @@ export function ChatPanel() {
               AEGIS
             </label>
             <div className="composerActions">
-              {personas.length > 0 && (
-                <div className="personaToggle" role="radiogroup" aria-label="구매 에이전트 페르소나">
-                  {personas.map((item) => (
-                    <button
-                      key={item.id}
-                      type="button"
-                      role="radio"
-                      aria-checked={item.id === persona}
-                      disabled={busy}
-                      onClick={() => setPersona(item.id)}
-                    >
-                      {item.name}
-                    </button>
-                  ))}
-                </div>
-              )}
               <button
                 type="button"
                 className="contentToggle"

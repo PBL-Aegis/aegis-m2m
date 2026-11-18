@@ -642,20 +642,6 @@ td small { display: block; margin-top: 2px; font-size: 12px; color: var(--faint)
 
 /* --- 페르소나 근거와 평가 --- */
 .why { margin: 0; padding: 0 4px; font-size: 12px; line-height: 1.5; color: var(--faint); }
-.personaToggle { display: flex; padding: 3px; border-radius: 20px; background: var(--paper); }
-.personaToggle button {
-  height: 34px;
-  padding: 0 12px;
-  border: 0;
-  border-radius: 17px;
-  background: transparent;
-  color: var(--muted);
-  font-size: 13px;
-  cursor: pointer;
-  white-space: nowrap;
-}
-.personaToggle button[aria-checked="true"] { background: var(--card); color: var(--violet-ink); font-weight: 600; }
-.personaToggle button:disabled { cursor: default; }
 .evaluation {
   padding: 14px 16px;
   border-radius: 12px;

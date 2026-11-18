@@ -14,7 +14,7 @@ HTTP API. 화면(web/)과 다른 에이전트가 이 주소들만 부른다.
 POST /api/purchase 의 입력은 여기서 모양만 검사한다(문자열인지, 금액 형식인지).
 예산(budget)은 사람이 적는 값이라 AEGIS 로 받고(예: "0.5"), 여기서 최소 단위(units)로 바꾼다.
 우선순위(priority)는 받지 않는다(보내면 400). 로컬 Gemma 가 지시(prompt)와 내용(content)을 읽고 정한다.
-페르소나(persona)도 빼도 된다. 빼면 최저가형(thrifty)으로 흥정한다. 쓸 수 있는 값은 personas/ 의 파일 이름이다.
+페르소나(persona)도 받지 않는다(보내면 400). 구매 성향은 Gemma 가 정한 등급을 따른다: 싸게·기본은 최저가형, 똑똑하게는 품질형.
 requestId·userId 도 빼도 된다. requestId 를 빼면 서버가 새로 만든다.
 """
 
@@ -81,11 +81,8 @@ def parse_body(body: Any) -> dict[str, Any] | str:
         if content.strip() != "":
             request["content"] = content
 
-    persona = body.get("persona")
-    if persona is not None:
-        if persona not in persona_ids():
-            return f"persona 는 {', '.join(persona_ids())} 중 하나이거나 비어 있어야 합니다"
-        request["persona"] = persona
+    if "persona" in body:
+        return "persona 는 받지 않습니다. 구매 성향은 Gemma 가 정한 등급을 따릅니다 (싸게·기본은 최저가형, 똑똑하게는 품질형)"
 
     if "maxOutputTokens" in body:
         value = body["maxOutputTokens"]
