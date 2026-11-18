@@ -1,11 +1,11 @@
 /**
  * 이상 거래 알림 목록. 대시보드(최근 몇 건), 이상 거래 화면(전체), 구매 상세(그 거래의 알림)가 함께 쓴다.
- * 규칙이 결제를 막은 알림은 "차단", ctx.alert 로 남긴 알림은 "경고"로 보여준다.
+ * 규칙이 결제를 막은 알림은 "막음", ctx.alert 로 남긴 알림은 "알림"으로 보여준다.
  */
 
 import Link from "next/link";
 
-import { shortTime } from "@/lib/purchase-view";
+import { ruleName, shortTime } from "@/lib/purchase-view";
 import type { AuditAlert, AuditStage } from "@/lib/types";
 
 export const STAGE_LABEL: Record<AuditStage, string> = {
@@ -14,19 +14,19 @@ export const STAGE_LABEL: Record<AuditStage, string> = {
   "after-payment": "결제 후",
 };
 
-/** 결제 전 감사에 걸린 건은 경고여도 빨간색으로 눈에 띄게 한다. */
+/** 결제 전 감사에 걸린 건은 알림이어도 빨간색으로 눈에 띄게 한다. */
 export function alertTone(stage: AuditStage | undefined): "risk" | "warn" {
   return stage === "on-request" || stage === "before-payment" ? "risk" : "warn";
 }
 
 function Badge({ alert }: { alert: AuditAlert }) {
-  return alert.blocked ? <span className="badge risk">차단</span> : <span className={`badge ${alertTone(alert.stage)}`}>경고</span>;
+  return alert.blocked ? <span className="badge risk">막음</span> : <span className={`badge ${alertTone(alert.stage)}`}>알림</span>;
 }
 
 function Meta({ alert }: { alert: AuditAlert }) {
   return (
     <small>
-      {alert.rule}
+      {ruleName(alert.rule)}
       {alert.stage !== undefined && <> · {STAGE_LABEL[alert.stage]}</>}
       {alert.userId !== null && <> · {alert.userId}</>} · {shortTime(alert.createdAt)}
     </small>

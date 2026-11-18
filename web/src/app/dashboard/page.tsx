@@ -49,7 +49,7 @@ export default async function DashboardPage() {
         <article>
           <span>이상 거래</span>
           <strong>
-            {counts.blocked} 차단 · {counts.warnings} 경고
+            막음 {counts.blocked} · 알림 {counts.warnings}
           </strong>
         </article>
       </section>
