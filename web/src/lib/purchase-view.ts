@@ -113,12 +113,12 @@ export function auditFindings(record: PurchaseRecord): AuditReport["findings"] {
 }
 
 /** 규칙 문장을 결과 카드에 넣을 한 줄로 줄인다. 모양이 다르면 첫 문장을 쓴다. 전체 문장은 이상 거래 화면에 있다. */
-export function shortReason(finding: AuditReport["findings"][number]): string {
+export function shortReason(finding: { rule: string; message: string }): string {
   const { rule, message } = finding;
   const match = (pattern: RegExp) => message.match(pattern);
   if (rule === "intent-swap") {
-    const quoted = match(/지시처럼 보이는 문장: “(.+?)”/);
-    if (quoted) return `문서 속 "${quoted[1]}"`;
+    const tier = match(/가 '(.+?)'로 정해/);
+    if (tier) return `문서 속 숨은 지시가 등급을 '${tier[1]}'로 바꿔 결제 직전에 멈췄어요`;
   } else if (rule === "persona-gap") {
     const percent = match(/\(([\d.]+%)\) 비쌉니다/);
     if (percent) return `최저가형이었다면 ${percent[1]} 덜 냈어요`;
@@ -139,7 +139,11 @@ export function shortReason(finding: AuditReport["findings"][number]): string {
 
 export function failureText(record: PurchaseRecord): string | null {
   if (record.failureReason === null) return null;
-  if (record.blockedRule !== undefined) return `감사 규칙이 송금 직전에 막아서 돈은 나가지 않았어요. ${record.failureReason}`;
+  if (record.blockedRule !== undefined) {
+    // 규칙의 긴 원문은 이상 거래 화면의 자세히에 있다. 여기서는 한 줄 요약만 붙인다.
+    const finding = auditFindings(record).find((item) => item.outcome === "block");
+    return `감사 규칙이 송금 직전에 막아서 돈은 나가지 않았어요. ${finding === undefined ? record.failureReason : shortReason(finding)}`;
+  }
   const stage = record.failureStage === "after-send" ? "송금 뒤에 실패했어요. 돈이 나갔을 수 있어요." : "송금 전에 실패했어요.";
   return `${stage} ${record.failureReason}`;
 }

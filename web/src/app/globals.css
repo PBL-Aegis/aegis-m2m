@@ -255,23 +255,9 @@ td small { display: block; margin-top: 2px; font-size: 12px; color: var(--faint)
   gap: 8px;
 }
 .compactAlert:hover { color: var(--ink); }
-.compactAlert b { font-size: 14px; font-weight: 500; line-height: 1.5; overflow-wrap: anywhere; }
 .compactAlert small { font-size: 12px; color: var(--muted); }
 
 .alertList { display: flex; flex-direction: column; gap: 12px; }
-.alertRow {
-  padding: 20px;
-  border-radius: 16px;
-  background: var(--card);
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-.alertRow > div { flex: 1 1 320px; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
-.alertRow h2 { font-size: 16px; line-height: 1.5; overflow-wrap: anywhere; }
-.alertRow small { font-size: 12px; color: var(--faint); }
 
 /* --- 거래 상세 --- */
 .detailHead { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
@@ -331,15 +317,23 @@ td small { display: block; margin-top: 2px; font-size: 12px; color: var(--faint)
 .moreFacts summary svg { transition: transform 0.15s; }
 .moreFacts[open] summary svg { transform: rotate(180deg); }
 .moreFacts .facts { padding-bottom: 8px; }
-.stages { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; }
+/* 감사 세 단계를 세로 점선으로 이은 단계 표시. 점 색이 그 단계 결과다. */
+.stages { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; }
 .stages li {
-  min-height: 28px;
+  position: relative;
+  min-height: 36px;
+  padding-left: 22px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   font-size: 14px;
 }
+.stages li::before { content: ""; position: absolute; left: 3px; top: 50%; width: 9px; height: 9px; margin-top: -4.5px; border-radius: 5px; background: #c4c9d4; }
+.stages li:not(:last-child)::after { content: ""; position: absolute; left: 7px; top: calc(50% + 7px); height: calc(100% - 14px); border-left: 1px dashed #d4d8e0; }
+.stages li:has(.badge.ok)::before { background: var(--green); }
+.stages li:has(.badge.warn)::before { background: var(--amber); }
+.stages li:has(.badge.risk)::before { background: var(--red); }
 
 /* --- 채팅 --- */
 .chat { position: relative; height: 100%; display: flex; flex-direction: column; overflow: hidden; background: #ffffff; }
@@ -757,7 +751,6 @@ td.saved { color: var(--green); }
 .ruleTable h2 { margin-bottom: 6px; font-size: 16px; }
 .ruleRow { padding: 14px 0; border-top: 1px solid #f0f1f5; display: grid; grid-template-columns: 150px 64px minmax(0, 1fr) 32px; gap: 16px; align-items: baseline; }
 .ruleText { font-size: 14px; color: var(--muted); }
-.alertExtra { font-size: 14px; color: var(--muted); }
 
 /* --- 구매 상세: 거래 흐름 --- */
 .dealFlow { padding: 22px 24px 18px; border-radius: 16px; background: var(--card); display: flex; align-items: flex-start; overflow-x: auto; }
@@ -804,3 +797,23 @@ td.saved { color: var(--green); }
 .talkTurn p { padding: 8px 12px; border-radius: 14px; background: var(--paper); font-size: 14px; line-height: 1.5; }
 .talkTurn.buyer { align-self: flex-end; align-items: flex-end; }
 .talkTurn.buyer p { background: #f2ecff; }
+
+/* --- 이상 거래 카드: 규칙 이름과 한 줄 요약, 원문은 자세히에 --- */
+.alertCard { padding: 16px 20px; border-radius: 16px; background: var(--card); display: flex; flex-direction: column; gap: 4px; }
+.alertHead { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.alertHead .textLink { min-height: 0; }
+.alertTitle { display: inline-flex; align-items: center; gap: 10px; }
+.alertTitle i { flex: none; width: 8px; height: 8px; border-radius: 4px; background: var(--amber); }
+.alertTitle i.risk { background: var(--red); }
+.alertTitle b { font-size: 16px; }
+.alertKind { font-size: 13px; font-weight: 600; color: var(--amber); }
+.alertKind.risk { color: var(--red); }
+.alertShort { margin-left: 18px; font-size: 15px; color: var(--ink-soft); }
+.alertMore { margin-left: 18px; font-size: 13px; color: var(--faint); }
+.alertMore summary { display: flex; align-items: center; gap: 12px; min-height: 28px; cursor: pointer; list-style: none; }
+.alertMore summary::-webkit-details-marker { display: none; }
+.alertMore summary b { font-weight: 600; color: var(--faint); }
+.alertMore[open] summary b { color: var(--ink-soft); }
+.alertMore p { margin-top: 6px; padding: 12px 14px; border-radius: 12px; background: #f6f7f9; font-size: 14px; color: var(--muted); }
+.compactAlert .alertShort { margin-left: 18px; font-size: 14px; }
+.compactAlert small { margin-left: 18px; }
