@@ -16,7 +16,7 @@ export const dynamic = "force-dynamic";
 
 const STAGES: AuditStage[] = ["on-request", "before-payment", "after-payment"];
 
-const AUDIT_RESULT_LABEL = { pass: "통과", alert: "알림", block: "막음" } as const;
+const AUDIT_RESULT_LABEL = { pass: "통과", alert: "경고", block: "막음" } as const;
 
 /** 체인에 남은 감사 결과. 올리지 못했으면 그렇게 적는다. */
 function auditText(entry: AuditEntry): string {
@@ -31,19 +31,19 @@ function savingText(listUnits: number, paidUnits: number): string {
   return `호가 ${aegisText(listUnits)}에서 ${percent}% 아낌`;
 }
 
-/** 송금 전·뒤 감사 결과를 한 줄로. 막음이 있으면 막음, 알림이 있으면 알림이다. */
+/** 송금 전·뒤 감사 결과를 한 줄로. 막음이 있으면 막음, 경고가 있으면 경고다. */
 function auditSummary(audit: { beforeSend?: AuditEntry; afterSend?: AuditEntry }): string {
   const entries = [audit.beforeSend, audit.afterSend].filter((entry): entry is AuditEntry => entry !== undefined);
   const results = entries.map((entry) => entry.report.result);
   if (results.includes("block")) return "막음";
-  if (results.includes("alert")) return "알림";
+  if (results.includes("alert")) return "경고";
   return audit.afterSend !== undefined ? "송금 전후 모두 통과" : "송금 전 통과";
 }
 
 function stageBadge(stage: AuditStage, alerts: AuditAlert[], processing: boolean) {
   const found = alerts.filter((alert) => alert.stage === stage);
   if (found.some((alert) => alert.blocked)) return <span className="badge risk">막음</span>;
-  if (found.length > 0) return <span className={`badge ${alertTone(stage)}`}>알림</span>;
+  if (found.length > 0) return <span className={`badge ${alertTone(stage)}`}>경고</span>;
   if (processing && stage !== "on-request") return <span className="badge">대기</span>;
   return <span className="badge ok">통과</span>;
 }

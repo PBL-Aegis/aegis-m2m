@@ -1,6 +1,6 @@
 /**
  * 이상 거래 알림 목록. 대시보드(최근 몇 건), 이상 거래 화면(전체), 구매 상세(그 거래의 알림)가 함께 쓴다.
- * 규칙이 결제를 막은 알림은 "막음", ctx.alert 로 남긴 알림은 "알림"으로 보여준다.
+ * 규칙이 결제를 막은 알림은 "막음", ctx.alert 로 남긴 알림은 "경고"로 보여준다.
  * 협상 깨기의 보조 알림(판매자 버티기 등)은 따로 카드를 만들지 않고 같은 구매의 협상 깨기 카드에 근거로 붙인다.
  * 카드에는 규칙 이름과 한 줄 요약만 두고, 규칙이 남긴 긴 원문은 "자세히"를 눌러야 펼친다.
  */
@@ -16,7 +16,7 @@ export const STAGE_LABEL: Record<AuditStage, string> = {
   "after-payment": "결제 후",
 };
 
-/** 결제 전 감사에 걸린 건은 알림이어도 빨간색으로 눈에 띄게 한다. */
+/** 결제 전 감사에 걸린 건은 경고여도 빨간색으로 눈에 띄게 한다. */
 export function alertTone(stage: AuditStage | undefined): "risk" | "warn" {
   return stage === "on-request" || stage === "before-payment" ? "risk" : "warn";
 }
@@ -47,7 +47,7 @@ function Title({ alert }: { alert: AuditAlert }) {
     <span className="alertTitle">
       <i className={tone(alert)} aria-hidden="true" />
       <b>{ruleName(scenarioRule(alert.rule))}</b>
-      <span className={`alertKind ${tone(alert)}`}>{alert.blocked ? "막음" : "알림"}</span>
+      <span className={`alertKind ${tone(alert)}`}>{alert.blocked ? "막음" : "경고"}</span>
     </span>
   );
 }

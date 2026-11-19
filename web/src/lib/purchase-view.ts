@@ -91,7 +91,7 @@ export function scenarioRule(rule: string): string {
 
 export type AuditResult = "pass" | "alert" | "block";
 
-/** 이 구매의 감사 결과 하나. 막음이 있으면 막음, 알림이 있으면 알림, 없으면 통과다. */
+/** 이 구매의 감사 결과 하나. 막음이 있으면 막음, 경고가 있으면 경고, 없으면 통과다. */
 export function auditResult(record: PurchaseRecord): AuditResult {
   if (record.blockedRule !== undefined) return "block";
   const findings = auditFindings(record);
@@ -106,7 +106,7 @@ export function recordRules(record: PurchaseRecord): string[] {
   return [...new Set(rules)];
 }
 
-/** 송금 전후 감사에 걸린 것. 막음을 알림보다 먼저 둔다. */
+/** 송금 전후 감사에 걸린 것. 막음을 경고보다 먼저 둔다. */
 export function auditFindings(record: PurchaseRecord): AuditReport["findings"] {
   const findings = [record.audit?.beforeSend, record.audit?.afterSend].flatMap((entry) => entry?.report.findings ?? []);
   return [...findings.filter((finding) => finding.outcome === "block"), ...findings.filter((finding) => finding.outcome !== "block")];
