@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 const RECENT_COUNT = 6;
 
 const DOT: Record<AuditResult, string> = { pass: "var(--green)", alert: "var(--amber)", block: "var(--red)" };
-const RESULT_LABEL: Record<AuditResult, string> = { pass: "통과", alert: "알림", block: "막음" };
+const RESULT_LABEL: Record<AuditResult, string> = { pass: "통과", alert: "경고", block: "막음" };
 
 export default async function DashboardPage() {
   const [records, balance] = await Promise.all([listPurchases(), buyerBalance()]);

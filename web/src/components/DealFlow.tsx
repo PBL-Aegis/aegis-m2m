@@ -16,7 +16,7 @@ const ICONS = {
 const SHIELD = "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z";
 const MARK = { pass: "m9 12 2 2 4-4", alert: "M12 8v4M12 16h.01", block: "M9.5 9.5l5 5M14.5 9.5l-5 5" } as const;
 const TONE = { pass: "ok", alert: "warn", block: "risk" } as const;
-const RESULT_LABEL = { pass: "통과", alert: "알림", block: "막음" } as const;
+const RESULT_LABEL = { pass: "통과", alert: "경고", block: "막음" } as const;
 
 function Node({ icon, label, sub, tone }: { icon: string[]; label: string; sub: string; tone?: string }) {
   return (
