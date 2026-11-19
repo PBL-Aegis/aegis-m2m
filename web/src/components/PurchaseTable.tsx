@@ -1,15 +1,17 @@
 /**
- * 구매 기록 표. 대시보드(최근 몇 건)와 전체 기록 화면이 같은 모양으로 보여주기 위해 공유한다.
+ * 전체 기록 표. 호가·합의·아낀 금액·예산과 감사에 걸린 규칙을 한 줄에 보여준다.
+ * 막은 구매는 돈이 나가지 않았으므로 합의 칸에 "결제 안 함"을 쓴다.
  */
 
 import Link from "next/link";
 
 import { toAegis } from "@/lib/format";
-import { PRIORITY_LABEL } from "@/lib/priority-label";
-import { purchaseStatus, shortTime } from "@/lib/purchase-view";
+import { auditResult, purchaseStatus, recordRules, ruleName, shortTime } from "@/lib/purchase-view";
 import type { PurchaseRecord } from "@/lib/types";
 
-export function PurchaseTable({ records, detailed = false }: { records: PurchaseRecord[]; detailed?: boolean }) {
+const AUDIT_TONE = { pass: "ok", alert: "warn", block: "risk" } as const;
+
+export function PurchaseTable({ records }: { records: PurchaseRecord[] }) {
   if (records.length === 0) return <p className="empty">아직 기록이 없어요</p>;
   return (
     <div className="tableWrap">
@@ -18,45 +20,37 @@ export function PurchaseTable({ records, detailed = false }: { records: Purchase
           <tr>
             <th>요청</th>
             <th>구매 모델</th>
-            {detailed ? (
-              <>
-                <th className="num">호가 (AEGIS)</th>
-                <th className="num">합의 (AEGIS)</th>
-                <th className="num">예산 (AEGIS)</th>
-              </>
-            ) : (
-              <th className="num">호가 → 합의 (AEGIS)</th>
-            )}
+            <th className="num">호가</th>
+            <th className="num">합의</th>
+            <th className="num">아낀 금액</th>
+            <th className="num">예산</th>
+            <th>감사</th>
             <th>상태</th>
           </tr>
         </thead>
         <tbody>
           {records.map((record) => {
-            const { winner, priority, budgetUnits } = record.decision;
-            const list = winner.listAmountUnits === undefined ? "-" : toAegis(winner.listAmountUnits);
+            const { winner, budgetUnits } = record.decision;
+            const paid = record.status === "SETTLED";
+            const list = winner.listAmountUnits;
             const status = purchaseStatus(record);
+            const rules = recordRules(record);
             return (
               <tr key={record.id}>
                 <td className="requestCell">
                   <Link href={`/dashboard/${record.id}`} title={record.prompt}>
                     {record.prompt}
                   </Link>
-                  <small>
-                    {shortTime(record.createdAt)} · {PRIORITY_LABEL[priority]}
-                  </small>
+                  <small>{shortTime(record.createdAt)}</small>
                 </td>
                 <td className="nowrap">{winner.displayName}</td>
-                {detailed ? (
-                  <>
-                    <td className="num">{list}</td>
-                    <td className="num strong">{toAegis(winner.amountUnits)}</td>
-                    <td className="num">{toAegis(budgetUnits)}</td>
-                  </>
-                ) : (
-                  <td className="num nowrap">
-                    {list} → {toAegis(winner.amountUnits)}
-                  </td>
-                )}
+                <td className="num">{list === undefined ? "-" : toAegis(list)}</td>
+                <td className="num strong">{paid ? toAegis(winner.amountUnits) : "결제 안 함"}</td>
+                <td className="num saved">{paid && list !== undefined ? toAegis(Math.max(list - winner.amountUnits, 0)) : "—"}</td>
+                <td className="num">{toAegis(budgetUnits)}</td>
+                <td>
+                  <span className={`dotLabel ${AUDIT_TONE[auditResult(record)]}`}>{rules.length === 0 ? "통과" : rules.map(ruleName).join(" · ")}</span>
+                </td>
                 <td>
                   <span className={`badge ${status.tone}`}>{status.label}</span>
                 </td>

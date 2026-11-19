@@ -1,12 +1,13 @@
 "use client";
 
 /**
- * 판매 에이전트 한 곳과의 흥정. 채팅에서는 진행 중에 펼쳐 두고, 끝나면 접는다.
- * 막대는 구매자 값과 판매자 값 사이의 간격이다. 흥정이 진행될수록 좁아진다.
+ * 판매 에이전트 한 곳과의 협상. 채팅에서는 진행 중에 펼쳐 두고, 끝나면 접는다.
+ * 머리와 높이가 고정된 대화 칸이 한 카드다. 칸 안에서만 스크롤되고, 새 말이 오면 칸이 맨 아래를 따라간다.
+ * 막대는 구매자 값과 판매자 값 사이의 간격이다. 협상이 진행될수록 좁아진다.
  * 구매자 말풍선 아래에는 그 값을 부른 이유(페르소나 근거)를 붙인다.
  */
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { aegisText } from "@/lib/format";
 import type { StatusView } from "@/lib/purchase-view";
@@ -62,9 +63,14 @@ export function NegotiationBlock({
   const mark = sellerName.charAt(0);
   const { buyer, seller, left, width } = gap(turns, askUnits);
   const lastTurn = turns[turns.length - 1];
+  const box = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (box.current !== null) box.current.scrollTop = box.current.scrollHeight;
+  }, [turns.length, expanded]);
 
   return (
-    <section className={`deal${live ? " live" : ""}`} aria-label={`${sellerName}와 흥정`}>
+    <section className={`deal${live ? " live" : ""}`} aria-label={`${sellerName}와 협상`}>
       <button
         type="button"
         className={`dealHead${live ? " live" : ""}`}
@@ -93,7 +99,7 @@ export function NegotiationBlock({
       </button>
 
       {expanded && (
-        <div className="dealTurns">
+        <div className="dealTurns" ref={box}>
           {turns.map((turn, index) =>
             turn.from === "buyer" ? (
               <div className="msg" key={index}>

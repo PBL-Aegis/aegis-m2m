@@ -69,7 +69,7 @@ const RULE_NAME: Record<string, string> = {
   holdout: "협상 깨기",
   "holdout-stall": "판매자 버티기",
   "holdout-seller-rate": "자주 버티는 판매자",
-  "persona-gap": "구매 성향 차이",
+  "persona-gap": "품질형 추가 비용",
   "seller-collusion": "담합 의심",
   "over-budget": "예산 초과",
   limit: "결제 한도",
@@ -79,6 +79,31 @@ const RULE_NAME: Record<string, string> = {
 
 export function ruleName(rule: string): string {
   return RULE_NAME[rule] ?? rule;
+}
+
+/** 협상 깨기 규칙이 함께 남기는 보조 알림. 화면에서는 따로 세지 않고 협상 깨기의 근거로 보여 준다. */
+export const HOLDOUT_EXTRAS = new Set(["holdout-stall", "holdout-seller-rate"]);
+
+/** 화면에 보일 규칙 이름. 보조 알림은 협상 깨기로 묶는다. */
+export function scenarioRule(rule: string): string {
+  return HOLDOUT_EXTRAS.has(rule) ? "holdout" : rule;
+}
+
+export type AuditResult = "pass" | "alert" | "block";
+
+/** 이 구매의 감사 결과 하나. 막음이 있으면 막음, 알림이 있으면 알림, 없으면 통과다. */
+export function auditResult(record: PurchaseRecord): AuditResult {
+  if (record.blockedRule !== undefined) return "block";
+  const findings = auditFindings(record);
+  if (findings.some((finding) => finding.outcome === "block")) return "block";
+  return findings.length > 0 ? "alert" : "pass";
+}
+
+/** 이 구매에 걸린 규칙 이름들. 보조 알림은 협상 깨기로 묶고 겹치면 한 번만 쓴다. 막음이 앞에 온다. */
+export function recordRules(record: PurchaseRecord): string[] {
+  const rules = auditFindings(record).map((finding) => scenarioRule(finding.rule));
+  if (record.blockedRule !== undefined) rules.unshift(scenarioRule(record.blockedRule));
+  return [...new Set(rules)];
 }
 
 /** 송금 전후 감사에 걸린 것. 막음을 알림보다 먼저 둔다. */

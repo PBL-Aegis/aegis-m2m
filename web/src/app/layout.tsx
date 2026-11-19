@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { SiteNav } from "@/components/SiteNav";
@@ -11,7 +10,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "agent-M2M",
-  description: "AI 구매 에이전트가 판매 에이전트들과 흥정해 가장 싼 곳에서 AEGIS 토큰으로 결제하는 데모",
+  description: "AI 구매 에이전트가 판매 에이전트들과 협상해 가장 싼 곳에서 AEGIS 토큰으로 결제하는 데모",
 };
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
@@ -24,14 +23,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         />
       </head>
       <body>
-        <header className="site">
-          <div className="inner">
-            <Link className="brand" href="/">agent-M2M</Link>
-            <div className="right">
-              <SiteNav />
-            </div>
-          </div>
-        </header>
+        <SiteNav />
         <main>{children}</main>
       </body>
     </html>

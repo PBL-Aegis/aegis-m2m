@@ -1,11 +1,12 @@
 /**
  * 이상 거래 알림 목록. 대시보드(최근 몇 건), 이상 거래 화면(전체), 구매 상세(그 거래의 알림)가 함께 쓴다.
  * 규칙이 결제를 막은 알림은 "막음", ctx.alert 로 남긴 알림은 "알림"으로 보여준다.
+ * 협상 깨기의 보조 알림(판매자 버티기 등)은 따로 카드를 만들지 않고 같은 구매의 협상 깨기 카드에 근거로 붙인다.
  */
 
 import Link from "next/link";
 
-import { ruleName, shortTime } from "@/lib/purchase-view";
+import { HOLDOUT_EXTRAS, ruleName, scenarioRule, shortTime } from "@/lib/purchase-view";
 import type { AuditAlert, AuditStage } from "@/lib/types";
 
 export const STAGE_LABEL: Record<AuditStage, string> = {
@@ -20,13 +21,25 @@ export function alertTone(stage: AuditStage | undefined): "risk" | "warn" {
 }
 
 function Badge({ alert }: { alert: AuditAlert }) {
-  return alert.blocked ? <span className="badge risk">막음</span> : <span className={`badge ${alertTone(alert.stage)}`}>알림</span>;
+  return alert.blocked ? <span className="dotLabel risk">막음</span> : <span className={`dotLabel ${alertTone(alert.stage)}`}>알림</span>;
+}
+
+/** 보조 알림을 같은 구매의 협상 깨기 알림 아래로 모은다. 협상 깨기 알림이 없으면 그대로 둔다. */
+function group(alerts: AuditAlert[]): { alert: AuditAlert; extras: AuditAlert[] }[] {
+  const holdouts = new Set(alerts.filter((alert) => alert.rule === "holdout").map((alert) => alert.purchaseId));
+  const rows = alerts
+    .filter((alert) => !(HOLDOUT_EXTRAS.has(alert.rule) && holdouts.has(alert.purchaseId)))
+    .map((alert) => ({ alert, extras: [] as AuditAlert[] }));
+  for (const extra of alerts.filter((alert) => HOLDOUT_EXTRAS.has(alert.rule) && holdouts.has(alert.purchaseId))) {
+    rows.find((row) => row.alert.rule === "holdout" && row.alert.purchaseId === extra.purchaseId)?.extras.push(extra);
+  }
+  return rows;
 }
 
 function Meta({ alert }: { alert: AuditAlert }) {
   return (
     <small>
-      {ruleName(alert.rule)}
+      {ruleName(scenarioRule(alert.rule))}
       {alert.stage !== undefined && <> · {STAGE_LABEL[alert.stage]}</>}
       {alert.userId !== null && <> · {alert.userId}</>} · {shortTime(alert.createdAt)}
     </small>
@@ -46,12 +59,13 @@ export function AlertList({
   emptyText?: string;
 }) {
   if (alerts.length === 0) return <p className="empty">{emptyText}</p>;
+  const rows = group(alerts);
   const hasRecord = (id: string) => (Array.isArray(linked) ? linked.includes(id) : linked.has(id));
 
   if (compact) {
     return (
       <div className="compactAlerts">
-        {alerts.map((alert) =>
+        {rows.map(({ alert }) =>
           hasRecord(alert.purchaseId) ? (
             <Link className="compactAlert" key={alert.id} href={`/dashboard/${alert.purchaseId}`}>
               <Badge alert={alert} />
@@ -72,11 +86,14 @@ export function AlertList({
 
   return (
     <section className="alertList">
-      {alerts.map((alert) => (
+      {rows.map(({ alert, extras }) => (
         <article className="alertRow" key={alert.id}>
           <div>
             <Badge alert={alert} />
             <h2>{alert.message}</h2>
+            {extras.map((extra) => (
+              <p className="alertExtra" key={extra.id}>{extra.message}</p>
+            ))}
             <Meta alert={alert} />
             {alert.requestId !== undefined && (
               <small>
