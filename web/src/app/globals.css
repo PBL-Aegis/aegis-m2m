@@ -817,3 +817,16 @@ td.saved { color: var(--green); }
 .alertMore p { margin-top: 6px; padding: 12px 14px; border-radius: 12px; background: #f6f7f9; font-size: 14px; color: var(--muted); }
 .compactAlert .alertShort { margin-left: 18px; font-size: 14px; }
 .compactAlert small { margin-left: 18px; }
+
+/* --- 시연 장면: 왼쪽 메뉴 맨 아래 흐린 재생 아이콘과 장면 목록 --- */
+.chatEmpty { flex-direction: column; gap: 20px; }
+.railDemo { position: relative; margin-top: auto; }
+.railDemoButton { width: 44px; height: 44px; padding: 0; border: 0; border-radius: 12px; background: transparent; color: #c4c9d4; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.railDemoButton:hover, .railDemoButton[aria-expanded="true"] { background: #ffffff; color: var(--violet); }
+.demoMenu { position: absolute; left: 54px; bottom: 0; width: 230px; padding: 6px; border: 1px solid var(--line); border-radius: 14px; background: #ffffff; box-shadow: 0 12px 32px rgb(26 32 48 / 14%); display: flex; flex-direction: column; }
+.demoMenu a { padding: 10px 12px; border-radius: 10px; display: flex; flex-direction: column; gap: 2px; color: var(--ink); }
+.demoMenu a:hover { background: #f2ecff; color: var(--ink); }
+.demoMenu b { font-size: 14px; font-weight: 600; }
+.demoMenu span { font-size: 12px; color: #8a92a3; }
+.attached { align-self: flex-start; padding: 4px 6px 4px 12px; border-radius: 14px; background: var(--paper); display: flex; align-items: center; gap: 4px; font-size: 13px; color: var(--muted); }
+.attached button { width: 24px; height: 24px; padding: 0; border: 0; border-radius: 12px; background: transparent; color: var(--faint); cursor: pointer; }

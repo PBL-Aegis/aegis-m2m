@@ -9,9 +9,11 @@
  */
 
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 
 import { BuyerAvatar, NegotiationBlock } from "@/components/Negotiation";
+import { DEMO_SCENARIOS } from "@/lib/demo-scenarios";
 import { aegisText, parseAegis } from "@/lib/format";
 import { auditFindings, dealStatus, endsDeal, purchaseTitle, quotesOf, quoteStatus, ruleName, scenarioRule, shortReason } from "@/lib/purchase-view";
 import type { NegotiationTurn, Priority, PurchaseRecord, PurchaseStreamEvent, StreamModel } from "@/lib/types";
@@ -23,6 +25,7 @@ const TITLE = "무엇을 시킬까요?";
 /** 빈 화면 입력창 안내 글에서 차례로 타이핑할 예시 요청. "싸게"·"똑똑하게"가 등급을 고른다는 걸 보여 준다. */
 const EXAMPLES = ["싸게 이 회의록 요약해 줘", "똑똑하게 이 계약서 검토해 줘", "이 메일을 정중한 영어로 바꿔 줘"];
 const IDLE_HINT = "무엇을 시킬지 적어주세요";
+
 
 const PLAN_OPENING: Partial<Record<Priority, string>> = {
   default: "기본으로 살게요.",
@@ -179,6 +182,20 @@ function useTypingHint(active: boolean): string {
 export function ChatPanel() {
   const [prompt, setPrompt] = useState("");
   const [budget, setBudget] = useState("0.3");
+  /** 시연 장면이 채운 첨부 문서. 요청과 함께 보내고 나면 비운다. */
+  const [attached, setAttached] = useState("");
+  const router = useRouter();
+  const scenarioId = useSearchParams().get("scenario");
+
+  // 왼쪽 메뉴의 시연 장면을 고르면 /?scenario=… 로 온다. 입력창을 채우고 주소에서 장면을 지운다.
+  useEffect(() => {
+    const scenario = DEMO_SCENARIOS.find((item) => item.id === scenarioId);
+    if (scenario === undefined) return;
+    setPrompt(scenario.prompt);
+    setBudget(scenario.budget);
+    setAttached(scenario.content ?? "");
+    router.replace("/");
+  }, [scenarioId, router]);
   const [busy, setBusy] = useState(false);
   const [turns, setTurns] = useState<Turn[]>([]);
 
@@ -248,8 +265,10 @@ export function ChatPanel() {
     const text = prompt.trim();
     if (text === "" || busy || parseAegis(budget) === null) return;
     const id = Date.now();
-    setTurns((prev) => [...prev, { id, prompt: text, content: "", priority: null, personaName: null, blocks: [], record: null, error: null }]);
+    const content = attached;
+    setTurns((prev) => [...prev, { id, prompt: text, content, priority: null, personaName: null, blocks: [], record: null, error: null }]);
     setPrompt("");
+    setAttached("");
     setBusy(true);
 
     // 받은 순서대로 쌓아 두고 하나씩 푼다. 이미 끝난 협상에 붙는 말(취소 등)은 기다리지 않는다.
@@ -282,7 +301,7 @@ export function ChatPanel() {
       const response = await fetch("/api/purchase/stream", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ prompt: text, budget: budget.trim() }),
+        body: JSON.stringify({ prompt: text, budget: budget.trim(), ...(content === "" ? {} : { content }) }),
       });
       if (response.ok) {
         await readEvents(response, push);
@@ -343,6 +362,14 @@ export function ChatPanel() {
 
       <form className="composer" onSubmit={onSubmit}>
         <div className="composerCard">
+          {attached !== "" && (
+            <div className="attached" title={attached}>
+              <span>첨부한 문서</span>
+              <button type="button" aria-label="첨부한 문서 빼기" onClick={() => setAttached("")} disabled={busy}>
+                ×
+              </button>
+            </div>
+          )}
           <textarea
             aria-label="요청 내용"
             value={prompt}
