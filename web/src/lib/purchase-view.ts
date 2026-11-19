@@ -3,7 +3,7 @@
  */
 
 import { aegisText } from "@/lib/format";
-import type { AuditReport, Evaluation, Negotiation, NegotiationTurn, PurchaseRecord } from "@/lib/types";
+import type { AuditReport, Evaluation, Negotiation, NegotiationReason, NegotiationTurn, PurchaseRecord } from "@/lib/types";
 
 export type Tone = "live" | "win" | "ok" | "warn" | "risk" | "mute";
 
@@ -146,6 +146,46 @@ export function failureText(record: PurchaseRecord): string | null {
   }
   const stage = record.failureStage === "after-send" ? "송금 뒤에 실패했어요. 돈이 나갔을 수 있어요." : "송금 전에 실패했어요.";
   return `${stage} ${record.failureReason}`;
+}
+
+/** 퍼센트 한 자리 표기. 0.15 → "15%". */
+function percent(ratio: unknown): string {
+  return typeof ratio === "number" ? `${Math.round(ratio * 100)}%` : "";
+}
+
+/**
+ * 구매 에이전트가 그 값을 부른 이유를 한 줄로. 서버 문장에는 계산에 쓴 금액이 모두 들어 있어 길다.
+ * 규칙과 입력값으로 줄이고, 모르는 규칙은 페르소나 이름만 떼고 원문을 쓴다. 원문은 마우스를 올리면 보인다.
+ */
+export function reasonShort(reason: NegotiationReason): string {
+  const { rule, inputs } = reason;
+  if (rule === "opening") return `호가의 ${percent(inputs.openingRatio)}에서 시작`;
+  if (rule === "concede") {
+    if (inputs.freshness === "new") return `판매자의 새 근거 '${inputs.card}'를 듣고 차이의 ${percent(inputs.ratio)} 올림`;
+    if (inputs.freshness === "used") return `이미 들은 근거 '${inputs.card}'라 차이의 ${percent(inputs.ratio)}만 올림`;
+    return `판매자가 근거 없이 버텨 차이의 ${percent(inputs.ratio)}만 올림`;
+  }
+  if (rule === "accept") return "조금만 올리면 판매자 값에 닿아 그 값에 삼";
+  if (rule === "last-round") return "제안 5번을 다 해서 최대가 안의 판매자 값을 받음";
+  if (rule === "over-max") return "판매자 값이 최대가를 넘어 거절";
+  if (rule === "over-budget") return "모두 결렬돼 가장 낮게 부른 곳에서 예산을 넘겨 삼";
+  return reason.text.replace(/^[^:]+:\s*/, "");
+}
+
+/**
+ * 거래 평가 줄을 읽기 쉽게 다듬는다. 서버 문장은 기록에 남은 그대로라, 이미 쌓인 기록도 같은 모양으로 보이게 화면에서 고친다.
+ * "최저가 근거" 줄은 숫자(lowestPrice)로 다시 쓰고, 최저가형끼리 같은 값이면 뺀다. 0% 깎은 줄은 "호가 그대로"로 쓴다.
+ */
+export function evaluationLines(evaluation: Evaluation): string[] {
+  return evaluation.lines.flatMap((line) => {
+    if (line.startsWith("최저가 근거:")) {
+      const low = evaluation.lowestPrice;
+      if (low === undefined) return [line.replace(/^최저가 근거:\s*/, "")];
+      if (low.gapUnits <= 0) return [];
+      return [`${low.persona}이었다면 ${low.displayName}를 ${aegisText(low.priceUnits)}에 샀어요 (${percent(low.gapRatio)} 덜 냄)`];
+    }
+    return [line.replace(/호가 (\S+ AEGIS)에서 \S+ AEGIS로 0% 깎아 샀습니다\./, "호가 $1 그대로 샀습니다.")];
+  });
 }
 
 export const VERDICT_VIEW: Record<Evaluation["verdict"], StatusView> = {
