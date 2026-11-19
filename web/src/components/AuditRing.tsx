@@ -1,5 +1,5 @@
 /**
- * 감사 결과 원형 게이지. 통과·알림·막음 구간이 끝이 둥근 고리로 나뉘고, 화면이 열리면 차례로 차오른다.
+ * 감사 결과 원형 게이지. 통과·경고·막음 구간이 끝이 둥근 고리로 나뉘고, 화면이 열리면 차례로 차오른다.
  * 대시보드와 이상 거래 화면이 함께 쓴다.
  */
 
@@ -7,7 +7,7 @@ import type { AuditResult } from "@/lib/purchase-view";
 
 const SEGMENTS: { result: AuditResult; label: string; color: string }[] = [
   { result: "pass", label: "통과", color: "#2f9e6f" },
-  { result: "alert", label: "알림", color: "#e0913f" },
+  { result: "alert", label: "경고", color: "#e0913f" },
   { result: "block", label: "막음", color: "#d64553" },
 ];
 

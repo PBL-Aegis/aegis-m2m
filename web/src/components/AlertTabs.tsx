@@ -1,6 +1,6 @@
 "use client";
 
-/** 이상 거래 화면. 알림과 막음을 탭으로 나눠 본다. */
+/** 이상 거래 화면. 경고와 막음을 탭으로 나눠 본다. */
 
 import { useState } from "react";
 
@@ -9,7 +9,7 @@ import type { AuditAlert } from "@/lib/types";
 
 const TABS: { id: string; label: string; emptyText: string; match: (alert: AuditAlert) => boolean }[] = [
   { id: "all", label: "전체", emptyText: "감지된 이상 거래가 없어요", match: () => true },
-  { id: "warn", label: "알림", emptyText: "알린 거래가 없어요", match: (alert) => !alert.blocked },
+  { id: "warn", label: "경고", emptyText: "경고한 거래가 없어요", match: (alert) => !alert.blocked },
   { id: "blocked", label: "막음", emptyText: "막은 거래가 없어요", match: (alert) => alert.blocked === true },
 ];
 
