@@ -10,7 +10,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { aegisText } from "@/lib/format";
-import type { StatusView } from "@/lib/purchase-view";
+import { reasonShort, type StatusView } from "@/lib/purchase-view";
 import type { NegotiationTurn } from "@/lib/types";
 
 /** 막대가 안 보일 만큼 좁아지지 않게 하는 최소 폭(%). */
@@ -107,7 +107,7 @@ export function NegotiationBlock({
                 <div className="msgBody">
                   {index < 2 && <span className="msgName">구매 에이전트</span>}
                   <div className="bubble buyer">{turn.text}</div>
-                  {turn.reason !== undefined && <p className="why">{turn.reason.text}</p>}
+                  {turn.reason !== undefined && <p className="why" title={turn.reason.text}>{reasonShort(turn.reason)}</p>}
                 </div>
               </div>
             ) : (
