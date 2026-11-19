@@ -4,11 +4,12 @@ import { notFound } from "next/navigation";
 import { AlertList, alertTone, STAGE_LABEL } from "@/components/AlertList";
 import { CopyButton } from "@/components/CopyButton";
 import { EvaluationCard } from "@/components/EvaluationCard";
-import { NegotiationBlock } from "@/components/Negotiation";
+import { DealFlow } from "@/components/DealFlow";
+import { DealTalks } from "@/components/DealTalks";
 import { getPurchase, listAlertsForPurchase } from "@/lib/api";
 import { aegisText } from "@/lib/format";
 import { PRIORITY_LABEL } from "@/lib/priority-label";
-import { failureText, priceDate, purchaseStatus, purchaseTitle, quotesOf, quoteStatus, shortHash, shortTime } from "@/lib/purchase-view";
+import { failureText, priceDate, purchaseStatus, purchaseTitle, quotesOf, shortHash, shortTime } from "@/lib/purchase-view";
 import type { AuditAlert, AuditEntry, AuditStage } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -67,10 +68,11 @@ export default async function PurchaseDetailPage({ params }: { params: Promise<{
         {record.content && <p className="requestContent">{record.content}</p>}
         <span className="muted">
           {shortTime(record.createdAt)} · 우선순위 {PRIORITY_LABEL[decision.priority]}
-          {decision.priorityModel !== undefined && ` (${decision.priorityModel}이(가) 판단)`}
           {decision.persona !== undefined && ` · ${decision.persona.name}`}
         </span>
       </div>
+
+      <DealFlow record={record} />
 
       <div className="columns">
         <div className="wide">
@@ -82,20 +84,8 @@ export default async function PurchaseDetailPage({ params }: { params: Promise<{
 
           {quotes.length > 0 && (
             <section className="panel">
-              <h2>흥정 대화</h2>
-              <div className="deals">
-                {quotes.map((quote) => (
-                  <NegotiationBlock
-                    key={quote.key}
-                    displayName={quote.displayName}
-                    sellerName={quote.sellerName}
-                    askUnits={quote.askUnits}
-                    turns={quote.transcript}
-                    live={false}
-                    status={quoteStatus(quote, record)}
-                  />
-                ))}
-              </div>
+              <h2>협상 대화</h2>
+              <DealTalks quotes={quotes} record={record} />
             </section>
           )}
 
@@ -117,7 +107,7 @@ export default async function PurchaseDetailPage({ params }: { params: Promise<{
             <dl className="facts">
               {decision.winner.listAmountUnits !== undefined && (
                 <div>
-                  <dt>흥정</dt>
+                  <dt>협상</dt>
                   <dd>{savingText(decision.winner.listAmountUnits, decision.winner.amountUnits)}</dd>
                 </div>
               )}

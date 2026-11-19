@@ -25,67 +25,83 @@
 * { box-sizing: border-box; }
 
 html {
-  background: var(--paper);
+  background: #eef0f4;
   color: var(--ink);
   font-family: Pretendard, -apple-system, "Apple SD Gothic Neo", "Segoe UI", sans-serif;
   letter-spacing: -0.01em;
   word-break: keep-all;
 }
 
+/* 왼쪽 아이콘 메뉴와 둥근 본문 판 두 칸이다. */
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100dvh;
   display: flex;
-  flex-direction: column;
 }
 
 /* 채팅은 화면 높이에 맞추고 대화 영역만 스크롤한다. */
 body:has(.chat) { height: 100dvh; }
+body:has(.chat) main { overflow: hidden; background: #ffffff; }
 
 a { color: var(--violet); text-decoration: none; }
 a:hover { color: var(--violet-deep); }
 a:focus-visible, button:focus-visible { outline: 2px solid var(--violet); outline-offset: 2px; }
 button, input, textarea, select { font: inherit; color: inherit; }
 
-/* --- 상단 바 --- */
-header.site {
+/* --- 왼쪽 아이콘 메뉴 --- */
+.rail {
+  position: sticky;
+  top: 0;
+  z-index: 5;
   flex: none;
-  background: var(--card);
-  border-bottom: 1px solid var(--line);
-}
-header.site .inner {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 8px 24px;
+  width: 72px;
+  height: 100dvh;
+  padding: 16px 0;
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  gap: 4px 24px;
+  gap: 8px;
 }
-header.site .brand {
-  min-height: 44px;
+.railLogo, .railItem {
+  position: relative;
+  border-radius: 12px;
   display: flex;
   align-items: center;
-  font-size: 18px;
-  font-weight: 700;
-  letter-spacing: -0.03em;
-  color: var(--ink);
+  justify-content: center;
 }
-header.site .right { display: flex; align-items: center; gap: 12px; }
-header.site nav { display: flex; gap: 4px; }
-header.site nav a {
-  min-height: 44px;
-  padding: 0 12px;
-  display: flex;
-  align-items: center;
-  font-size: 15px;
-  color: var(--muted);
+.railLogo { width: 40px; height: 40px; margin-bottom: 12px; background: var(--violet); }
+.railItem { width: 44px; height: 44px; color: var(--muted); }
+.railItem:hover { color: var(--ink); }
+.railItem[aria-current="page"] { background: #ffffff; color: var(--violet); }
+.railTip {
+  position: absolute;
+  left: calc(100% + 10px);
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--ink);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.12s;
 }
-header.site nav a[aria-current="page"] { font-weight: 600; color: var(--violet); }
+.railLogo:hover .railTip, .railLogo:focus-visible .railTip,
+.railItem:hover .railTip, .railItem:focus-visible .railTip { opacity: 1; }
 
-main { flex: 1; min-height: 0; }
+main {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  min-height: calc(100dvh - 16px);
+  margin: 8px 8px 8px 0;
+  border-radius: 16px;
+  background: #f5f6f9;
+}
 
 /* --- 쪽 공통 --- */
 .page {
@@ -327,20 +343,19 @@ td small { display: block; margin-top: 2px; font-size: 12px; color: var(--faint)
 
 /* --- 채팅 --- */
 .chat { position: relative; height: 100%; display: flex; flex-direction: column; overflow: hidden; background: #ffffff; }
-/* 흰 바탕 위쪽에 보라빛 원 몇 개를 크게 흐려 번지게 한다. 아래로 갈수록 흰색이 된다. */
-.chat::before {
-  content: "";
-  position: absolute;
-  inset: 0 0 auto;
-  height: 72%;
-  pointer-events: none;
-  background:
-    radial-gradient(34% 58% at 20% 0%, rgba(201, 189, 235, 0.95), transparent 72%),
-    radial-gradient(40% 66% at 52% 4%, rgba(107, 63, 212, 0.55), transparent 72%),
-    radial-gradient(34% 58% at 84% 0%, rgba(124, 77, 255, 0.45), transparent 72%),
-    radial-gradient(30% 40% at 38% 30%, rgba(217, 207, 245, 0.7), transparent 72%);
-  filter: blur(48px);
-}
+/* 빈 화면에만 흰 바탕 위쪽에 보라빛 원 몇 개를 크게 흐려 천천히 움직인다. 대화가 시작되면 없앤다. */
+.chatGlow { position: absolute; inset: 0 0 auto; height: 70%; pointer-events: none; filter: blur(70px); opacity: 0.85; }
+.chatGlow i { position: absolute; border-radius: 50%; will-change: transform; }
+.chatGlow i:nth-child(1) { left: 4%; top: -40%; width: 420px; height: 360px; background: rgb(201 189 235 / 95%); animation: glowA 6s ease-in-out infinite alternate; }
+.chatGlow i:nth-child(2) { left: 36%; top: -50%; width: 480px; height: 420px; background: rgb(107 63 212 / 55%); animation: glowB 8s ease-in-out infinite alternate; }
+.chatGlow i:nth-child(3) { left: 68%; top: -45%; width: 420px; height: 360px; background: rgb(124 77 255 / 45%); animation: glowC 7s ease-in-out infinite alternate; }
+.chatGlow i:nth-child(4) { left: 24%; top: 10%; width: 360px; height: 240px; background: rgb(217 207 245 / 80%); animation: glowA 9s ease-in-out infinite alternate-reverse; }
+@keyframes glowA { 0% { transform: translate(0, 0) scale(1); } 50% { transform: translate(120px, 40px) scale(1.15); } 100% { transform: translate(-60px, 20px) scale(0.95); } }
+@keyframes glowB { 0% { transform: translate(0, 0) scale(1); } 50% { transform: translate(-140px, 60px) scale(1.1); } 100% { transform: translate(80px, -10px) scale(1.2); } }
+@keyframes glowC { 0% { transform: translate(0, 0) scale(1.1); } 50% { transform: translate(60px, -30px) scale(0.9); } 100% { transform: translate(-100px, 50px) scale(1.05); } }
+/* 대화가 시작되면 위에 보낸 요청을 제목으로 둔다. */
+.chatTitle { position: relative; flex: none; height: 52px; padding: 0 24px; border-bottom: 1px solid #eef0f4; display: flex; align-items: center; }
+.chatTitle h1 { min-width: 0; font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .chatLog { position: relative; flex: 1; min-height: 0; overflow-y: auto; }
 .chatEmpty {
   height: 100%;
@@ -350,10 +365,16 @@ td small { display: block; margin-top: 2px; font-size: 12px; color: var(--faint)
   justify-content: center;
 }
 .chatEmpty h1 { font-size: 28px; }
-/* 말풍선, 흥정 칸, 결과 카드, 입력창이 같은 끝선을 쓰도록 폭을 하나로 맞춘다. */
+/* 빈 화면 제목은 글자마다 0.04초 간격으로 아래에서 굴러 올라온다. 처음 한 번만. */
+.rollBox { display: inline-block; overflow: hidden; vertical-align: bottom; line-height: 1.3; }
+.roll { display: inline-block; animation: rollIn 0.55s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+@keyframes rollIn { from { transform: translateY(110%); } to { transform: none; } }
+/* 말풍선, 협상 칸, 결과 카드, 입력창이 같은 끝선을 쓰도록 폭을 하나로 맞춘다. 대화는 아래에서부터 쌓인다. */
 .chatColumn {
   max-width: 880px;
+  min-height: 100%;
   margin: 0 auto;
+  justify-content: flex-end;
   padding: 24px 16px;
   display: flex;
   flex-direction: column;
@@ -374,7 +395,7 @@ td small { display: block; margin-top: 2px; font-size: 12px; color: var(--faint)
   background: var(--violet);
   color: #ffffff;
 }
-.bubble.agent { border-radius: 16px 16px 16px 4px; background: var(--card); }
+.bubble.agent { border-radius: 16px 16px 16px 4px; background: var(--paper); }
 .bubble.error { border-radius: 16px 16px 16px 4px; background: var(--red-soft); color: var(--red); }
 
 .msg { display: flex; gap: 8px; align-items: flex-end; animation: msgIn 0.25s ease-out; }
@@ -411,11 +432,11 @@ td small { display: block; margin-top: 2px; font-size: 12px; color: var(--faint)
   30% { opacity: 1; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .msg, .typing i { animation: none; }
+  .msg, .typing i, .chatGlow i, .roll { animation: none; }
   .dealBar i { transition: none; }
 }
 
-/* 흥정 한 건: 판매자마다 칸을 나눠 대화가 나란히 쌓인다. */
+/* 협상 한 건: 판매자마다 칸을 나눠 대화가 나란히 쌓인다. */
 .deals {
   position: relative;
   display: grid;
@@ -436,15 +457,15 @@ td small { display: block; margin-top: 2px; font-size: 12px; color: var(--faint)
     background: var(--divider);
   }
 }
-.deal { min-width: 0; display: flex; flex-direction: column; gap: 12px; scroll-margin-top: 16px; }
-.dealTurns > * { scroll-margin: 140px 0 16px; }
+/* 머리와 대화 칸이 한 카드다. 대화 칸은 높이를 고정해 그 안에서만 스크롤한다. */
+.deal { min-width: 0; border: 1px solid var(--line); border-radius: 16px; background: var(--card); overflow: hidden; display: flex; flex-direction: column; }
+.deal.live { border-color: var(--violet-off); }
 .dealHead { flex: 1; }
 .deal > .dealHead .dealBar { margin-top: auto; }
 .dealHead {
   width: 100%;
   padding: 12px 16px;
-  border: 1px solid var(--line);
-  border-radius: 16px;
+  border: 0;
   background: var(--card);
   text-align: left;
   cursor: pointer;
@@ -454,7 +475,6 @@ td small { display: block; margin-top: 2px; font-size: 12px; color: var(--faint)
   align-items: stretch;
   gap: 10px;
 }
-.dealHead.live { position: sticky; top: 8px; z-index: 1; }
 .dealTitle { display: flex; align-items: center; gap: 12px; }
 .dealName { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .dealName strong { font-size: 15px; font-weight: 600; }
@@ -462,13 +482,6 @@ td small { display: block; margin-top: 2px; font-size: 12px; color: var(--faint)
 /* 판매자 이름·호가 줄은 꺾지 않는다. 좁으면 말줄임. */
 .dealName strong, .dealName span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .dealTitle svg { flex: none; transition: transform 0.15s; }
-/* 흥정 결과만 칩으로 보여 준다. 다른 상태는 글자만 쓴다. */
-.dealTitle .badge { padding: 4px 10px; border-radius: 12px; background: var(--paper); }
-.dealTitle .badge.live { background: var(--violet-soft); }
-.dealTitle .badge.win { background: var(--violet); color: #ffffff; }
-.dealTitle .badge.warn { background: var(--amber-soft); }
-.dealTitle .badge.risk { background: var(--red-soft); }
-.panel .dealTitle .badge.mute { background: var(--line); }
 .dealHead[aria-expanded="true"] .dealTitle svg { transform: rotate(180deg); }
 .dealBar {
   position: relative;
@@ -494,7 +507,18 @@ td small { display: block; margin-top: 2px; font-size: 12px; color: var(--faint)
   color: var(--muted);
   font-variant-numeric: tabular-nums;
 }
-.dealTurns { display: flex; flex-direction: column; gap: 8px; }
+.dealTurns {
+  height: 360px;
+  overflow-y: auto;
+  padding: 12px;
+  border-top: 1px solid #eef0f4;
+  background: #fafafc;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  scrollbar-width: thin;
+  mask-image: linear-gradient(to bottom, transparent 0, #000 18px);
+}
 .panel .dealHead { border: 0; background: var(--paper); }
 .panel .dealHead .avatar { background: var(--card); }
 .panel .msg .bubble { font-size: 14px; }
@@ -535,33 +559,29 @@ td small { display: block; margin-top: 2px; font-size: 12px; color: var(--faint)
   padding: 20px;
   border-radius: 4px 16px 16px 16px;
   background: var(--card);
+  box-shadow: 0 0 0 1px var(--line);
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
-/* 감사가 막거나 알린 것. 결과 카드 맨 위에서 가장 먼저 눈에 띄게 한다. */
-.auditBand { padding: 16px 18px; border-radius: 12px; border-left: 6px solid var(--amber); background: var(--amber-soft); display: flex; flex-direction: column; gap: 10px; }
-.auditBand.risk { border-left-color: var(--red); background: var(--red-soft); }
-.auditBand h2 { font-size: 20px; line-height: 1.35; letter-spacing: -0.03em; color: var(--amber); }
-.auditBand.risk h2 { color: var(--red); }
-.auditBand ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
+/* 감사가 막거나 알린 것. 결과 카드 맨 위에 옅은 바탕과 얇은 테두리로 둔다. */
+.auditBand { padding: 16px 18px; border: 1px solid #f3d2ae; border-radius: 14px; background: #fffaf3; display: flex; gap: 12px; align-items: flex-start; color: var(--amber); }
+.auditBand.risk { border-color: #f4cdd2; background: #fff6f7; color: var(--red); }
+.auditIcon { flex: none; width: 32px; height: 32px; border-radius: 16px; background: #ffffff; display: flex; align-items: center; justify-content: center; }
+.auditBody { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.auditBand h2 { font-size: 17px; line-height: 1.4; letter-spacing: -0.02em; }
+.auditBand ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 4px; }
 .auditBand li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; font-size: 15px; line-height: 1.5; color: var(--ink-soft); }
 .auditBand li strong { font-weight: 700; color: var(--ink); }
-.auditTag { padding: 1px 8px; border-radius: 10px; background: var(--amber); color: #ffffff; font-size: 12px; font-weight: 700; }
-.finalHead { display: flex; flex-direction: column; gap: 8px; }
-.finalHead h2 { font-size: 20px; line-height: 1.35; letter-spacing: -0.03em; }
-.finalHead p { max-width: 72ch; font-size: 15px; color: var(--ink-soft); }
-.prices {
-  margin: 0;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(120px, 100%), 1fr));
-  gap: 12px;
-  font-variant-numeric: tabular-nums;
-}
-.prices div { display: flex; flex-direction: column; gap: 4px; }
-.prices dt { font-size: 12px; color: var(--faint); }
-.prices dd { margin: 0; font-size: 18px; font-weight: 500; }
-.prices dd.paid { font-weight: 700; color: var(--violet); }
+.bandLink { align-self: flex-start; font-size: 13px; font-weight: 600; color: inherit; }
+.bandLink:hover { color: inherit; text-decoration: underline; }
+.finalTitle { font-size: 20px; line-height: 1.35; letter-spacing: -0.03em; }
+.finalAmount { display: flex; flex-direction: column; gap: 6px; }
+.finalAmount > div { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
+.finalAmount strong { font-size: 26px; letter-spacing: -0.02em; color: var(--violet); font-variant-numeric: tabular-nums; }
+.finalAmount strong.unpaid { color: var(--muted); }
+.finalAmount span { font-size: 14px; color: var(--muted); }
+.finalAmount p { font-size: 14px; color: var(--ink-soft); }
 .finalResult {
   padding-top: 16px;
   border-top: 1px solid var(--line);
@@ -597,18 +617,6 @@ td small { display: block; margin-top: 2px; font-size: 12px; color: var(--faint)
 }
 .composerCard textarea:focus { outline: none; }
 .composerCard textarea::placeholder { color: var(--faint); opacity: 1; }
-.composerCard textarea.contentInput { border-top: 1px solid var(--line); padding-top: 8px; font-size: 14px; }
-.contentToggle {
-  padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px;
-  background: transparent; font: inherit; font-size: 13px; color: var(--muted); cursor: pointer;
-}
-.contentToggle[aria-pressed="true"] { border-color: var(--violet); color: var(--violet); }
-.contentToggle:disabled { cursor: default; color: var(--faint); }
-.bubbleContent {
-  display: block; margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--line);
-  font-size: 13px; opacity: 0.8; white-space: pre-wrap; max-height: 8em; overflow: hidden;
-}
-.requestContent { margin: 4px 0 0; font-size: 14px; color: var(--muted); white-space: pre-wrap; max-height: 10em; overflow: auto; }
 .composerBar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
 .budgetPill {
   height: 40px;
@@ -638,9 +646,9 @@ td small { display: block; margin-top: 2px; font-size: 12px; color: var(--faint)
 .budgetPill input:focus { outline: none; }
 .budgetPill input::-webkit-outer-spin-button,
 .budgetPill input::-webkit-inner-spin-button { appearance: none; margin: 0; }
-.composerActions { margin-left: auto; display: flex; align-items: center; gap: 6px; }
 .sendButton {
   flex: none;
+  margin-left: auto;
   width: 44px;
   height: 44px;
   padding: 0;
@@ -669,3 +677,130 @@ td small { display: block; margin-top: 2px; font-size: 12px; color: var(--faint)
 .evaluationHead { display: flex; align-items: center; gap: 8px; font-size: 15px; }
 .evaluationGoal { margin: 0; font-size: 13px; color: var(--muted); }
 .evaluation ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; font-size: 14px; color: var(--ink-soft); }
+
+/* --- 대시보드 --- */
+/* 오른쪽 위 잔액 뒤에만 옅은 보라 격자를 깔고 아래로 갈수록 흐리게 지운다. */
+main:has(.dashboard) { isolation: isolate; overflow: hidden; }
+main:has(.dashboard)::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  border-radius: inherit;
+  background-image:
+    linear-gradient(to right, rgb(107 63 212 / 10%) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(107 63 212 / 10%) 1px, transparent 1px);
+  background-size: 32px 32px;
+  background-position: -1px -1px;
+  mask-image: radial-gradient(ellipse 70% 45% at 85% 0%, #000 0%, transparent 100%);
+}
+.page.dashboard { gap: 20px; }
+.balance { padding: 4px 4px 8px; display: flex; flex-direction: column; gap: 2px; }
+.balance > span { font-size: 14px; color: var(--muted); }
+.balance small { font-size: 13px; color: var(--faint); }
+.balanceValue { font-size: 40px; font-weight: 700; line-height: 1.15; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+.balanceValue span { margin-left: 6px; font-size: 16px; font-weight: 500; color: #9aa1b0; letter-spacing: 0; }
+.metrics.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 600px) { .metrics.two { grid-template-columns: minmax(0, 1fr); } }
+.metrics.two article, .card { box-shadow: 0 1px 2px rgb(26 32 48 / 4%), 0 8px 24px rgb(26 32 48 / 5%); }
+.metrics.two article { border-radius: 18px; gap: 4px; }
+.metrics.two strong { font-size: 26px; }
+.metrics strong.saved { color: var(--violet); }
+.dashGrid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 16px; align-items: stretch; }
+@media (max-width: 900px) { .dashGrid { grid-template-columns: minmax(0, 1fr); } }
+.card { min-width: 0; padding: 20px 24px; border-radius: 18px; background: var(--card); display: flex; flex-direction: column; gap: 12px; }
+.card .sectionHead .textLink { min-height: 0; }
+.recentList { margin: 0; padding: 0; list-style: none; }
+.recentList a { padding: 12px 0; border-top: 1px solid #f0f1f5; display: flex; align-items: center; gap: 12px; color: var(--ink); }
+.recentList i { flex: none; width: 7px; height: 7px; border-radius: 4px; }
+.recentText { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.recentText b { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.recentText small { font-size: 13px; color: var(--faint); }
+.recentList .num { font-weight: 600; }
+.ringWrap { flex: 1; display: flex; align-items: center; justify-content: center; }
+.guarded { padding-top: 14px; border-top: 1px solid #f0f1f5; display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.guarded span { font-size: 14px; color: var(--muted); }
+.guarded strong { font-size: 20px; color: var(--violet-ink); font-variant-numeric: tabular-nums; }
+
+/* 감사 결과 원형 게이지 */
+.auditRing { display: flex; align-items: center; gap: 32px; }
+.ring { position: relative; flex: none; }
+.ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.ringTrack { fill: none; stroke: #f0f1f5; stroke-width: 9; }
+.ringArc { fill: none; stroke-width: 9; stroke-linecap: round; animation: ringIn 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+@keyframes ringIn { from { stroke-dasharray: 0 100; } }
+.ringCenter { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.ringCenter strong { font-size: 26px; line-height: 1; }
+.ringCenter span { font-size: 12px; color: var(--faint); }
+.ringLegend { width: 140px; margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 12px; }
+.ringLegend li { display: flex; justify-content: space-between; }
+.ringLegend span { display: flex; align-items: center; gap: 8px; }
+.ringLegend i { width: 10px; height: 10px; border-radius: 3px; }
+@media (prefers-reduced-motion: reduce) { .ringArc { animation: none; } }
+
+/* 상태 글자 앞의 색 점. 칩 대신 쓴다. */
+.dotLabel { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; white-space: nowrap; }
+.dotLabel::before { content: ""; width: 7px; height: 7px; border-radius: 4px; background: currentColor; }
+.dotLabel.ok { color: var(--green); }
+.dotLabel.warn { color: var(--amber); }
+.dotLabel.risk { color: var(--red); }
+td.saved { color: var(--green); }
+
+/* --- 이상 거래 요약 --- */
+.auditSummary { padding: 24px 28px; border-radius: 18px; background: var(--card); display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 40px; }
+@media (max-width: 900px) { .auditSummary { grid-template-columns: minmax(0, 1fr); } }
+.auditSummarySide { display: flex; flex-direction: column; gap: 20px; }
+.guarded.stacked { flex-direction: column; align-items: flex-start; gap: 2px; }
+.guarded.stacked small { font-size: 13px; color: var(--faint); }
+.ruleTable { display: flex; flex-direction: column; }
+.ruleTable h2 { margin-bottom: 6px; font-size: 16px; }
+.ruleRow { padding: 14px 0; border-top: 1px solid #f0f1f5; display: grid; grid-template-columns: 150px 64px minmax(0, 1fr) 32px; gap: 16px; align-items: baseline; }
+.ruleText { font-size: 14px; color: var(--muted); }
+.alertExtra { font-size: 14px; color: var(--muted); }
+
+/* --- 구매 상세: 거래 흐름 --- */
+.dealFlow { padding: 22px 24px 18px; border-radius: 16px; background: var(--card); display: flex; align-items: flex-start; overflow-x: auto; }
+.flowNode { width: 120px; flex: none; display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; color: var(--violet); }
+.flowNode.ok { color: var(--green); }
+.flowNode.warn { color: var(--amber); }
+.flowNode.risk { color: var(--red); }
+.flowNode.off { color: #aab0bd; }
+.flowIcon { width: 52px; height: 52px; border-radius: 26px; background: #ffffff; border: 1px solid currentColor; box-shadow: 0 4px 14px rgb(26 32 48 / 8%); display: flex; align-items: center; justify-content: center; }
+.flowNode:not(.ok, .warn, .risk, .off) .flowIcon { border-color: var(--line); }
+.flowNode strong { font-size: 13px; color: var(--ink); }
+.flowSub { font-size: 12px; color: var(--faint); }
+.flowNode.ok .flowSub, .flowNode.warn .flowSub, .flowNode.risk .flowSub { color: inherit; }
+.flowLine { flex: 1; min-width: 40px; height: 40px; margin-top: 6px; overflow: visible; }
+.flowLine.wide { flex: 1.4; }
+.flowBase { fill: none; stroke: var(--line); stroke-width: 2; }
+.flowBase.off { stroke: #d4d8e0; stroke-dasharray: 4 4; }
+.beam { fill: none; stroke: var(--violet); stroke-width: 2.5; stroke-linecap: round; stroke-dasharray: 20 100; }
+.beam.fwd { animation: beamFwd 2.4s linear infinite; }
+.beam.back { stroke: #8b5cf6; animation: beamBack 2.4s linear infinite; animation-delay: -1.2s; }
+@keyframes beamFwd { from { stroke-dashoffset: 120; } to { stroke-dashoffset: 0; } }
+@keyframes beamBack { from { stroke-dashoffset: 0; } to { stroke-dashoffset: 120; } }
+@media (prefers-reduced-motion: reduce) { .beam { animation: none; stroke-dasharray: none; opacity: 0.35; } }
+
+/* --- 구매 상세: 협상 대화 --- */
+.talks { display: flex; flex-direction: column; }
+.talk { border-top: 1px solid #f0f1f5; }
+.talkHead { width: 100%; min-height: 56px; padding: 10px 0; border: 0; background: transparent; display: flex; align-items: center; gap: 12px; text-align: left; cursor: pointer; }
+.talkHead svg { flex: none; transition: transform 0.15s; }
+.talkHead[aria-expanded="true"] svg { transform: rotate(180deg); }
+.talkDot { flex: none; width: 8px; height: 8px; border-radius: 4px; background: #8a92a3; }
+.talkName { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.talkName strong { font-size: 15px; }
+.talkName strong span { font-weight: 400; color: #8a92a3; }
+.talkName small { font-size: 13px; color: var(--muted); }
+.talkLabel { font-size: 13px; font-weight: 600; color: #8a92a3; white-space: nowrap; }
+.talkDot.win { background: var(--violet); }
+.talkDot.risk { background: var(--red); }
+.talkLabel.win { color: var(--violet); }
+.talkLabel.risk { color: var(--red); }
+.talkTurns { max-height: 340px; overflow-y: auto; margin-bottom: 12px; padding: 12px; border-radius: 12px; background: #fafafc; display: flex; flex-direction: column; gap: 8px; }
+.talkTurn { max-width: 78%; display: flex; flex-direction: column; gap: 2px; }
+.talkTurn span { font-size: 11px; color: #8a92a3; }
+.talkTurn p { padding: 8px 12px; border-radius: 14px; background: var(--paper); font-size: 14px; line-height: 1.5; }
+.talkTurn.buyer { align-self: flex-end; align-items: flex-end; }
+.talkTurn.buyer p { background: #f2ecff; }
